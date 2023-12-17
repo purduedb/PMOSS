@@ -4,8 +4,6 @@
  * @brief 
  */
 
-#ifndef RTREE_RTREE_H
-#define RTREE_RTREE_H
 #include<list>
 #include<vector>
 #include<algorithm>
@@ -32,6 +30,13 @@ using std::exp;
 using std::ofstream;
 using std::chrono::high_resolution_clock;
 using std::priority_queue;
+
+namespace erebus
+{
+namespace storage
+{
+namespace rtree
+{
 
 enum INSERT_STRATEGY{
     INS_AREA, INS_MARGIN, INS_OVERLAP, INS_RANDOM
@@ -388,5 +393,6 @@ extern "C"{
 	void SetRR_s(double s_value);
 }
 
-
-#endif //RTREE_RTREE_H
+}  // namespace rtree
+}  // namespace storage
+}  // namespace erebus

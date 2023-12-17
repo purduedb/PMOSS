@@ -6,7 +6,12 @@
 
 #include "rtree.h"
 
-
+namespace erebus
+{
+namespace storage
+{
+namespace rtree
+{
 int TreeNode::maximum_entry = 100;
 int TreeNode::minimum_entry = 40;
 double TreeNode::RR_s = 0.5;
@@ -5243,3 +5248,7 @@ double GetIndexSizeInMB(RTree* rtree){
 	total_size = total_size / 1024 / 1024;
 	return total_size;
 }
+
+}  // namespace rtree
+}  // namespace storage
+}  // namespace erebus

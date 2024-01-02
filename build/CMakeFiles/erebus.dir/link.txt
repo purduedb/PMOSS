@@ -1,0 +1,1 @@
+/usr/bin/g++ -std=c++17  -W -Wall -pedantic -DLEVEL1_DCACHE_LINESIZE= -DPAGESIZE= -march=native -Wno-variadic-macros -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-label-as-value -Wno-vla-extension -g -rdynamic CMakeFiles/erebus.dir/src/erebus.cpp.o -o bin/erebus 

@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/yrayhan/works/erebus/build",
+  "command": "/usr/bin/g++  -I/home/yrayhan/works/erebus/third-party/tlx -I/home/yrayhan/works/erebus/third-party/taskflow -I/home/yrayhan/works/erebus/third-party/thread-pool -I/home/yrayhan/works/erebus/src -std=c++17  -W -Wall -pedantic -DLEVEL1_DCACHE_LINESIZE= -DPAGESIZE= -march=native -Wno-variadic-macros -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-label-as-value -Wno-vla-extension -g -std=gnu++17 -o CMakeFiles/erebus.dir/src/erebus.cpp.o -c /home/yrayhan/works/erebus/src/erebus.cpp",
+  "file": "/home/yrayhan/works/erebus/src/erebus.cpp",
+  "output": "CMakeFiles/erebus.dir/src/erebus.cpp.o"
+}
+]

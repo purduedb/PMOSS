@@ -69,10 +69,38 @@ include CMakeFiles/erebus.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/erebus.dir/flags.make
 
+CMakeFiles/erebus.dir/src/threads/threadpool.cc.o: CMakeFiles/erebus.dir/flags.make
+CMakeFiles/erebus.dir/src/threads/threadpool.cc.o: /home/yrayhan/works/erebus/src/threads/threadpool.cc
+CMakeFiles/erebus.dir/src/threads/threadpool.cc.o: CMakeFiles/erebus.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yrayhan/works/erebus/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/erebus.dir/src/threads/threadpool.cc.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/erebus.dir/src/threads/threadpool.cc.o -MF CMakeFiles/erebus.dir/src/threads/threadpool.cc.o.d -o CMakeFiles/erebus.dir/src/threads/threadpool.cc.o -c /home/yrayhan/works/erebus/src/threads/threadpool.cc
+
+CMakeFiles/erebus.dir/src/threads/threadpool.cc.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/erebus.dir/src/threads/threadpool.cc.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/yrayhan/works/erebus/src/threads/threadpool.cc > CMakeFiles/erebus.dir/src/threads/threadpool.cc.i
+
+CMakeFiles/erebus.dir/src/threads/threadpool.cc.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/erebus.dir/src/threads/threadpool.cc.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/yrayhan/works/erebus/src/threads/threadpool.cc -o CMakeFiles/erebus.dir/src/threads/threadpool.cc.s
+
+CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o: CMakeFiles/erebus.dir/flags.make
+CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o: /home/yrayhan/works/erebus/src/storage/rtree/rtree.cpp
+CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o: CMakeFiles/erebus.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yrayhan/works/erebus/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o -MF CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o.d -o CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o -c /home/yrayhan/works/erebus/src/storage/rtree/rtree.cpp
+
+CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/yrayhan/works/erebus/src/storage/rtree/rtree.cpp > CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.i
+
+CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/yrayhan/works/erebus/src/storage/rtree/rtree.cpp -o CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.s
+
 CMakeFiles/erebus.dir/src/erebus.cpp.o: CMakeFiles/erebus.dir/flags.make
 CMakeFiles/erebus.dir/src/erebus.cpp.o: /home/yrayhan/works/erebus/src/erebus.cpp
 CMakeFiles/erebus.dir/src/erebus.cpp.o: CMakeFiles/erebus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yrayhan/works/erebus/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/erebus.dir/src/erebus.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yrayhan/works/erebus/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/erebus.dir/src/erebus.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/erebus.dir/src/erebus.cpp.o -MF CMakeFiles/erebus.dir/src/erebus.cpp.o.d -o CMakeFiles/erebus.dir/src/erebus.cpp.o -c /home/yrayhan/works/erebus/src/erebus.cpp
 
 CMakeFiles/erebus.dir/src/erebus.cpp.i: cmake_force
@@ -83,17 +111,38 @@ CMakeFiles/erebus.dir/src/erebus.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/erebus.dir/src/erebus.cpp.s"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/yrayhan/works/erebus/src/erebus.cpp -o CMakeFiles/erebus.dir/src/erebus.cpp.s
 
+CMakeFiles/erebus.dir/src/utils/Misc.cpp.o: CMakeFiles/erebus.dir/flags.make
+CMakeFiles/erebus.dir/src/utils/Misc.cpp.o: /home/yrayhan/works/erebus/src/utils/Misc.cpp
+CMakeFiles/erebus.dir/src/utils/Misc.cpp.o: CMakeFiles/erebus.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yrayhan/works/erebus/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/erebus.dir/src/utils/Misc.cpp.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/erebus.dir/src/utils/Misc.cpp.o -MF CMakeFiles/erebus.dir/src/utils/Misc.cpp.o.d -o CMakeFiles/erebus.dir/src/utils/Misc.cpp.o -c /home/yrayhan/works/erebus/src/utils/Misc.cpp
+
+CMakeFiles/erebus.dir/src/utils/Misc.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/erebus.dir/src/utils/Misc.cpp.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/yrayhan/works/erebus/src/utils/Misc.cpp > CMakeFiles/erebus.dir/src/utils/Misc.cpp.i
+
+CMakeFiles/erebus.dir/src/utils/Misc.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/erebus.dir/src/utils/Misc.cpp.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/yrayhan/works/erebus/src/utils/Misc.cpp -o CMakeFiles/erebus.dir/src/utils/Misc.cpp.s
+
 # Object files for target erebus
 erebus_OBJECTS = \
-"CMakeFiles/erebus.dir/src/erebus.cpp.o"
+"CMakeFiles/erebus.dir/src/threads/threadpool.cc.o" \
+"CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o" \
+"CMakeFiles/erebus.dir/src/erebus.cpp.o" \
+"CMakeFiles/erebus.dir/src/utils/Misc.cpp.o"
 
 # External object files for target erebus
 erebus_EXTERNAL_OBJECTS =
 
+bin/erebus: CMakeFiles/erebus.dir/src/threads/threadpool.cc.o
+bin/erebus: CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o
 bin/erebus: CMakeFiles/erebus.dir/src/erebus.cpp.o
+bin/erebus: CMakeFiles/erebus.dir/src/utils/Misc.cpp.o
 bin/erebus: CMakeFiles/erebus.dir/build.make
+bin/erebus: /opt/intel/oneapi/tbb/2021.9.0/lib/intel64/gcc4.8/libtbb_debug.so.12
 bin/erebus: CMakeFiles/erebus.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/yrayhan/works/erebus/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable bin/erebus"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/yrayhan/works/erebus/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable bin/erebus"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/erebus.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

@@ -120,6 +120,14 @@
 			"isCMake" : true,
 			"isExternal" : true,
 			"path" : "/usr/local/lib/python3.10/dist-packages/cmake/data/share/cmake-3.26/Modules/CMakeCommonLanguageInclude.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/usr/local/lib/cmake/tbb-2021.9.0/TBBConfigVersion.cmake"
+		},
+		{
+			"isExternal" : true,
+			"path" : "/usr/local/lib/cmake/tbb-2021.9.0/TBBConfig.cmake"
 		}
 	],
 	"kind" : "cmakeFiles",

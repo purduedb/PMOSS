@@ -17,7 +17,11 @@
 #include <thread>
 #include <vector>
 #include <mutex>
-
+#include <condition_variable>
+#include "oneapi/tbb/concurrent_priority_queue.h"
+#include "storage/rtree/rtree.h"
+#include "shared-headers/PerfEvent.hpp"
+using namespace erebus::storage::rtree;
 namespace erebus
 {
 namespace tp
@@ -25,14 +29,57 @@ namespace tp
     
 class ThreadPool{
   public:
-    static ThreadPool* glb_tpool;
-    std::vector<std::thread> glb_thrds; 
-    
-    ThreadPool();
+    static const int MAX_MEGAMIND_THREADS = 10;
+    static const int MAX_WORKER_THREADS = 10;
+    static const int MAX_ROUTER_THREADS = 4;
 
+    static const int CURR_MEGAMIND_THREADS = 2;
+    static const int CURR_WORKER_THREADS = 4;
+    static const int CURR_ROUTER_THREADS = 2;
+    
+    std::vector<std::thread> glb_worker_thrds; 
+    std::vector<std::thread> glb_megamind_thrds;
+    std::vector<std::thread> glb_router_thrds; 
+    
+    
+    struct MegaMindThread {
+      std::mutex mutex;
+      std::condition_variable cv;
+      // oneapi::tbb::concurrent_priority_queue<std::function<void()>> jobs;
+      
+      bool wt_ready = true;   // Idle
+      bool job_set = false;   // Has job
+      bool job_done = false;  // Job done
+    };
+    
+    struct WorkerThread {
+      std::mutex mutex;
+      std::condition_variable cv;
+      oneapi::tbb::concurrent_priority_queue<Rectangle, Rectangle::compare_f> jobs;
+      bool wt_ready = true;   // Idle
+      bool job_set = false;   // Has job
+      bool job_done = false;  // Job done
+    };
+
+    struct RouterThread {
+      std::mutex mutex;
+      std::condition_variable cv;
+      // oneapi::tbb::concurrent_priority_queue<std::function<void()>> jobs;
+      
+      bool wt_ready = true;   // Idle
+      bool job_set = false;   // Has job
+      bool job_done = false;  // Job done
+    };
+   
+   MegaMindThread megamind_threads_meta[MAX_MEGAMIND_THREADS];
+   WorkerThread worker_threads_meta[MAX_WORKER_THREADS];
+   RouterThread router_threads_meta[MAX_ROUTER_THREADS];
+   
+   ThreadPool(std::vector<int> megamind_cpuids, std::vector<int> worker_cpuids, std::vector<int> router_cpuids, RTree *rtree);
 };
 
 
-}
+}  // namespace tp 
 
-}
+}  // namespace erebus
+

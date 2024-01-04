@@ -173,6 +173,78 @@ src/erebus.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/erebus.cpp.s
 .PHONY : src/erebus.cpp.s
 
+src/storage/rtree/rtree.o: src/storage/rtree/rtree.cpp.o
+.PHONY : src/storage/rtree/rtree.o
+
+# target to build an object file
+src/storage/rtree/rtree.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o
+.PHONY : src/storage/rtree/rtree.cpp.o
+
+src/storage/rtree/rtree.i: src/storage/rtree/rtree.cpp.i
+.PHONY : src/storage/rtree/rtree.i
+
+# target to preprocess a source file
+src/storage/rtree/rtree.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.i
+.PHONY : src/storage/rtree/rtree.cpp.i
+
+src/storage/rtree/rtree.s: src/storage/rtree/rtree.cpp.s
+.PHONY : src/storage/rtree/rtree.s
+
+# target to generate assembly for a file
+src/storage/rtree/rtree.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.s
+.PHONY : src/storage/rtree/rtree.cpp.s
+
+src/threads/threadpool.o: src/threads/threadpool.cc.o
+.PHONY : src/threads/threadpool.o
+
+# target to build an object file
+src/threads/threadpool.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/threads/threadpool.cc.o
+.PHONY : src/threads/threadpool.cc.o
+
+src/threads/threadpool.i: src/threads/threadpool.cc.i
+.PHONY : src/threads/threadpool.i
+
+# target to preprocess a source file
+src/threads/threadpool.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/threads/threadpool.cc.i
+.PHONY : src/threads/threadpool.cc.i
+
+src/threads/threadpool.s: src/threads/threadpool.cc.s
+.PHONY : src/threads/threadpool.s
+
+# target to generate assembly for a file
+src/threads/threadpool.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/threads/threadpool.cc.s
+.PHONY : src/threads/threadpool.cc.s
+
+src/utils/Misc.o: src/utils/Misc.cpp.o
+.PHONY : src/utils/Misc.o
+
+# target to build an object file
+src/utils/Misc.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/utils/Misc.cpp.o
+.PHONY : src/utils/Misc.cpp.o
+
+src/utils/Misc.i: src/utils/Misc.cpp.i
+.PHONY : src/utils/Misc.i
+
+# target to preprocess a source file
+src/utils/Misc.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/utils/Misc.cpp.i
+.PHONY : src/utils/Misc.cpp.i
+
+src/utils/Misc.s: src/utils/Misc.cpp.s
+.PHONY : src/utils/Misc.s
+
+# target to generate assembly for a file
+src/utils/Misc.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/utils/Misc.cpp.s
+.PHONY : src/utils/Misc.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -187,6 +259,15 @@ help:
 	@echo "... src/erebus.o"
 	@echo "... src/erebus.i"
 	@echo "... src/erebus.s"
+	@echo "... src/storage/rtree/rtree.o"
+	@echo "... src/storage/rtree/rtree.i"
+	@echo "... src/storage/rtree/rtree.s"
+	@echo "... src/threads/threadpool.o"
+	@echo "... src/threads/threadpool.i"
+	@echo "... src/threads/threadpool.s"
+	@echo "... src/utils/Misc.o"
+	@echo "... src/utils/Misc.i"
+	@echo "... src/utils/Misc.s"
 .PHONY : help
 
 

@@ -2022,6 +2022,18 @@
 			"value" : ""
 		},
 		{
+			"name" : "PCM_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for PCM."
+				}
+			],
+			"type" : "PATH",
+			"value" : "PCM_DIR-NOTFOUND"
+		},
+		{
 			"name" : "SITE",
 			"properties" : 
 			[
@@ -2036,6 +2048,18 @@
 			],
 			"type" : "STRING",
 			"value" : "dbserver3"
+		},
+		{
+			"name" : "TBB_DIR",
+			"properties" : 
+			[
+				{
+					"name" : "HELPSTRING",
+					"value" : "The directory containing a CMake configuration file for TBB."
+				}
+			],
+			"type" : "PATH",
+			"value" : "/usr/local/lib/cmake/tbb-2021.9.0"
 		},
 		{
 			"name" : "TLX_BUILD_SHARED_LIBS",

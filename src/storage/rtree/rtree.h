@@ -97,6 +97,15 @@ class Rectangle{
         void Set(double l, double r, double b, double t);
         void Include(const Rectangle& rectangle);
         Rectangle Merge(const Rectangle& rectangle);
+
+		// creator: yr
+		struct compare_f {
+			bool operator()(const Rectangle& u, const Rectangle& v) const {
+				return true;
+			}
+		};
+		
+
 };
 
 

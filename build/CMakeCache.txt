@@ -379,8 +379,14 @@ MEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind
 //File that contains suppressions for the memory checker
 MEMORYCHECK_SUPPRESSIONS_FILE:FILEPATH=
 
+//The directory containing a CMake configuration file for PCM.
+PCM_DIR:PATH=PCM_DIR-NOTFOUND
+
 //Name of the computer/site where compile is being run
 SITE:STRING=dbserver3
+
+//The directory containing a CMake configuration file for TBB.
+TBB_DIR:PATH=/usr/local/lib/cmake/tbb-2021.9.0
 
 //Build shared library version of libtlx
 TLX_BUILD_SHARED_LIBS:BOOL=OFF

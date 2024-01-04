@@ -16,15 +16,27 @@ SET(CMAKE_CXX_FLAGS                 "-std=c++17 ${CMAKE_CXX_FLAGS} ${CMAKE_COMPI
 # SET(CMAKE_CXX_FLAGS_RELEASE         "-O2")
 # SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-O2 -ggdb3")
 
+
 # Third party
 include_directories(third-party/tlx)
 include_directories(third-party/taskflow)
 include_directories(third-party/thread-pool)
+include_directories(third-party/pcm)
 
 # Directories
 include_directories(src)
 
 
+find_package(TBB REQUIRED)
+
+# Our Project
+set(SOURCE_FILES
+    src/threads/threadpool.cc
+    src/storage/rtree/rtree.cpp
+    src/erebus.cpp
+    src/utils/Misc.cpp
+)
 
 # Executables
-add_executable(erebus src/erebus.cpp)
+add_executable(erebus ${SOURCE_FILES})
+target_link_libraries(erebus TBB::tbb)

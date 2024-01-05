@@ -16,6 +16,10 @@ SET(CMAKE_CXX_FLAGS                 "-std=c++17 ${CMAKE_CXX_FLAGS} ${CMAKE_COMPI
 # SET(CMAKE_CXX_FLAGS_RELEASE         "-O2")
 # SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-O2 -ggdb3")
 
+# set(CMAKE_BUILD_WITH_INSTALL_RPATH ON)
+# set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# SET(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath=/home/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so")
+
 
 # Third party
 include_directories(third-party/tlx)
@@ -25,6 +29,14 @@ include_directories(third-party/pcm)
 
 # Directories
 include_directories(src)
+
+# including intel pcm
+# set(PCM_DIR third-party/pcm/build/lib)
+# set(LDFLAGS "-L$(COURSE_DIR)")
+# set(LDLIBS "-lpcm -Wl,-rpath=$(PCM_DIR)/pcm.so")
+
+# LDLIBS = -lpcm # 
+
 
 
 find_package(TBB REQUIRED)
@@ -39,5 +51,13 @@ set(SOURCE_FILES
 )
 
 # Executables
+
 add_executable(erebus ${SOURCE_FILES})
-target_link_libraries(erebus TBB::tbb)
+# target_link_directories(erebus PUBLIC $(PCM_DIR))
+target_link_libraries(erebus 
+                    TBB::tbb
+                    /home/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so
+                    # libpcm.so
+                    # -L /home/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so
+                    # -pcm
+                    )

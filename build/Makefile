@@ -173,6 +173,30 @@ src/erebus.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/erebus.cpp.s
 .PHONY : src/erebus.cpp.s
 
+src/scheduling/RM.o: src/scheduling/RM.cpp.o
+.PHONY : src/scheduling/RM.o
+
+# target to build an object file
+src/scheduling/RM.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/scheduling/RM.cpp.o
+.PHONY : src/scheduling/RM.cpp.o
+
+src/scheduling/RM.i: src/scheduling/RM.cpp.i
+.PHONY : src/scheduling/RM.i
+
+# target to preprocess a source file
+src/scheduling/RM.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/scheduling/RM.cpp.i
+.PHONY : src/scheduling/RM.cpp.i
+
+src/scheduling/RM.s: src/scheduling/RM.cpp.s
+.PHONY : src/scheduling/RM.s
+
+# target to generate assembly for a file
+src/scheduling/RM.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/scheduling/RM.cpp.s
+.PHONY : src/scheduling/RM.cpp.s
+
 src/storage/rtree/rtree.o: src/storage/rtree/rtree.cpp.o
 .PHONY : src/storage/rtree/rtree.o
 
@@ -259,6 +283,9 @@ help:
 	@echo "... src/erebus.o"
 	@echo "... src/erebus.i"
 	@echo "... src/erebus.s"
+	@echo "... src/scheduling/RM.o"
+	@echo "... src/scheduling/RM.i"
+	@echo "... src/scheduling/RM.s"
 	@echo "... src/storage/rtree/rtree.o"
 	@echo "... src/storage/rtree/rtree.i"
 	@echo "... src/storage/rtree/rtree.s"

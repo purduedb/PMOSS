@@ -81,12 +81,12 @@ clean: CMakeFiles/erebus.dir/clean
 CMakeFiles/erebus.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/yrayhan/works/erebus/build/CMakeFiles --progress-num=1,2,3,4,5 "Built target erebus"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/yrayhan/works/erebus/build/CMakeFiles --progress-num=1,2,3,4,5,6 "Built target erebus"
 .PHONY : CMakeFiles/erebus.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/erebus.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/yrayhan/works/erebus/build/CMakeFiles 5
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yrayhan/works/erebus/build/CMakeFiles 6
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/erebus.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/yrayhan/works/erebus/build/CMakeFiles 0
 .PHONY : CMakeFiles/erebus.dir/rule

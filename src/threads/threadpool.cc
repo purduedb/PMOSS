@@ -5,19 +5,18 @@
 * 
 */
 #pragma once
-
-// TODO: Create n number of megamind threads that can handle incoming queries be it range or any other
-// thingy
-
-
 #include "threadpool.hpp"
+// -------------------------------------------------------------------------------------
 #include <random>
+// -------------------------------------------------------------------------------------
 #include "utils/Misc.hpp"
+// -------------------------------------------------------------------------------------
+namespace erebus
+{
+namespace tp
+{
 
-namespace erebus{
-namespace tp{
-
-ThreadPool::ThreadPool(std::vector<int> megamind_cpuids, std::vector<int> worker_cpuids, std::vector<int> router_cpuids, RTree *rtree){
+TPManager::TPManager(std::vector<int> megamind_cpuids, std::vector<int> worker_cpuids, std::vector<int> router_cpuids, RTree *rtree){
     // unsigned num_cpus = std::thread::hardware_concurrency();
     // std::cout << "Launching " << num_cpus << " threads\n";
     
@@ -31,20 +30,22 @@ ThreadPool::ThreadPool(std::vector<int> megamind_cpuids, std::vector<int> worker
         glb_worker_thrds.push_back(std::thread([&iomutex, i, this, rtree, worker_cpuids] {
             
             erebus::utils::PinThisThread(worker_cpuids[i]);
-            
+            worker_threads_meta[i].cpuid=worker_cpuids[i];
             std::this_thread::sleep_for(std::chrono::milliseconds(20));
             PerfEvent e;
             
             static int cnt = 0;        
             
             while (1) {
-                if (cnt%100==0) 
-                    e.startCounters();    
+                if (cnt % PERF_STAT_COLLECTION_INTERVAL == 0) {
+                    e.startCounters();
+                }
+                    
                 
                 Rectangle rec_pop;
                 worker_threads_meta[i].jobs.try_pop(rec_pop);
                 int result = QueryRectangle(rtree, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
-                cout << "Threads= " << i << " Result = " << result << endl;
+                // cout << "Threads= " << i << " Result = " << result << endl;
                 
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
@@ -58,11 +59,18 @@ ThreadPool::ThreadPool(std::vector<int> megamind_cpuids, std::vector<int> worker
                 // Simulate important work done by the tread by sleeping for a bit...
                 // std::this_thread::sleep_for(std::chrono::milliseconds(900));
                 
-                if (cnt%100==9){
+                if (cnt % PERF_STAT_COLLECTION_INTERVAL == 9){
                     e.stopCounters();
-                    std::cout << "Thread =" << i << endl;
-                    e.printReport(std::cout, 10); // use n as scale factor
-                    std::cout << std::endl;
+                    PerfCounter perf_counter;
+                    for(auto j=0; j < e.events.size(); j++)
+					    perf_counter.raw_counter_values[j] = e.events[j].readCounter();
+				    perf_counter.normalizationConstant = 1;
+
+                    worker_threads_meta[i].perf_stats.push_back(perf_counter);
+
+                    // std::cout << "Thread =" << i << endl;
+                    // e.printReport(std::cout, 10); // use n as scale factor
+                    // std::cout << std::endl;
                 }
                     
                 cnt +=1;
@@ -86,7 +94,7 @@ ThreadPool::ThreadPool(std::vector<int> megamind_cpuids, std::vector<int> worker
         glb_router_thrds.push_back(std::thread([&iomutex, tid, this, router_cpuids, i] {
             
             erebus::utils::PinThisThread(router_cpuids[i]);
-            
+            router_threads_meta[i].cpuid=router_cpuids[i];
             while (1) {
                 
 

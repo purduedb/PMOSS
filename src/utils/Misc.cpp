@@ -15,5 +15,5 @@ void PinThisThread(const u64 t_i)
    }
 }
 
-}
-}
+}  // namespace utils
+}  // namespace erebus

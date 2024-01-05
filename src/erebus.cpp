@@ -1,10 +1,11 @@
-#pragma once
 #include <iostream>
 // -------------------------------------------------------------------------------------
 #include <fstream>
 // -------------------------------------------------------------------------------------
 #include <thread>   // std::thread
 #include <mutex>
+// -------------------------------------------------------------------------------------
+#include "../third-party/pcm/src/cpucounters.h"
 // -------------------------------------------------------------------------------------
 #include "utils/gflags.h"
 #include "threads/threadpool.hpp"
@@ -55,6 +56,18 @@ void build_basertree(int insert_strategy, int split_strategy)
 
 int main()
 {
+	pcm::PCM *m; // = PCM::getInstance();
+    m = pcm::PCM::getInstance();
+    pcm::PCM::ErrorCode returnResult = m->program();
+    if (returnResult != pcm::PCM::Success) {
+        std::cerr << "PCM couldn't start" << std::endl;
+        std::cerr << "Error code: " << returnResult << std::endl;
+		std::cout << "could not start!"<< endl;
+        exit(1);
+    }
+	else{
+		cout << "success" << endl;
+	}
 
 	erebus::build_basertree(1, 1);
 

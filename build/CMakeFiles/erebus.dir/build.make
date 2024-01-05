@@ -157,6 +157,7 @@ bin/erebus: CMakeFiles/erebus.dir/src/utils/Misc.cpp.o
 bin/erebus: CMakeFiles/erebus.dir/src/scheduling/RM.cpp.o
 bin/erebus: CMakeFiles/erebus.dir/build.make
 bin/erebus: /opt/intel/oneapi/tbb/2021.9.0/lib/intel64/gcc4.8/libtbb_debug.so.12
+bin/erebus: /home/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so
 bin/erebus: CMakeFiles/erebus.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/yrayhan/works/erebus/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable bin/erebus"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/erebus.dir/link.txt --verbose=$(VERBOSE)

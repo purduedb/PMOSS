@@ -1,22 +1,24 @@
+#pragma once
 #include <iostream>
-#include "utils/gflags.h"
-
+// -------------------------------------------------------------------------------------
 #include <fstream>
-using std::ifstream;
-using std::ofstream;
+// -------------------------------------------------------------------------------------
 #include <thread>   // std::thread
 #include <mutex>
+// -------------------------------------------------------------------------------------
+#include "utils/gflags.h"
 #include "threads/threadpool.hpp"
-
-// #include <taskflow/taskflow.hpp>  // Taskflow is header-only
-// #include "threads/BS_thread_pool.hpp"
-using namespace erebus;
-using namespace erebus::storage::rtree;
-using namespace erebus::tp;
-namespace erebus{
+#include "scheduling/RM.hpp"
+// -------------------------------------------------------------------------------------
+using std::ifstream;
+using std::ofstream;
+// -------------------------------------------------------------------------------------
+namespace erebus
+{
 
 RTree* tree;
-void build_basertree(int insert_strategy, int split_strategy) {
+void build_basertree(int insert_strategy, int split_strategy) 
+{
 	tree = ConstructTree(50, 20);
 	SetDefaultInsertStrategy(tree, insert_strategy);
 	SetDefaultSplitStrategy(tree, split_strategy);
@@ -51,23 +53,21 @@ void build_basertree(int insert_strategy, int split_strategy) {
 }   // namespace erebus
 
 
-int main(){
+int main()
+{
 
-	// T1: Build the index first
-	build_basertree(1, 1);
+	erebus::build_basertree(1, 1);
 
-	// T2: Start the threads 
-	// Megamind threads are the ones that receive the queries and pass it to the worker threads, 
-	// The worker threads actually do the job of querying 
-	
 	std::vector<int> mm_cpuids = {30, 31};
 	std::vector<int> wrk_cpuids = {11, 12, 13, 14};
 	std::vector<int> rt_cpuids = {99, 100};
 	
-	ThreadPool glb_tpool(mm_cpuids, wrk_cpuids, rt_cpuids, tree);
-	
-	
+	erebus::tp::TPManager glb_tpool(mm_cpuids, wrk_cpuids, rt_cpuids, erebus::tree);
+	erebus::scheduler::ResourceManager GlbRM (&glb_tpool, erebus::tree);
+
 	while(1);
+	return 0;
+
 	// BS::thread_pool MegaMindPool(4);
 	// BS::thread_pool WorkerPool(50);
 	// auto mtids = MegaMindPool.get_thread_ids();
@@ -108,5 +108,5 @@ int main(){
 	// test_loop_until_empty();
     // test_init_thread();
 
-    return 0;
+   
 }

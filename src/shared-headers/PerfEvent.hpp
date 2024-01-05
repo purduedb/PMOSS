@@ -41,8 +41,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-struct PerfEvent {
+#define PERF_EVENT_CNT 7
 
+struct PerfEvent {
+   
    struct event {
       struct read_format {
          uint64_t value;

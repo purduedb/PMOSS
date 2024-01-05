@@ -35,6 +35,7 @@ set(SOURCE_FILES
     src/storage/rtree/rtree.cpp
     src/erebus.cpp
     src/utils/Misc.cpp
+    src/scheduling/RM.cpp
 )
 
 # Executables

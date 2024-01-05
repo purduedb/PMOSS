@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/erebus.dir/src/erebus.cpp.o"
   "CMakeFiles/erebus.dir/src/erebus.cpp.o.d"
+  "CMakeFiles/erebus.dir/src/scheduling/RM.cpp.o"
+  "CMakeFiles/erebus.dir/src/scheduling/RM.cpp.o.d"
   "CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o"
   "CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o.d"
   "CMakeFiles/erebus.dir/src/threads/threadpool.cc.o"

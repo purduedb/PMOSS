@@ -26,19 +26,13 @@
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 55,
+				"line" : 58,
 				"parent" : 0
 			},
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 57,
-				"parent" : 0
-			},
-			{
-				"command" : 2,
-				"file" : 0,
-				"line" : 25,
+				"line" : 60,
 				"parent" : 0
 			},
 			{
@@ -62,7 +56,13 @@
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 31,
+				"line" : 29,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 32,
 				"parent" : 0
 			}
 		]
@@ -119,7 +119,8 @@
 				1,
 				2,
 				3,
-				4
+				4,
+				5
 			]
 		}
 	],
@@ -149,6 +150,10 @@
 				"backtrace" : 2,
 				"fragment" : "/home/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so",
 				"role" : "libraries"
+			},
+			{
+				"fragment" : "-lnuma",
+				"role" : "libraries"
 			}
 		],
 		"language" : "CXX"
@@ -170,7 +175,8 @@
 				1,
 				2,
 				3,
-				4
+				4,
+				5
 			]
 		}
 	],
@@ -179,7 +185,7 @@
 		{
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
-			"path" : "src/threads/threadpool.cc",
+			"path" : "src/threads/TPM.cc",
 			"sourceGroupIndex" : 0
 		},
 		{
@@ -204,6 +210,12 @@
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
 			"path" : "src/scheduling/RM.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/scheduling/GM.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],

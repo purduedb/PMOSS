@@ -1,7 +1,10 @@
 
+#pragma once
 // -------------------------------------------------------------------------------------
-#include "threads/threadpool.hpp"
+#include <unordered_map>
+#include <thread>
 // -------------------------------------------------------------------------------------
+#include "shared-headers/Units.hpp"
 
 namespace erebus
 {
@@ -17,12 +20,13 @@ class ResourceManager
 {
     public:
         std::unordered_map<u64, std::thread*> CPUCoreToThread;
-        storage::rtree::RTree* TreeIdx;
-        tp::TPManager *TPM;
+        std::unordered_map<u64, std::thread*> NUMAToThread;
         // -------------------------------------------------------------------------------------
-        ResourceManager(tp::TPManager *TPM, storage::rtree::RTree* TreeIdx);
+        ResourceManager();
         ~ResourceManager();
         // -------------------------------------------------------------------------------------
+        void register_cpu(int cpuid, std::thread* th);
+        void register_numa(int numaid, std::thread* th);
 };
 
 }  // namespace scheduler

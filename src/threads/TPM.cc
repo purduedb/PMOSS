@@ -1,11 +1,4 @@
-/*
-* TODO: (a) create n(=num_cores) threads, bind it to cores,
-* (b) Have something to point to the active task sets that a thread needs to execute
-* [Probably a grid data structure where all the queries that fall in a cell are queued]
-* 
-*/
-#pragma once
-#include "threadpool.hpp"
+#include "TPM.hpp"
 // -------------------------------------------------------------------------------------
 #include <random>
 // -------------------------------------------------------------------------------------
@@ -16,18 +9,18 @@ namespace erebus
 namespace tp
 {
 
-TPManager::TPManager(std::vector<int> megamind_cpuids, std::vector<int> worker_cpuids, std::vector<int> router_cpuids, RTree *rtree){
-    // unsigned num_cpus = std::thread::hardware_concurrency();
-    // std::cout << "Launching " << num_cpus << " threads\n";
-    
-    // A mutex ensures orderly access to std::cout from multiple threads.
+TPManager::TPManager(std::vector<int> megamind_cpuids, std::vector<int> worker_cpuids, std::vector<int> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm)
+{
+    this->gm = gm;
+    this->rm = rm;
+
     std::mutex iomutex;
-    
-    
+
+    // -------------------------------------------------------------------------------------
     // initialize worker_threads
     s16 tid = 0;
     for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
-        glb_worker_thrds.push_back(std::thread([&iomutex, i, this, rtree, worker_cpuids] {
+        glb_worker_thrds.push_back(std::thread([&iomutex, i, this, gm, worker_cpuids]{
             
             erebus::utils::PinThisThread(worker_cpuids[i]);
             worker_threads_meta[i].cpuid=worker_cpuids[i];
@@ -41,24 +34,13 @@ TPManager::TPManager(std::vector<int> megamind_cpuids, std::vector<int> worker_c
                     e.startCounters();
                 }
                     
-                
                 Rectangle rec_pop;
                 worker_threads_meta[i].jobs.try_pop(rec_pop);
-                int result = QueryRectangle(rtree, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
-                // cout << "Threads= " << i << " Result = " << result << endl;
+                int result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
+                cout << "Threads= " << i << " Result = " << result << endl;
                 
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-                // {
-                // // Use a lexical scope and lock_guard to safely lock the mutex only
-                // // for the duration of std::cout usage.
-                // std::lock_guard<std::mutex> iolock(iomutex);
-                // std::cout << "Thread #" << i << ": on CPU " << sched_getcpu() << "\n";
-                // }
-
-                // Simulate important work done by the tread by sleeping for a bit...
-                // std::this_thread::sleep_for(std::chrono::milliseconds(900));
-                
+ 
                 if (cnt % PERF_STAT_COLLECTION_INTERVAL == 9){
                     e.stopCounters();
                     PerfCounter perf_counter;
@@ -89,6 +71,7 @@ TPManager::TPManager(std::vector<int> megamind_cpuids, std::vector<int> worker_c
         tid += 1;
     }
     
+    // -------------------------------------------------------------------------------------
     // initialize router threads
     for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {
         glb_router_thrds.push_back(std::thread([&iomutex, tid, this, router_cpuids, i] {
@@ -131,6 +114,21 @@ TPManager::TPManager(std::vector<int> megamind_cpuids, std::vector<int> worker_c
         // int rc = pthread_setaffinity_np(glb_router_thrds[i].native_handle(), sizeof(cpu_set_t), &cpuset);
         // if (rc != 0) 
         //     std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
+        tid += 1;
+    }
+    // -------------------------------------------------------------------------------------
+    // initialize megamind threads
+    for (unsigned i = 0; i < CURR_MEGAMIND_THREADS; ++i) {
+        glb_router_thrds.push_back(std::thread([&iomutex, tid, this, megamind_cpuids, i] {
+            
+            erebus::utils::PinThisThread(megamind_cpuids[i]);
+            megamind_threads_meta[i].cpuid=megamind_cpuids[i];
+            while (1) 
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+            }
+        }));
         tid += 1;
     }
 }

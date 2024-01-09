@@ -457,6 +457,9 @@ leanstoredb_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 leanstoredb_SOURCE_DIR:STATIC=/home/yrayhan/works/erebus
 
+//The directory containing a CMake configuration file for numa.
+numa_DIR:PATH=numa_DIR-NOTFOUND
+
 //Value Computed by CMake
 tlx_BINARY_DIR:STATIC=/home/yrayhan/works/erebus/build/third-party/tlx
 

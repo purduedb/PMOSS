@@ -173,6 +173,30 @@ src/erebus.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/erebus.cpp.s
 .PHONY : src/erebus.cpp.s
 
+src/scheduling/GM.o: src/scheduling/GM.cpp.o
+.PHONY : src/scheduling/GM.o
+
+# target to build an object file
+src/scheduling/GM.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/scheduling/GM.cpp.o
+.PHONY : src/scheduling/GM.cpp.o
+
+src/scheduling/GM.i: src/scheduling/GM.cpp.i
+.PHONY : src/scheduling/GM.i
+
+# target to preprocess a source file
+src/scheduling/GM.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/scheduling/GM.cpp.i
+.PHONY : src/scheduling/GM.cpp.i
+
+src/scheduling/GM.s: src/scheduling/GM.cpp.s
+.PHONY : src/scheduling/GM.s
+
+# target to generate assembly for a file
+src/scheduling/GM.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/scheduling/GM.cpp.s
+.PHONY : src/scheduling/GM.cpp.s
+
 src/scheduling/RM.o: src/scheduling/RM.cpp.o
 .PHONY : src/scheduling/RM.o
 
@@ -221,29 +245,29 @@ src/storage/rtree/rtree.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.s
 .PHONY : src/storage/rtree/rtree.cpp.s
 
-src/threads/threadpool.o: src/threads/threadpool.cc.o
-.PHONY : src/threads/threadpool.o
+src/threads/TPM.o: src/threads/TPM.cc.o
+.PHONY : src/threads/TPM.o
 
 # target to build an object file
-src/threads/threadpool.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/threads/threadpool.cc.o
-.PHONY : src/threads/threadpool.cc.o
+src/threads/TPM.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/threads/TPM.cc.o
+.PHONY : src/threads/TPM.cc.o
 
-src/threads/threadpool.i: src/threads/threadpool.cc.i
-.PHONY : src/threads/threadpool.i
+src/threads/TPM.i: src/threads/TPM.cc.i
+.PHONY : src/threads/TPM.i
 
 # target to preprocess a source file
-src/threads/threadpool.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/threads/threadpool.cc.i
-.PHONY : src/threads/threadpool.cc.i
+src/threads/TPM.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/threads/TPM.cc.i
+.PHONY : src/threads/TPM.cc.i
 
-src/threads/threadpool.s: src/threads/threadpool.cc.s
-.PHONY : src/threads/threadpool.s
+src/threads/TPM.s: src/threads/TPM.cc.s
+.PHONY : src/threads/TPM.s
 
 # target to generate assembly for a file
-src/threads/threadpool.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/threads/threadpool.cc.s
-.PHONY : src/threads/threadpool.cc.s
+src/threads/TPM.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/erebus.dir/build.make CMakeFiles/erebus.dir/src/threads/TPM.cc.s
+.PHONY : src/threads/TPM.cc.s
 
 src/utils/Misc.o: src/utils/Misc.cpp.o
 .PHONY : src/utils/Misc.o
@@ -283,15 +307,18 @@ help:
 	@echo "... src/erebus.o"
 	@echo "... src/erebus.i"
 	@echo "... src/erebus.s"
+	@echo "... src/scheduling/GM.o"
+	@echo "... src/scheduling/GM.i"
+	@echo "... src/scheduling/GM.s"
 	@echo "... src/scheduling/RM.o"
 	@echo "... src/scheduling/RM.i"
 	@echo "... src/scheduling/RM.s"
 	@echo "... src/storage/rtree/rtree.o"
 	@echo "... src/storage/rtree/rtree.i"
 	@echo "... src/storage/rtree/rtree.s"
-	@echo "... src/threads/threadpool.o"
-	@echo "... src/threads/threadpool.i"
-	@echo "... src/threads/threadpool.s"
+	@echo "... src/threads/TPM.o"
+	@echo "... src/threads/TPM.i"
+	@echo "... src/threads/TPM.s"
 	@echo "... src/utils/Misc.o"
 	@echo "... src/utils/Misc.i"
 	@echo "... src/utils/Misc.s"

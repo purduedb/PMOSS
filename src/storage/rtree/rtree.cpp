@@ -446,6 +446,13 @@ void RTree::Print() {
 }
 
 TreeNode* RTree::SplitStepByStep(TreeNode *tree_node) {
+	// -------------------------------------------------------------------------------------
+	int dest_socket = 1;
+	struct bitmask *bmp = numa_allocate_nodemask();
+	numa_bitmask_setbit(bmp, dest_socket);
+	numa_bind(bmp);
+	// -------------------------------------------------------------------------------------
+
 	return SplitStepByStep(tree_node, split_strategy_);
 }
 
@@ -620,6 +627,15 @@ RTree::RTree() {
 	height_ = 1;
 	root->is_leaf = true;
 	root_ = 0;
+	
+	/**
+	 * Check to see if the node is created at preferred destination
+	*/
+	// -------------------------------------------------------------------------------------
+	// void *ptr_to_check = root; int status[1];
+	// int ret_code = move_pages(0 /*self memory */, 1, &ptr_to_check, NULL, status, 0);
+	// printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
+	// -------------------------------------------------------------------------------------
 
 	RR_s = 0.5;
 	RR_y1 = exp(-1 / RR_s / RR_s);
@@ -1515,6 +1531,9 @@ double RTree::MinDistanceToNode(double x, double y, int tree_node_id) {
 
 
 TreeNode* RTree::SplitStepByStep(TreeNode *tree_node, SPLIT_STRATEGY strategy) {
+	// -------------------------------------------------------------------------------------
+
+	// -------------------------------------------------------------------------------------
 	TreeNode* next_node = nullptr;
 	if (tree_node->is_overflow) {
 		//vector<TreeNode*> new_child1;
@@ -4512,9 +4531,19 @@ void RTree::SplitQUADRATICCost(TreeNode* tree_node, vector<double>& values, Rect
 
 
 RTree* ConstructTree(int max_entry, int min_entry) {
+	/**
+	 * Storing the rtree node at dest_socket
+	 * root is always stored at NUMA node 0
+	*/
+	int dest_socket = 0;
+	struct bitmask *bmp = numa_allocate_nodemask();
+	numa_bitmask_setbit(bmp, dest_socket);
+	numa_bind(bmp);
+
 	TreeNode::maximum_entry = max_entry;
 	TreeNode::minimum_entry = min_entry;
 	RTree* rtree = new RTree();
+
 	return rtree;
 }
 
@@ -5247,6 +5276,38 @@ double GetIndexSizeInMB(RTree* rtree){
 	}
 	total_size = total_size / 1024 / 1024;
 	return total_size;
+}
+
+
+
+void RTree::Print(bool print_numa_node) {
+	TreeNode* iter = nullptr;
+	list<TreeNode*> queue;
+	queue.push_back(tree_nodes_[root_]);
+	while (!queue.empty()) {
+		iter = queue.front();
+		queue.pop_front();
+		
+		// -------------------------------------------------------------------------------------
+		void *ptr_to_check = iter; int status[1];
+		int ret_code = move_pages(0 /*self memory */, 1, &ptr_to_check, NULL, status, 0);
+		printf("Node: %d = Memory at %p is at %d node (retcode %d)\n", iter->id_, ptr_to_check, status[0], ret_code);
+		// -------------------------------------------------------------------------------------
+		
+		for (int i = 0; i < iter->entry_num; i++) {
+			if (iter->is_leaf) {
+				int child_idx = iter->children[i];
+			}
+			else {
+				int child_idx = iter->children[i];
+				TreeNode* t_iter = tree_nodes_[child_idx];
+				queue.push_back(t_iter);
+			}
+		}
+		
+		
+	}
+	cout << "#######################"<<endl;
 }
 
 }  // namespace rtree

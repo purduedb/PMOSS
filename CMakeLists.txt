@@ -12,6 +12,7 @@ SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_COMPILE_FLAGS             "-W -Wall -pedantic -DLEVEL1_DCACHE_LINESIZE=${LEVEL1_DCACHE_LINESIZE} -DPAGESIZE=${PAGESIZE} -march=native -Wno-variadic-macros -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-label-as-value -Wno-vla-extension")
 SET(CMAKE_C_FLAGS                   "${CMAKE_C_FLAGS} ${CMAKE_COMPILE_FLAGS}")
 SET(CMAKE_CXX_FLAGS                 "-std=c++17 ${CMAKE_CXX_FLAGS} ${CMAKE_COMPILE_FLAGS}")
+SET(CMAKE_CXX_STANDARD_LIBRARIES    "-lnuma")
 # SET(CMAKE_CXX_FLAGS_DEBUG           "-ggdb3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined -fsanitize-address-use-after-scope")
 # SET(CMAKE_CXX_FLAGS_RELEASE         "-O2")
 # SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-O2 -ggdb3")
@@ -33,7 +34,7 @@ include_directories(src)
 # including intel pcm
 # set(PCM_DIR third-party/pcm/build/lib)
 # set(LDFLAGS "-L$(COURSE_DIR)")
-# set(LDLIBS "-lpcm -Wl,-rpath=$(PCM_DIR)/pcm.so")
+# set(LDLIBS "-lnuma")
 
 # LDLIBS = -lpcm # 
 
@@ -41,13 +42,15 @@ include_directories(src)
 
 find_package(TBB REQUIRED)
 
+
 # Our Project
 set(SOURCE_FILES
-    src/threads/threadpool.cc
+    src/threads/TPM.cc
     src/storage/rtree/rtree.cpp
     src/erebus.cpp
     src/utils/Misc.cpp
     src/scheduling/RM.cpp
+    src/scheduling/GM.cpp
 )
 
 # Executables

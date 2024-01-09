@@ -3,18 +3,21 @@
  * @author Kaiyu (2020/7/25)
  * @brief 
  */
-
+// -------------------------------------------------------------------------------------
 #include<list>
 #include<vector>
 #include<algorithm>
 #include<cfloat>
 #include<cmath>
 #include<chrono>
-#include<assert.h>
 #include<iostream>
 #include<queue>
 #include<fstream>
-
+// -------------------------------------------------------------------------------------
+#include <assert.h>
+#include <numa.h> 
+#include <numaif.h>
+// -------------------------------------------------------------------------------------
 using std::list;
 using std::vector;
 using std::pair;
@@ -283,6 +286,7 @@ public:
 	void SplitQUADRATICCost(TreeNode* tree_node, vector<double>& values, Rectangle& rec1, Rectangle& rec2);
 
 	void Print();
+	void Print(bool print_numa_node);
 	void PrintEntryNum();
 };
 

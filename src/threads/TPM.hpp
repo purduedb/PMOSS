@@ -1,9 +1,3 @@
-/**
- * @file threadpool.hpp
- * @author yr (Dec17,23)
- * @brief 
- * 
- */
 #pragma once
 
 #include <thread>
@@ -14,7 +8,8 @@
 #include "oneapi/tbb/concurrent_priority_queue.h"
 // -------------------------------------------------------------------------------------
 #include "shared-headers/Units.hpp"
-#include "storage/rtree/rtree.h"
+#include "scheduling/RM.hpp"
+#include "scheduling/GM.hpp"
 #include "shared-headers/PerfEvent.hpp"
 #include "profiling/PerfCounters.hpp"
 // -------------------------------------------------------------------------------------
@@ -26,6 +21,9 @@ namespace tp
     
 class TPManager{
   public:
+    dm::GridManager *gm;
+    scheduler:: ResourceManager *rm;
+    // -------------------------------------------------------------------------------------    
     static const int MAX_MEGAMIND_THREADS = 10;
     static const int MAX_WORKER_THREADS = 10;
     static const int MAX_ROUTER_THREADS = 4;
@@ -78,7 +76,7 @@ class TPManager{
     WorkerThread worker_threads_meta[MAX_WORKER_THREADS];
     RouterThread router_threads_meta[MAX_ROUTER_THREADS];
     // -------------------------------------------------------------------------------------
-    TPManager(std::vector<int> megamind_cpuids, std::vector<int> worker_cpuids, std::vector<int> router_cpuids, RTree *rtree);
+    TPManager(std::vector<int> megamind_cpuids, std::vector<int> worker_cpuids, std::vector<int> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
     //  ~TPManager();
     // -------------------------------------------------------------------------------------
 };

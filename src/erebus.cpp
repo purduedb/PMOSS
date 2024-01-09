@@ -1,3 +1,5 @@
+#include "erebus.hpp"
+// -------------------------------------------------------------------------------------
 #include <iostream>
 // -------------------------------------------------------------------------------------
 #include <fstream>
@@ -5,50 +7,47 @@
 #include <thread>   // std::thread
 #include <mutex>
 // -------------------------------------------------------------------------------------
-#include "../third-party/pcm/src/cpucounters.h"
-// -------------------------------------------------------------------------------------
-#include "utils/gflags.h"
-#include "threads/threadpool.hpp"
-#include "scheduling/RM.hpp"
-// -------------------------------------------------------------------------------------
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
 namespace erebus
 {
-
-RTree* tree;
-void build_basertree(int insert_strategy, int split_strategy) 
+Erebus::Erebus(erebus::storage::rtree::RTree *idx, erebus::dm::GridManager *gm, erebus::scheduler::ResourceManager *rm, erebus::tp::TPManager *tp)
 {
-	tree = ConstructTree(50, 20);
-	SetDefaultInsertStrategy(tree, insert_strategy);
-	SetDefaultSplitStrategy(tree, split_strategy);
+	this->idx = idx;
+	this->glb_gm = gm;
+	this->glb_rm = rm;
+	this->glb_tpool = tp;
+}
+
+Erebus::Erebus(erebus::storage::rtree::RTree *idx, erebus::dm::GridManager *gm, erebus::scheduler::ResourceManager *rm)
+{
+	this->idx = idx;
+	this->glb_gm = gm;
+	this->glb_rm = rm;
+}
+
+void Erebus::register_idx(int insert_strategy, int split_strategy) 
+{
+	this->idx = ConstructTree(50, 20);
+	SetDefaultInsertStrategy(this->idx, insert_strategy);
+	SetDefaultSplitStrategy(this->idx, split_strategy);
 	int total_access = 0;
 	ifstream ifs("/home/yrayhan/works/erebus/src/dataset/uni100k.txt", std::ifstream::in);
 	for (int i = 0; i < 100000; i++) {
 		double l, r, b, t;
 		ifs >> l >> r >> b >> t;
-		Rectangle* rectangle = InsertRec(tree, l, r, b, t);
-		DefaultInsert(tree, rectangle);
+		Rectangle* rectangle = InsertRec(this->idx, l, r, b, t);
+		DefaultInsert(this->idx, rectangle);
 	}
 	ifs.close();
+	
+	this->glb_gm->idx = this->idx;
+}
 
-	// ifs.open("./dataset/query1k.txt", std::ifstream::in);
-	// ofstream ofs("./reference.log", std::ofstream::out);
-	// for (int i = 0; i < 1000; i++) {
-	// 	//cout<<"query "<<i<<endl;
-	// 	double l, r, b, t;
-	// 	ifs >> l >> r >> b >> t;
-	// 	Rectangle query(l, r, b, t);
-	// 	int access = QueryRectangle(tree, l, r, b, t);
-	// 	ofs << tree->result_count << endl;
-	// 	total_access += access;
-	// }
-	// ofs.close();
-	// ifs.close();
-	// Clear(tree);
-	cout << "insert strategy " << tree->insert_strategy_ << " split strategy " << tree->split_strategy_ << endl;
-	cout << "average node access is " << 1.0 * total_access / 1000 << endl;
+void Erebus::register_threadpool(erebus::tp::TPManager *tp)
+{
+	this->glb_tpool = tp;
 }
 
 }   // namespace erebus
@@ -56,27 +55,22 @@ void build_basertree(int insert_strategy, int split_strategy)
 
 int main()
 {
-	pcm::PCM *m; // = PCM::getInstance();
-    m = pcm::PCM::getInstance();
-    pcm::PCM::ErrorCode returnResult = m->program();
-    if (returnResult != pcm::PCM::Success) {
-        std::cerr << "PCM couldn't start" << std::endl;
-        std::cerr << "Error code: " << returnResult << std::endl;
-		std::cout << "could not start!"<< endl;
-        exit(1);
-    }
-	else{
-		cout << "success" << endl;
-	}
 
-	erebus::build_basertree(1, 1);
+	erebus::storage::rtree::RTree *idx;
+	
+	erebus::dm::GridManager glb_gm(10, 10, 0, 1000, 0, 1000);
+	
+	erebus::scheduler::ResourceManager glb_rm;
+	
+	erebus::Erebus db(idx, &glb_gm, &glb_rm);
+	db.register_idx(1, 1);
+	db.idx->Print(true);
 
+	
 	std::vector<int> mm_cpuids = {30, 31};
 	std::vector<int> wrk_cpuids = {11, 12, 13, 14};
 	std::vector<int> rt_cpuids = {99, 100};
-	
-	erebus::tp::TPManager glb_tpool(mm_cpuids, wrk_cpuids, rt_cpuids, erebus::tree);
-	erebus::scheduler::ResourceManager GlbRM (&glb_tpool, erebus::tree);
+	erebus::tp::TPManager glb_tpool(mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 
 	while(1);
 	return 0;

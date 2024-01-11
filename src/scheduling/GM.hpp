@@ -1,4 +1,5 @@
 #pragma once
+// -------------------------------------------------------------------------------------
 #include "utils/Misc.hpp"
 #include "storage/rtree/rtree.h"
 // -------------------------------------------------------------------------------------
@@ -18,9 +19,13 @@ class GridManager
     double minYSpace;  // min-space of the index in y-dim
     double maxXSpace;  // min-space of the index in x-dim
     double maxYSpace;  // min-space of the index in y-dim
-    int nGridCells =  (this->xPar) *  (this->yPar);
+    int nGridCells;
+    int nGridCellsPerThread;
     // -------------------------------------------------------------------------------------
     erebus::storage::rtree::RTree *idx;
+    // -------------------------------------------------------------------------------------
+    std::unordered_map<u64, std::thread*> CPUCoreToThread;
+    std::unordered_map<u64, std::thread*> NUMAToThread;
     // -------------------------------------------------------------------------------------
 
     struct GridCell{
@@ -39,6 +44,8 @@ class GridManager
 
     GridManager(int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace);
     void register_grid_cells();
+    void register_grid_cells(vector<CPUID> availCPUs);
+    void register_index(erebus::storage::rtree::RTree *idx);
 
 };
 

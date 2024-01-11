@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Site BuildName="Linux-g++"
-	BuildStamp="20240109-0415-Experimental"
+	BuildStamp="20240111-1009-Experimental"
 	Name="dbserver3"
 	Generator="ctest-3.26.1"
 	CompilerName="/usr/bin/g++"
@@ -21,14 +21,14 @@
 	TotalVirtualMemory="8191"
 	TotalPhysicalMemory="192583"
 	LogicalProcessorsPerPhysical="2"
-	ProcessorClockFrequency="1156.23"
+	ProcessorClockFrequency="2400"
 	>
 	<Testing>
-		<StartDateTime>Jan 09 23:48 UTC</StartDateTime>
-		<StartTestTime>1704844082</StartTestTime>
+		<StartDateTime>Jan 11 10:09 UTC</StartDateTime>
+		<StartTestTime>1704967793</StartTestTime>
 		<TestList/>
-		<EndDateTime>Jan 09 23:48 UTC</EndDateTime>
-		<EndTestTime>1704844082</EndTestTime>
+		<EndDateTime>Jan 11 10:09 UTC</EndDateTime>
+		<EndTestTime>1704967793</EndTestTime>
 		<ElapsedMinutes>0</ElapsedMinutes>
 	</Testing>
 </Site>

@@ -1,6 +1,7 @@
 #pragma once
 #include <thread>
 #include <vector>
+#include <numa.h>
 // -------------------------------------------------------------------------------------
 #include "shared-headers/Units.hpp"
 // -------------------------------------------------------------------------------------
@@ -8,7 +9,7 @@ namespace erebus{
 namespace utils{
 
 void PinThisThread(const u64 t_i);
-
+int CntHWThreads();
 /**
  * Copied from https://gist.github.com/lorenzoriano/5414671
 */

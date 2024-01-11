@@ -15,5 +15,11 @@ void PinThisThread(const u64 t_i)
    }
 }
 
+int CntHWThreads()
+{
+   unsigned num_cpus = std::thread::hardware_concurrency();
+   return num_cpus;
+}
+
 }  // namespace utils
 }  // namespace erebus

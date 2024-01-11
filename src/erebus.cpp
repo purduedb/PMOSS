@@ -27,7 +27,14 @@ Erebus::Erebus(erebus::storage::rtree::RTree *idx, erebus::dm::GridManager *gm, 
 	this->glb_rm = rm;
 }
 
-void Erebus::register_idx(int insert_strategy, int split_strategy) 
+Erebus::Erebus(erebus::dm::GridManager *gm, erebus::scheduler::ResourceManager *rm)
+{
+	
+	this->glb_gm = gm;
+	this->glb_rm = rm;
+}
+
+erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_strategy) 
 {
 	this->idx = ConstructTree(50, 20);
 	SetDefaultInsertStrategy(this->idx, insert_strategy);
@@ -42,7 +49,7 @@ void Erebus::register_idx(int insert_strategy, int split_strategy)
 	}
 	ifs.close();
 	
-	this->glb_gm->idx = this->idx;
+	return this->idx;
 }
 
 void Erebus::register_threadpool(erebus::tp::TPManager *tp)
@@ -56,21 +63,25 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 int main()
 {
 
-	erebus::storage::rtree::RTree *idx;
-	
-	erebus::dm::GridManager glb_gm(10, 10, 0, 1000, 0, 1000);
+	std::vector<CPUID> mm_cpuids = {101, 102};
+	std::vector<CPUID> wrk_cpuids;
+	std::vector<CPUID> rt_cpuids = {99, 100};
+	for (int i = 20; i < 60; i++) wrk_cpuids.push_back(i);
+
+	erebus::dm::GridManager glb_gm(10, 10, 0, 100000, 0, 100000);
 	
 	erebus::scheduler::ResourceManager glb_rm;
 	
-	erebus::Erebus db(idx, &glb_gm, &glb_rm);
-	db.register_idx(1, 1);
-	db.idx->Print(true);
-
+	erebus::Erebus db(&glb_gm, &glb_rm);
+	db.build_idx(1, 1);
 	
-	std::vector<int> mm_cpuids = {30, 31};
-	std::vector<int> wrk_cpuids = {11, 12, 13, 14};
-	std::vector<int> rt_cpuids = {99, 100};
+	glb_gm.register_index(db.idx);
+	// glb_gm.register_grid_cells();
+	glb_gm.register_grid_cells(wrk_cpuids);
+	
+	
 	erebus::tp::TPManager glb_tpool(mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
+
 
 	while(1);
 	return 0;

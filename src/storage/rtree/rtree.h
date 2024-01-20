@@ -78,6 +78,7 @@ class Rectangle{
         double top_;
 
         unsigned int id_;
+		int qStamp;
 
     public:
         Rectangle();

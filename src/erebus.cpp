@@ -40,7 +40,7 @@ erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_
 	SetDefaultInsertStrategy(this->idx, insert_strategy);
 	SetDefaultSplitStrategy(this->idx, split_strategy);
 	int total_access = 0;
-	ifstream ifs("/home/yrayhan/works/erebus/src/dataset/uni100k.txt", std::ifstream::in);
+	ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/uni100k.txt", std::ifstream::in);
 	for (int i = 0; i < 100000; i++) {
 		double l, r, b, t;
 		ifs >> l >> r >> b >> t;

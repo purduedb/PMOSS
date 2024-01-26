@@ -33,9 +33,12 @@ TPManager::TPManager(std::vector<CPUID> megamind_cpuids, std::vector<CPUID> work
                 }
                     
                 Rectangle rec_pop;
-                glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
-                int result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
-                cout << "Threads= " << i << " Result = " << result << endl;
+                int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
+                if (size_jobqueue != 0){
+                    glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
+                    int result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
+                    cout << "Threads= " << worker_cpuids[i] << " Result = " << result << endl;
+                }
                 
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
  
@@ -110,7 +113,7 @@ TPManager::TPManager(std::vector<CPUID> megamind_cpuids, std::vector<CPUID> work
                 std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
                 int insert_tid = dq(gen);
                 int cpuid = gm->glbGridCell[valid_gcells[insert_tid]].idCPU;
-                cout << glb_worker_thrds[cpuid].cpuid << "  " << glb_worker_thrds[cpuid].th.get_id() << endl;
+                // cout << glb_worker_thrds[cpuid].cpuid << "  " << glb_worker_thrds[cpuid].th.get_id() << endl;
                 glb_worker_thrds[cpuid].jobs.push(query);
                 // worker_threads_meta[gm->glbGridCell[valid_gcells[insert_tid]]].jobs.push(query);
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));

@@ -1,3 +1,0 @@
-/homes/yrayhan/works/erebus/build/CMakeFiles/erebus.dir
-/homes/yrayhan/works/erebus/build/CMakeFiles/edit_cache.dir
-/homes/yrayhan/works/erebus/build/CMakeFiles/rebuild_cache.dir

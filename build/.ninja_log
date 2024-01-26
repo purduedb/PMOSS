@@ -1,8 +1,0 @@
-# ninja log v5
-4	401	1704968168959294433	CMakeFiles/erebus.dir/src/utils/Misc.cpp.o	c8ac5952bdb87374
-5	530	1704968169087297459	CMakeFiles/erebus.dir/src/scheduling/RM.cpp.o	3283d2a67f964eb2
-5	729	1704968169287302188	CMakeFiles/erebus.dir/src/scheduling/GM.cpp.o	c0778a023236f23e
-4	1914	1704968170467330089	CMakeFiles/erebus.dir/src/storage/rtree/rtree.cpp.o	bb91ab5506552b8
-3	1248	1704969475002175613	CMakeFiles/erebus.dir/src/erebus.cpp.o	c58a8a7b41f8ca6d
-1769	2092	1704969475846195571	bin/erebus	663760066ad5885f
-3	1769	1704969475522187909	CMakeFiles/erebus.dir/src/threads/TPM.cc.o	c89daae6015d8a7d

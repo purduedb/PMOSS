@@ -59,7 +59,7 @@ add_executable(erebus ${SOURCE_FILES})
 # target_link_directories(erebus PUBLIC $(PCM_DIR))
 target_link_libraries(erebus 
                     TBB::tbb
-                    /home/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so
+                    /homes/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so
                     # libpcm.so
                     # -L /home/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so
                     # -pcm

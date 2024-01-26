@@ -83,9 +83,9 @@ class TPManager{
     // std::vector<std::thread> glb_megamind_thrds;
     // std::vector<std::thread> glb_router_thrds; 
     // -------------------------------------------------------------------------------------
-    MegaMindThread megamind_threads_meta[MAX_MEGAMIND_THREADS];
-    WorkerThread worker_threads_meta[MAX_WORKER_THREADS];
-    RouterThread router_threads_meta[MAX_ROUTER_THREADS];
+    // MegaMindThread megamind_threads_meta[MAX_MEGAMIND_THREADS];
+    // WorkerThread worker_threads_meta[MAX_WORKER_THREADS];
+    // RouterThread router_threads_meta[MAX_ROUTER_THREADS];
     // -------------------------------------------------------------------------------------
     TPManager(std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
     //  ~TPManager();

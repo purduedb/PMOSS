@@ -1,4 +1,4 @@
-# Install script for directory: /home/yrayhan/works/erebus
+# Install script for directory: /homes/yrayhan/works/erebus
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/yrayhan/works/erebus/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/homes/yrayhan/works/erebus/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

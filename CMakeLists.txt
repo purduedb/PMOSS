@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.5)
 
 project("erebus"
     LANGUAGES C CXX
@@ -8,6 +8,7 @@ project("erebus"
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/bin")
 
 # Set compilation flags
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_COMPILE_FLAGS             "-W -Wall -pedantic -DLEVEL1_DCACHE_LINESIZE=${LEVEL1_DCACHE_LINESIZE} -DPAGESIZE=${PAGESIZE} -march=native -Wno-variadic-macros -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-label-as-value -Wno-vla-extension")
 SET(CMAKE_C_FLAGS                   "${CMAKE_C_FLAGS} ${CMAKE_COMPILE_FLAGS}")
@@ -22,10 +23,12 @@ SET(CMAKE_CXX_STANDARD_LIBRARIES    "-lnuma")
 # SET(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath=/home/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so")
 
 
+include("${CMAKE_SOURCE_DIR}/libs/gflags.cmake")
+
 # Third party
-include_directories(third-party/tlx)
-include_directories(third-party/taskflow)
-include_directories(third-party/thread-pool)
+# include_directories(third-party/tlx)
+# include_directories(third-party/taskflow)
+# include_directories(third-party/thread-pool)
 include_directories(third-party/pcm)
 
 # Directories
@@ -51,6 +54,7 @@ set(SOURCE_FILES
     src/utils/Misc.cpp
     src/scheduling/RM.cpp
     src/scheduling/GM.cpp
+    # src/config/config.cpp
 )
 
 # Executables

@@ -2,7 +2,6 @@
 
 #include <numa.h>
 // -------------------------------------------------------------------------------------
-#include "utils/gflags.h"
 #include "threads/TPM.hpp"
 #include "scheduling/RM.hpp"
 #include "scheduling/GM.hpp"

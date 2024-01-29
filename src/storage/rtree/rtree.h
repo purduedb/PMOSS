@@ -79,6 +79,7 @@ class Rectangle{
 
         unsigned int id_;
 		int qStamp;
+		vector<int> validGridIds;
 
     public:
         Rectangle();
@@ -176,8 +177,6 @@ struct SplitLocation{
 
 class RTree {
 public:
-    //list<TreeNode*> tree_nodes_;
-	//list<Rectangle*> objects_;
 	vector<TreeNode*> tree_nodes_;
 	vector<Rectangle*> objects_;
     int root_;
@@ -205,10 +204,17 @@ public:
 	vector<SplitLocation> split_locations;
 	vector<int> candidate_split_action;
 
+	// Pointer to the grid manager that manages the index 
+	/**
+	 * TODO: Have the pointer to the GridManager so that while generating new nodes
+	 * you can go ahead and know where to put that node 
+	 * at creation time 
+	*/
+
 public:
 
 	RTree();
-
+	void registerGM();
 
 	void Copy(RTree* tree);
 	TreeNode* Root();

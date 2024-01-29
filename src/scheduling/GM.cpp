@@ -68,5 +68,41 @@ void GridManager::register_index(erebus::storage::rtree::RTree * idx)
 {
     this->idx = idx;
 }
+
+void GridManager::printGM(){
+    cout << "-------------------------------------------------------------------------------------" << endl;
+    cout << "------------------------------------Grid Resources-----------------------------------" << endl;
+    cout << "QueryDistribution" << endl;
+    for(auto j = 0; j < this->yPar; j++){
+        for (auto i = 0; i < this->xPar; i++){
+            cout << "|\t" << "(" << 
+                glbGridCell[this->yPar*i + j].idCPU <<
+                ", " << 
+                glbGridCell[this->yPar*i + j].idNUMA <<
+            ")" << "\t|";
+        }
+        cout << endl;
+    }
+    cout << "-------------------------------------------------------------------------------------" << endl;
+    cout << "-------------------------------------------------------------------------------------" << endl;
+}
+
+void GridManager::printQueryDist(){
+    cout << "-------------------------------------------------------------------------------------" << endl;
+    cout << "-------------------------------QueryDistribution-------------------------------------" << endl;
+    cout << "" << endl;
+
+    for(auto j = 0; j < this->yPar; j++){
+        for (auto i = 0; i < this->xPar; i++){
+            cout << "|\t" <<  
+                freqQueryDist[this->yPar*i + j] <<
+                "\t|";
+        }
+        cout << endl;
+    }
+    cout << "-------------------------------------------------------------------------------------" << endl;
+    cout << "-------------------------------------------------------------------------------------" << endl;
+}
+
 } // namespace dm
 }  // namespace erebus

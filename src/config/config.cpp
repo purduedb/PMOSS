@@ -1,4 +1,3 @@
-#pragma once
-#include "gflags/gflags.h"
+#include "config.hpp"
 // -------------------------------------------------------------------------------------
-DECLARE_double(dram_gib);
+DEFINE_double(dram_gib, 1, "");

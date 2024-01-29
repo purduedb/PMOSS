@@ -39,5 +39,8 @@ std::vector<T> linspace(double start, double end, double num)
     return linspaced;
 }
 
+void printGrid(int userRows, int userColumns);
+
+
 }  // namespace utils
 }  // namespace erebus

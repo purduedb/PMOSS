@@ -82,7 +82,7 @@ void TPManager::initRouterThreads(){
                 int ly = d4(gen);
                 int hx = lx + width;
                 int hy = ly + height;
-                Rectangle query(lx, ly, hx, hy);
+                Rectangle query(lx, hx, ly, hy);
                 
                 // -------------------------------------------------------------------------------------
                 // Check which grid the query belongs to 
@@ -242,8 +242,8 @@ void TPManager::dumpGridHWCounters(int tID){
         for(auto j = 0; j < sHist; j++){
             PerfCounter hist = this->glb_worker_thrds[cpuid].shadowDataDist[gIdx].perf_stats[j];
             input_qstamp << hist.rscan_query.left_ << " "
-            << hist.rscan_query.bottom_ << " "
             << hist.rscan_query.right_ << " "
+            << hist.rscan_query.bottom_ << " "
             << hist.rscan_query.top_ << " ";
             for (auto k = 0; k < PERF_EVENT_CNT; k++){
                 input_qstamp << hist.raw_counter_values[k] << " ";

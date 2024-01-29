@@ -24,17 +24,22 @@ class TPManager{
   public:
     dm::GridManager *gm;
     scheduler:: ResourceManager *rm;
-    // -------------------------------------------------------------------------------------    
-    static const int MAX_MEGAMIND_THREADS = 10;
-    static const int MAX_WORKER_THREADS = 200;
-    static const int MAX_ROUTER_THREADS = 4;
-
-    static const int CURR_MEGAMIND_THREADS = 2;
-    static const int CURR_WORKER_THREADS = 40;
-    static const int CURR_ROUTER_THREADS = 2;
+    
+    std::vector<CPUID> router_cpuids; 
+    std::vector<CPUID> worker_cpuids; 
+    std::vector<CPUID> megamind_cpuids; 
     
     // -------------------------------------------------------------------------------------    
-    static const u64 PERF_STAT_COLLECTION_INTERVAL = 100;
+    static const int MAX_MEGAMIND_THREADS = 20;
+    static const int MAX_WORKER_THREADS = 200;
+    static const int MAX_ROUTER_THREADS = 20;
+
+    static const int CURR_MEGAMIND_THREADS = 8;
+    static const int CURR_WORKER_THREADS = 40;
+    static const int CURR_ROUTER_THREADS = 8;
+    
+    // -------------------------------------------------------------------------------------    
+    static const u64 PERF_STAT_COLLECTION_INTERVAL = 1;
     // -------------------------------------------------------------------------------------
     struct MegaMindThread {
       std::thread th;
@@ -53,7 +58,13 @@ class TPManager{
       std::mutex mutex;
       std::condition_variable cv;
       oneapi::tbb::concurrent_priority_queue<Rectangle, Rectangle::compare_f> jobs;
-      std::vector<PerfCounter> perf_stats;
+      
+      // This is a local view of the data distribution 
+      // TODO: the size should be equal to the max number of grids
+      HWCounterStats shadowDataDist[1000];
+      // std::vector<PerfCounter> perf_stats;
+
+
       bool wt_ready = true;   // Idle
       bool job_set = false;   // Has job
       bool job_done = false;  // Job done
@@ -70,10 +81,22 @@ class TPManager{
       bool job_set = false;   // Has job
       bool job_done = false;  // Job done
     };
+    struct StandbyThread {
+      std::thread th;
+      u64 cpuid;
+      std::mutex mutex;
+      std::condition_variable cv;
+      // oneapi::tbb::concurrent_priority_queue<std::function<void()>> jobs;
+      
+      bool wt_ready = true;   // Idle
+      bool job_set = false;   // Has job
+      bool job_done = false;  // Job done
+    };
     // -------------------------------------------------------------------------------------
     std::unordered_map<CPUID, WorkerThread> glb_worker_thrds; 
     std::unordered_map<CPUID, MegaMindThread> glb_megamind_thrds; 
     std::unordered_map<CPUID, RouterThread> glb_router_thrds; 
+    std::unordered_map<CPUID, StandbyThread> glb_standby_thrds; 
 
     // std::unordered_map<CPUID, std::thread> glb_worker_thrds; 
     // std::unordered_map<CPUID, std::thread> glb_megamind_thrds; 
@@ -88,6 +111,12 @@ class TPManager{
     // RouterThread router_threads_meta[MAX_ROUTER_THREADS];
     // -------------------------------------------------------------------------------------
     TPManager(std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
+    void initWorkerThreads();
+    void initRouterThreads();
+    void initMegaMindThreads();
+
+    void dumpGridHWCounters(int tID);
+    
     //  ~TPManager();
     // -------------------------------------------------------------------------------------
 };

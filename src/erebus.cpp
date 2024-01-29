@@ -1,9 +1,7 @@
 #include "erebus.hpp"
 // -------------------------------------------------------------------------------------
 #include <iostream>
-// -------------------------------------------------------------------------------------
 #include <fstream>
-// -------------------------------------------------------------------------------------
 #include <thread>   // std::thread
 #include <mutex>
 // -------------------------------------------------------------------------------------
@@ -61,12 +59,43 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 
 
 int main()
-{
-
-	std::vector<CPUID> mm_cpuids = {101, 102};
+{	
+	std::vector<CPUID> mm_cpuids;
 	std::vector<CPUID> wrk_cpuids;
-	std::vector<CPUID> rt_cpuids = {99, 100};
-	for (int i = 20; i < 60; i++) wrk_cpuids.push_back(i);
+	std::vector<CPUID> rt_cpuids;
+	
+	int nNUMANodes = numa_num_configured_nodes();
+	int nCPUCores = numa_num_possible_cpus();
+	
+	vector<CPUID> cPool[nNUMANodes];
+
+	for(auto n=0; n < nNUMANodes; n++){
+		struct bitmask *bmp = numa_allocate_cpumask();
+		numa_node_to_cpus(n, bmp);
+		for(auto j = 0; j < nCPUCores; j++){
+			if (numa_bitmask_isbitset(bmp, j)) cPool[n].push_back(j);
+		}
+	}
+	/**
+	 * TODO: cleaner version would check the number of rt/numa node and allocate accordingly 
+	 * Also would remove the number from the TPM.cc file about the #of threads and make it 
+	 * global
+	*/
+	for(auto n=0; n < nNUMANodes; n++){
+		mm_cpuids.push_back(cPool[n][0]);
+		rt_cpuids.push_back(cPool[n][1]);
+		int cnt = 1;
+		for(auto j = 2; j < cPool[n].size(); j++, cnt++){
+			wrk_cpuids.push_back(cPool[n][j]);
+			if (cnt == 5) break;
+		}
+	}
+	
+
+	// std::vector<CPUID> mm_cpuids = {101, 102};
+	// std::vector<CPUID> wrk_cpuids;
+	// std::vector<CPUID> rt_cpuids = {0, 12, 24, 36, 48, 60, };
+	// Allocate 6 threads off each NUMA Node as worker CUPIDS
 
 	erebus::dm::GridManager glb_gm(10, 10, 0, 100000, 0, 100000);
 	
@@ -76,13 +105,20 @@ int main()
 	db.build_idx(1, 1);
 	
 	glb_gm.register_index(db.idx);
-	// glb_gm.register_grid_cells();
 	glb_gm.register_grid_cells(wrk_cpuids);
+	glb_gm.printGM();
+	glb_gm.printQueryDist();
 	
 	
 	erebus::tp::TPManager glb_tpool(mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
+	glb_tpool.initWorkerThreads();
+	glb_tpool.initRouterThreads();
+	glb_tpool.initMegaMindThreads();
 
-
+	std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+	
+	glb_tpool.dumpGridHWCounters(-1);
+	
 	while(1);
 	return 0;
 

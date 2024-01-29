@@ -28,6 +28,10 @@ Rectangle::Rectangle(const Rectangle& rectangle) {
 	right_ = rectangle.Right();
 	bottom_ = rectangle.Bottom();
 	top_ = rectangle.Top();
+	
+	// Yr
+	id_ = rectangle.id_;
+	validGridIds = rectangle.validGridIds;
 }
 
 void Rectangle::Include(const Rectangle &rectangle) {

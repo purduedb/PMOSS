@@ -1,7 +1,12 @@
 #pragma once
+#include <iostream>
+#include <fstream>
 // -------------------------------------------------------------------------------------
 #include "utils/Misc.hpp"
 #include "storage/rtree/rtree.h"
+// -------------------------------------------------------------------------------------
+using std::ifstream;
+using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define MAX_GRID_CELL 1000
 // -------------------------------------------------------------------------------------
@@ -41,11 +46,15 @@ class GridManager
     };
     
     GridCell glbGridCell[MAX_GRID_CELL];
+    int freqQueryDist[MAX_GRID_CELL];  // TODO: this needs to be thread-safe
 
     GridManager(int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace);
     void register_grid_cells();
     void register_grid_cells(vector<CPUID> availCPUs);
     void register_index(erebus::storage::rtree::RTree *idx);
+    void printGM();
+    void printQueryDist();
+   
 
 };
 

@@ -11,74 +11,60 @@ TPManager::TPManager(std::vector<CPUID> megamind_cpuids, std::vector<CPUID> work
 {
     this->gm = gm;
     this->rm = rm;
+    this->router_cpuids = router_cpuids;
+    this->worker_cpuids = worker_cpuids;
+    this->megamind_cpuids = megamind_cpuids;
+}
 
-    std::mutex iomutex;
-
+void TPManager::initWorkerThreads(){
     // -------------------------------------------------------------------------------------
     // initialize worker_threads
-    s16 tid = 0;
     for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
-        // glb_worker_thrds.push_back(std::thread([&iomutex, i, this, gm, worker_cpuids]{
-        glb_worker_thrds[worker_cpuids[i]].th = std::thread([&iomutex, i, this, gm, worker_cpuids]{
+        glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this]{
             erebus::utils::PinThisThread(worker_cpuids[i]);
             glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            
+            // std::this_thread::sleep_for(std::chrono::milliseconds(20));
             PerfEvent e;
-            
-            static int cnt = 0;        
-            
-            while (1) {
-                if (cnt % PERF_STAT_COLLECTION_INTERVAL == 0) {
-                    e.startCounters();
-                }
-                    
+
+            while (1) {    
                 Rectangle rec_pop;
                 int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
                 if (size_jobqueue != 0){
                     glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
+                    e.startCounters();
+                    
                     int result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
-                    cout << "Threads= " << worker_cpuids[i] << " Result = " << result << endl;
-                }
-                
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
- 
-                if (cnt % PERF_STAT_COLLECTION_INTERVAL == 9){
+                    
+                    
                     e.stopCounters();
                     PerfCounter perf_counter;
                     for(auto j=0; j < e.events.size(); j++)
 					    perf_counter.raw_counter_values[j] = e.events[j].readCounter();
 				    perf_counter.normalizationConstant = 1;
-
-                    glb_worker_thrds[worker_cpuids[i]].perf_stats.push_back(perf_counter);
-
-                    // std::cout << "Thread =" << i << endl;
-                    // e.printReport(std::cout, 10); // use n as scale factor
-                    // std::cout << std::endl;
-                }
+                    perf_counter.rscan_query = rec_pop;
                     
-                cnt +=1;
+                    for(auto qlog = 0; qlog < rec_pop.validGridIds.size(); qlog++){
+                        int gridId = rec_pop.validGridIds[qlog];
+                        glb_worker_thrds[worker_cpuids[i]].shadowDataDist[gridId].perf_stats.push_back(perf_counter);
+                    }
 
+                    cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
+                }
             }
         });
-
-        // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
-        // only CPU i as set.
-        // cpu_set_t cpuset;
-        // CPU_ZERO(&cpuset);
-        // CPU_SET(worker_cpuids[i], &cpuset);
-        // int rc = pthread_setaffinity_np(glb_worker_thrds[i].native_handle(), sizeof(cpu_set_t), &cpuset);
-        // if (rc != 0) 
-        //     std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
-        tid += 1;
     }
-    
+}
+
+
+void TPManager::initRouterThreads(){
     // -------------------------------------------------------------------------------------
     // initialize router threads
     for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {
-        // glb_router_thrds.push_back(std::thread([&iomutex, tid, this, router_cpuids, i] {
-        glb_router_thrds[router_cpuids[i]].th = std::thread([&iomutex, tid, this, router_cpuids, i, gm] {
+        glb_router_thrds[router_cpuids[i]].th = std::thread([i, this] {
             erebus::utils::PinThisThread(router_cpuids[i]);
             glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
+            
             while (1) {
                 // -------------------------------------------------------------------------------------
                 // Generate a query 
@@ -101,6 +87,7 @@ TPManager::TPManager(std::vector<CPUID> megamind_cpuids, std::vector<CPUID> work
                 // -------------------------------------------------------------------------------------
                 // Check which grid the query belongs to 
                 std::vector<int> valid_gcells;
+                
                 for (auto gc = 0; gc < gm->nGridCells; gc++){
                     double glx = gm->glbGridCell[gc].lx;
                     double gly = gm->glbGridCell[gc].ly;
@@ -109,9 +96,18 @@ TPManager::TPManager(std::vector<CPUID> megamind_cpuids, std::vector<CPUID> work
 
                     if (hx < glx || lx > ghx || hy < gly || ly > ghy)
                         continue;
-                    else valid_gcells.push_back(gc);
+                    else {
+                        /**
+                         * 1. Store IDs of the Grids that the query intersects
+                         * 2. Update the query frequency
+                         * 3. Update the query's valid grid cells so that it can maintain a local view of the data distribution
+                        */
+                        valid_gcells.push_back(gc);  
+                        gm->freqQueryDist[gc]++;
+                        query.validGridIds.push_back(gc);
+                    }        
                 }
-
+                
                 // -------------------------------------------------------------------------------------
                 /**
                  * TODO: Stamp the query whether it is a mice, elephant or mammoth
@@ -197,50 +193,68 @@ TPManager::TPManager(std::vector<CPUID> megamind_cpuids, std::vector<CPUID> work
                 std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
                 int insert_tid = dq(gen);
                 int cpuid = gm->glbGridCell[valid_gcells[insert_tid]].idCPU;
-                // cout << glb_worker_thrds[cpuid].cpuid << "  " << glb_worker_thrds[cpuid].th.get_id() << endl;
+
                 glb_worker_thrds[cpuid].jobs.push(query);
-                // worker_threads_meta[gm->glbGridCell[valid_gcells[insert_tid]]].jobs.push(query);
-
-
                 // -------------------------------------------------------------------------------------
-                // Go to sleep 
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-                // std::uniform_int_distribution<int> dq(0, CURR_WORKER_THREADS); 
-                // int insert_tid = dq(gen);
-                // worker_threads_meta[insert_tid].jobs.push(query);
-                // std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
+                // std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
         });
-
-        // Create a cpu_set_t object representing a set of CPUs. Clear it and mark
-        // only CPU i as set.
-        // cpu_set_t cpuset;
-        // CPU_ZERO(&cpuset);
-        // CPU_SET(router_cpuids[i], &cpuset);
-        // int rc = pthread_setaffinity_np(glb_router_thrds[i].native_handle(), sizeof(cpu_set_t), &cpuset);
-        // if (rc != 0) 
-        //     std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
-        tid += 1;
-    }
-    // -------------------------------------------------------------------------------------
-    // initialize megamind threads
-    for (unsigned i = 0; i < CURR_MEGAMIND_THREADS; ++i) {
-        // glb_router_thrds.push_back(std::thread([&iomutex, tid, this, megamind_cpuids, i] {
-        glb_router_thrds[megamind_cpuids[i]].th = std::thread([&iomutex, tid, this, megamind_cpuids, i] {
-            erebus::utils::PinThisThread(megamind_cpuids[i]);
-            megamind_threads_meta[i].cpuid=megamind_cpuids[i];
-            while (1) 
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            }
-        });
-        tid += 1;
     }
 }
 
-}  //namespace tp
 
+void TPManager::initMegaMindThreads(){
+    // -------------------------------------------------------------------------------------
+    // initialize megamind threads
+    for (unsigned i = 0; i < CURR_MEGAMIND_THREADS; ++i) {
+        glb_megamind_thrds[megamind_cpuids[i]].th = std::thread([i, this] {
+            erebus::utils::PinThisThread(megamind_cpuids[i]);
+            glb_megamind_thrds[megamind_cpuids[i]].cpuid=megamind_cpuids[i];
+            
+            while (1) 
+            {
+                
+
+            }
+        });
+    }
+}
+
+
+void TPManager::dumpGridHWCounters(int tID){
+    bool isFeaturized[MAX_GRID_CELL] = {0};
+    
+    for(auto gIdx = 0; gIdx < MAX_GRID_CELL; gIdx++){
+        // if (isFeaturized[gIdx] == false) {
+            
+        //     continue;
+        // }
+        // -------------------------------------------------------------------------------------
+        ofstream input_qstamp("/homes/yrayhan/works/erebus/src/qstamp_features/g" + std::to_string(gIdx) + ".txt", std::ifstream::out);
+        // -------------------------------------------------------------------------------------
+        // Find the appropriate thread
+        int cpuid = this->gm->glbGridCell[gIdx].idCPU;
+        // -------------------------------------------------------------------------------------
+        // Find the appropriate thread and gIdx 
+        // Cleaner version should do this more optimally since each thread can actually 
+        // store at multiple gridIdxs
+        int sHist = this->glb_worker_thrds[cpuid].shadowDataDist[gIdx].perf_stats.size();
+        for(auto j = 0; j < sHist; j++){
+            PerfCounter hist = this->glb_worker_thrds[cpuid].shadowDataDist[gIdx].perf_stats[j];
+            input_qstamp << hist.rscan_query.left_ << " "
+            << hist.rscan_query.bottom_ << " "
+            << hist.rscan_query.right_ << " "
+            << hist.rscan_query.top_ << " ";
+            for (auto k = 0; k < PERF_EVENT_CNT; k++){
+                input_qstamp << hist.raw_counter_values[k] << " ";
+            }
+            input_qstamp << endl;
+        }
+
+        
+    }
+    
+}
+
+}  //namespace tp
 } // namespace erebus

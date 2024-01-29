@@ -43,6 +43,7 @@ void TPManager::initWorkerThreads(){
 					    perf_counter.raw_counter_values[j] = e.events[j].readCounter();
 				    perf_counter.normalizationConstant = 1;
                     perf_counter.rscan_query = rec_pop;
+                    perf_counter.result = result;
                     
                     for(auto qlog = 0; qlog < rec_pop.validGridIds.size(); qlog++){
                         int gridId = rec_pop.validGridIds[qlog];
@@ -248,6 +249,7 @@ void TPManager::dumpGridHWCounters(int tID){
             for (auto k = 0; k < PERF_EVENT_CNT; k++){
                 input_qstamp << hist.raw_counter_values[k] << " ";
             }
+            input_qstamp << hist.result;
             input_qstamp << endl;
         }
 

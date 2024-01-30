@@ -39,7 +39,7 @@ erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_
 	SetDefaultSplitStrategy(this->idx, split_strategy);
 	int total_access = 0;
 	ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in);
-	for (int i = 0; i < 5000000; i++) {
+	for (int i = 0; i < 500000; i++) {
 		double l, r, b, t;
 		ifs >> l >> r >> b >> t;
 		Rectangle* rectangle = InsertRec(this->idx, l, r, b, t);
@@ -111,7 +111,7 @@ int main()
 	glb_gm.register_index(db.idx);
 	glb_gm.register_grid_cells(wrk_cpuids);
 	glb_gm.printGM();
-	glb_gm.printQueryDist();
+	glb_gm.printQueryDistPushed();
 	glb_gm.buildDataDistIdx();
 	glb_gm.printDataDistIdx();
 	
@@ -124,12 +124,15 @@ int main()
 	std::this_thread::sleep_for(std::chrono::milliseconds(50000));
 	glb_tpool.terminateWorkerThreads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	glb_gm.printQueryDist();
-	glb_tpool.dumpGridHWCounters(-1);
-	// while(1){
-	// 	glb_gm.printQueryDist();
-	// 	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-	// }
+	glb_gm.printQueryDistPushed();
+	// glb_tpool.dumpGridHWCounters(-1);
+	while(1){
+		glb_gm.printQueryDistPushed();
+		glb_gm.printQueryDistCompleted();
+		glb_gm.printQueryDistOstanding();
+		glb_gm.printQueryView();
+		std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+	}
 	
 	while(1);
 	return 0;

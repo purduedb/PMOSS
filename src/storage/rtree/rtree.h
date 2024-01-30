@@ -83,6 +83,7 @@ class Rectangle{
         unsigned int id_;
 		int qStamp;
 		vector<int> validGridIds;
+		int aGrid;
 
     public:
         Rectangle();
@@ -109,7 +110,7 @@ class Rectangle{
 		// creator: yr
 		struct compare_f {
 			bool operator()(const Rectangle& u, const Rectangle& v) const {
-				return true;
+				return u.qStamp < v.qStamp;
 			}
 		};
 		

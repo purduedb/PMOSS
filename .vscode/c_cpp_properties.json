@@ -5,6 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/third-party/tlx",
+                "${workspaceFolder}/src",
                 "${workspaceFolder}/src"
             ],
             "defines": [],

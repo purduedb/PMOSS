@@ -47,7 +47,7 @@ class TPManager{
       std::mutex mutex;
       std::condition_variable cv;
       
-      bool wt_ready = true;   // Idle
+      bool running = true;
       bool job_set = false;   // Has job
       bool job_done = false;  // Job done
     };
@@ -65,7 +65,7 @@ class TPManager{
       // std::vector<PerfCounter> perf_stats;
 
 
-      bool wt_ready = true;   // Idle
+      bool running = true;
       bool job_set = false;   // Has job
       bool job_done = false;  // Job done
     };
@@ -77,7 +77,7 @@ class TPManager{
       std::condition_variable cv;
       // oneapi::tbb::concurrent_priority_queue<std::function<void()>> jobs;
       
-      bool wt_ready = true;   // Idle
+      bool running = true;
       bool job_set = false;   // Has job
       bool job_done = false;  // Job done
     };
@@ -88,7 +88,7 @@ class TPManager{
       std::condition_variable cv;
       // oneapi::tbb::concurrent_priority_queue<std::function<void()>> jobs;
       
-      bool wt_ready = true;   // Idle
+      bool running = true;
       bool job_set = false;   // Has job
       bool job_done = false;  // Job done
     };
@@ -116,8 +116,8 @@ class TPManager{
     void initMegaMindThreads();
 
     void dumpGridHWCounters(int tID);
-    
-    //  ~TPManager();
+    void terminateWorkerThreads();
+    // ~TPManager();
     // -------------------------------------------------------------------------------------
 };
 

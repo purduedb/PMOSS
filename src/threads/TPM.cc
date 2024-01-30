@@ -26,7 +26,6 @@ void TPManager::initWorkerThreads(){
             erebus::utils::PinThisThread(worker_cpuids[i]);
             glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
             
-            // std::this_thread::sleep_for(std::chrono::milliseconds(20));
             PerfEvent e;
 
             while (1) {  
@@ -53,8 +52,14 @@ void TPManager::initWorkerThreads(){
                         glb_worker_thrds[worker_cpuids[i]].shadowDataDist[gridId].perf_stats.push_back(perf_counter);
                     }
 
+                    /**
+                     * TODO: You should be updating the outstanding queries 
+                    */
+                    gm->freqQueryDistCompleted[rec_pop.aGrid] += 1;
                     // cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 }
+                
             }
         });
     }
@@ -117,7 +122,7 @@ void TPManager::initRouterThreads(){
                          * 3. Update the query's valid grid cells so that it can maintain a local view of the data distribution
                         */
                         valid_gcells.push_back(gc);  
-                        gm->freqQueryDist[gc]++;
+                        // gm->freqQueryDistPushed[gc]++;  // I am currently only keeping where it goes, don't care about  the intersections
                         query.validGridIds.push_back(gc);
                     }        
                 }
@@ -207,8 +212,42 @@ void TPManager::initRouterThreads(){
                 std::mt19937 genInt(rd());
                 std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
                 int insert_tid = dq(genInt);
-                int cpuid = gm->glbGridCell[valid_gcells[insert_tid]].idCPU;
 
+                int glbGridCellInsert = valid_gcells[insert_tid];
+                
+                // -------------------------------------------------------------------------------------
+                // Stamping the query with something: You need to do the inverse of log_2
+                // For now skipping
+                double predictIns = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][0] + 
+                                    query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][1]+ 
+                                    query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][2]+ 
+                                    query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][3];
+                
+                double predictAcc = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][0] + 
+                                    query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][1]+ 
+                                    query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][2]+ 
+                                    query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][3];
+                
+                
+                if (predictIns < QUERY_THRESHOLD_INS && predictAcc < QUERY_THRESHOLD_ACC) 
+                    query.qStamp = QUERY_MICE;
+                else if (predictIns >= QUERY_THRESHOLD_INS && predictAcc >= QUERY_THRESHOLD_ACC)
+                    query.qStamp = QUERY_MAMMOTH;
+                else 
+                    query.qStamp = QUERY_ELEPHANT;
+                
+                // -------------------------------------------------------------------------------------
+                query.aGrid = glbGridCellInsert;
+                // -------------------------------------------------------------------------------------
+                // Update the query view of each cell
+                gm->glbGridCell[glbGridCellInsert].qType[query.qStamp] += 1;
+                gm->freqQueryDistPushed[glbGridCellInsert]++;
+                gm->freqQueryDistCompleted[glbGridCellInsert]++;
+                // -------------------------------------------------------------------------------------
+                /**
+                 * TODO: The idCpu can be a vector, as multiple threads might be allocated to this grid 
+                */
+                int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
                 glb_worker_thrds[cpuid].jobs.push(query);
                 // -------------------------------------------------------------------------------------
                 // std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -228,6 +267,15 @@ void TPManager::initMegaMindThreads(){
             
             while (1) 
             {
+                /**
+                 * Take a snapshot of the grid that are assigned under your NUMA node.
+                 * Take a snapshot of the frequency Queries;
+                 * Decide which are HOT, FROZEN, COLD And stuff
+                 * 
+                 * Take a snapshot of the query view: 
+                 * 
+                 * Then pick each grid cell and enforce policies
+                */
                 
 
             }

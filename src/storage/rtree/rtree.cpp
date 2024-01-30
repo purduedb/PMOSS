@@ -31,7 +31,11 @@ Rectangle::Rectangle(const Rectangle& rectangle) {
 	
 	// Yr
 	id_ = rectangle.id_;
+	qStamp = rectangle.qStamp;
+
 	validGridIds = rectangle.validGridIds;
+	aGrid = rectangle.aGrid;
+	
 }
 
 void Rectangle::Include(const Rectangle &rectangle) {

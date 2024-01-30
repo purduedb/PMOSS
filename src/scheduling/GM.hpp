@@ -9,6 +9,7 @@ using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define MAX_GRID_CELL 1000
+#define STAMP_LR_PARAM 4  // For now think of the query MBR as only output
 // -------------------------------------------------------------------------------------
 
 namespace erebus
@@ -42,21 +43,36 @@ class GridManager
       double hy;
       // -------------------------------------------------------------------------------------
       int idNUMA;
-      int idCPU;
+      
+      int idCPU;  
+      // -------------------------------------------------------------------------------------
+      // Model Parameters for stamping query: Currently we have linear regression
+      double lRegCoeff[2][STAMP_LR_PARAM];
+      // -------------------------------------------------------------------------------------
+      // Defines the number of queries of different view, usef for classifying if a grid is MICE, ...
+      double qType[3] = {0};
     };
     
     GridCell glbGridCell[MAX_GRID_CELL];
-    int freqQueryDist[MAX_GRID_CELL] = {0};  // TODO: this needs to be thread-safe
+    
+    int freqQueryDistPushed[MAX_GRID_CELL] = {0};  // TODO: this needs to be thread-safe
+    int freqQueryDistCompleted[MAX_GRID_CELL] = {0};  // TODO: this needs to be thread-safe
+
     int DataDist[MAX_GRID_CELL] = {0};
     GridManager(int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace);
     void register_grid_cells();
     void register_grid_cells(vector<CPUID> availCPUs);
     void register_index(erebus::storage::rtree::RTree *idx);
     void printGM();
-    void printQueryDist();
+    void printQueryDistPushed();
+    void printQueryDistCompleted();
+    void printQueryDistOstanding();
+    
     void buildDataDistIdx();
     void printDataDistIdx();
-   
+    
+    void printQueryView();
+    
 
 };
 

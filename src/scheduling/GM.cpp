@@ -103,6 +103,44 @@ void GridManager::printQueryDist(){
     cout << "-------------------------------------------------------------------------------------" << endl;
     cout << "-------------------------------------------------------------------------------------" << endl;
 }
+void GridManager::buildDataDistIdx(){
+    for(unsigned int i = 0; i < this->idx->objects_.size(); i++){
+        double lx = this->idx->objects_[i]->left_;
+        double hx = this->idx->objects_[i]->right_;
+        double ly = this->idx->objects_[i]->bottom_;
+        double hy = this->idx->objects_[i]->top_;
+
+        for (auto gc = 0; gc < nGridCells; gc++){
+            double glx = glbGridCell[gc].lx;
+            double gly = glbGridCell[gc].ly;
+            double ghx = glbGridCell[gc].hx;
+            double ghy = glbGridCell[gc].hy;
+
+            if (hx < glx || lx > ghx || hy < gly || ly > ghy)
+                continue;
+            else {
+                DataDist[gc]++;
+            }        
+        }
+    }
+}
+void GridManager::printDataDistIdx(){
+    cout << "-------------------------------------------------------------------------------------" << endl;
+    cout << "-------------------------------DataDistribution-------------------------------------" << endl;
+    cout << "" << endl;
+
+    for(auto j = 0; j < this->yPar; j++){
+        for (auto i = 0; i < this->xPar; i++){
+            cout << "|\t" <<  
+                DataDist[this->yPar*i + j] <<
+                "\t|";
+        }
+        cout << endl;
+    }
+    cout << "-------------------------------------------------------------------------------------" << endl;
+    cout << "-------------------------------------------------------------------------------------" << endl;
+}
+
 
 } // namespace dm
 }  // namespace erebus

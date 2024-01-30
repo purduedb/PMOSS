@@ -4,6 +4,7 @@
  * @brief 
  */
 // -------------------------------------------------------------------------------------
+#pragma once
 #include<list>
 #include<vector>
 #include<algorithm>
@@ -17,6 +18,8 @@
 #include <assert.h>
 #include <numa.h> 
 #include <numaif.h>
+// -------------------------------------------------------------------------------------
+
 // -------------------------------------------------------------------------------------
 using std::list;
 using std::vector;
@@ -210,12 +213,11 @@ public:
 	 * you can go ahead and know where to put that node 
 	 * at creation time 
 	*/
-
+	
 public:
 
 	RTree();
-	void registerGM();
-
+	
 	void Copy(RTree* tree);
 	TreeNode* Root();
 	Rectangle* InsertRectangle(double left, double right, double bottom, double top);

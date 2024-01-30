@@ -38,15 +38,15 @@ erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_
 	SetDefaultInsertStrategy(this->idx, insert_strategy);
 	SetDefaultSplitStrategy(this->idx, split_strategy);
 	int total_access = 0;
-	ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/uni100k.txt", std::ifstream::in);
-	for (int i = 0; i < 100000; i++) {
+	ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in);
+	for (int i = 0; i < 5000000; i++) {
 		double l, r, b, t;
 		ifs >> l >> r >> b >> t;
 		Rectangle* rectangle = InsertRec(this->idx, l, r, b, t);
 		DefaultInsert(this->idx, rectangle);
 	}
 	ifs.close();
-	
+	cout << this->idx->height_ << " " << GetIndexSizeInMB(this->idx) << endl;
 	return this->idx;
 }
 
@@ -97,7 +97,11 @@ int main()
 	// std::vector<CPUID> rt_cpuids = {0, 12, 24, 36, 48, 60, };
 	// Allocate 6 threads off each NUMA Node as worker CUPIDS
 
-	erebus::dm::GridManager glb_gm(10, 10, 0, 100000, 0, 100000);
+	double min_x = -83.478714;
+    double max_x = -65.87531;
+    double min_y = 38.78981;
+    double max_y = 47.491634;
+	erebus::dm::GridManager glb_gm(10, 10, min_x, max_x, min_y, max_y);
 	
 	erebus::scheduler::ResourceManager glb_rm;
 	
@@ -108,6 +112,8 @@ int main()
 	glb_gm.register_grid_cells(wrk_cpuids);
 	glb_gm.printGM();
 	glb_gm.printQueryDist();
+	glb_gm.buildDataDistIdx();
+	glb_gm.printDataDistIdx();
 	
 	
 	erebus::tp::TPManager glb_tpool(mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
@@ -115,9 +121,15 @@ int main()
 	glb_tpool.initRouterThreads();
 	glb_tpool.initMegaMindThreads();
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(30000));
-	
+	std::this_thread::sleep_for(std::chrono::milliseconds(50000));
+	glb_tpool.terminateWorkerThreads();
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	glb_gm.printQueryDist();
 	glb_tpool.dumpGridHWCounters(-1);
+	// while(1){
+	// 	glb_gm.printQueryDist();
+	// 	std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+	// }
 	
 	while(1);
 	return 0;

@@ -15,7 +15,9 @@ TPManager::TPManager(std::vector<CPUID> megamind_cpuids, std::vector<CPUID> work
     this->worker_cpuids = worker_cpuids;
     this->megamind_cpuids = megamind_cpuids;
 }
-
+// TPManager::~TPManager(){
+    
+// }
 void TPManager::initWorkerThreads(){
     // -------------------------------------------------------------------------------------
     // initialize worker_threads
@@ -27,7 +29,8 @@ void TPManager::initWorkerThreads(){
             // std::this_thread::sleep_for(std::chrono::milliseconds(20));
             PerfEvent e;
 
-            while (1) {    
+            while (1) {  
+                if(!glb_worker_thrds[worker_cpuids[i]].running) break;
                 Rectangle rec_pop;
                 int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
                 if (size_jobqueue != 0){
@@ -50,7 +53,7 @@ void TPManager::initWorkerThreads(){
                         glb_worker_thrds[worker_cpuids[i]].shadowDataDist[gridId].perf_stats.push_back(perf_counter);
                     }
 
-                    cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
+                    // cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
                 }
             }
         });
@@ -71,18 +74,28 @@ void TPManager::initRouterThreads(){
                 // Generate a query 
                 std::random_device rd;  // Seed the engine with a random value from the hardware
                 std::mt19937 gen(rd()); // Mersenne Twister 19937 generator
-                int max_pt = 100000;
+                double min_x, max_x, min_y, max_y;
+                min_x = -83.478714;
+                max_x = -65.87531;
+                min_y = 38.78981;
+                max_y = 47.491634;
+                  
+                double max_length = 2;
+                double max_width = 2;
 
-                std::uniform_int_distribution<int> d1(0, int(max_pt/1000)); 
-                std::uniform_int_distribution<int> d2(0, int(max_pt/1000)); 
-                std::uniform_int_distribution<int> d3(0, max_pt-150); 
-                std::uniform_int_distribution<int> d4(0, max_pt-150); 
-                int width = d1(gen);
-                int height = d2(gen);
-                int lx = d3(gen);
-                int ly = d4(gen);
-                int hx = lx + width;
-                int hy = ly + height;
+                std::uniform_real_distribution<> dlx(min_x, max_x);
+                std::uniform_real_distribution<> dly(min_y, max_y);
+                double lx = dlx(gen);
+                double ly = dly(gen);
+
+                std::uniform_real_distribution<> dLength(0, max_length);
+                std::uniform_real_distribution<> dWidth(0, max_width);
+                double length = dLength(gen);
+                double width = dWidth(gen);
+                
+                double hx = lx + length;
+                double hy = ly + width;
+
                 Rectangle query(lx, hx, ly, hy);
                 
                 // -------------------------------------------------------------------------------------
@@ -191,8 +204,9 @@ void TPManager::initRouterThreads(){
                 
                 // -------------------------------------------------------------------------------------
                 // Push the query to the correct worker thread's job queue
+                std::mt19937 genInt(rd());
                 std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
-                int insert_tid = dq(gen);
+                int insert_tid = dq(genInt);
                 int cpuid = gm->glbGridCell[valid_gcells[insert_tid]].idCPU;
 
                 glb_worker_thrds[cpuid].jobs.push(query);
@@ -252,11 +266,16 @@ void TPManager::dumpGridHWCounters(int tID){
             input_qstamp << hist.result;
             input_qstamp << endl;
         }
-
+        if (gIdx % 100 == 0) cout << gIdx << "++++++++++" << endl;
         
     }
     
 }
 
+void TPManager::terminateWorkerThreads(){
+    for (const auto & [ key, value ] : glb_worker_thrds) {
+        glb_worker_thrds[key].running = false;
+    }
+}
 }  //namespace tp
 } // namespace erebus

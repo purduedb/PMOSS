@@ -2,9 +2,11 @@
 
 #include <numa.h>
 // -------------------------------------------------------------------------------------
+
 #include "threads/TPM.hpp"
 #include "scheduling/RM.hpp"
 #include "scheduling/GM.hpp"
+
 // -------------------------------------------------------------------------------------
 
 namespace erebus

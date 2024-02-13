@@ -54,6 +54,7 @@ set(SOURCE_FILES
     src/utils/Misc.cpp
     src/scheduling/RM.cpp
     src/scheduling/GM.cpp
+    src/profiling/PCMMem.cpp
     # src/config/config.cpp
 )
 

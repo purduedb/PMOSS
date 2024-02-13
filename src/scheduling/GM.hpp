@@ -10,8 +10,10 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define MAX_GRID_CELL 1000
 #define STAMP_LR_PARAM 4  // For now think of the query MBR as only output
+#define MAX_XPAR 10
+#define MAX_YPAR 10
 // -------------------------------------------------------------------------------------
-
+# define USE_MODEL 0 
 namespace erebus
 {
 namespace dm
@@ -31,7 +33,7 @@ class GridManager
     erebus::storage::rtree::RTree *idx;
     // -------------------------------------------------------------------------------------
     std::unordered_map<u64, std::thread*> CPUCoreToThread;
-    std::unordered_map<u64, std::thread*> NUMAToThread;
+    std::unordered_multimap<u64, CPUID> NUMAToWorkerCPUs;
     // -------------------------------------------------------------------------------------
 
     struct GridCell{
@@ -54,15 +56,23 @@ class GridManager
     };
     
     GridCell glbGridCell[MAX_GRID_CELL];
+    // -------------------------------------------------------------------------------------
+    // Correlation Query Matrix of the grid cells [NUM_GRID_CELLS x NUM_GRID_CELLS]
+    int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  
+    // -------------------------------------------------------------------------------------
     
     int freqQueryDistPushed[MAX_GRID_CELL] = {0};  // TODO: this needs to be thread-safe
     int freqQueryDistCompleted[MAX_GRID_CELL] = {0};  // TODO: this needs to be thread-safe
 
-    int DataDist[MAX_GRID_CELL] = {0};
+    // int DataDist[MAX_GRID_CELL] = {0};
+    vector<int> DataDist;
+    
     GridManager(int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace);
     void register_grid_cells();
     void register_grid_cells(vector<CPUID> availCPUs);
+    void register_grid_cells(string configFile);
     void register_index(erebus::storage::rtree::RTree *idx);
+    
     void printGM();
     void printQueryDistPushed();
     void printQueryDistCompleted();
@@ -72,6 +82,7 @@ class GridManager
     void printDataDistIdx();
     
     void printQueryView();
+    void printQueryCorrMatrixView();
     
 
 };

@@ -41,7 +41,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#define PERF_EVENT_CNT 19
+#define PERF_EVENT_CNT 23
 
 struct PerfEvent {
    
@@ -114,11 +114,18 @@ struct PerfEvent {
       // For dbserver, L1D write misses donot seem to work
       // registerCounter("L1D-writes-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       
-      
-      
-      
       registerCounter("task-clock", PERF_TYPE_SOFTWARE, PERF_COUNT_SW_TASK_CLOCK);
+
+      // registerCounter("L1D_PEND_MISS.PENDING_CYCLES", PERF_TYPE_RAW, 0x1530148);
+      registerCounter("CYCLE_ACTIVITY.CYCLES_L1D_MISS", PERF_TYPE_RAW, 0x85308a3);
+      registerCounter("CYCLE_ACTIVITY.CYCLES_L2_MISS", PERF_TYPE_RAW, 0x15301a3);
+      registerCounter("CYCLE_ACTIVITY.CYCLES_L3_MISS", PERF_TYPE_RAW, 0x25302a3);
+      registerCounter("CYCLE_ACTIVITY.CYCLES_MEM_ANY", PERF_TYPE_RAW, 0x105310a3);
+            
       
+      // registerCounter("Stalled cycles fend", PERF_TYPE_HARDWARE, PERF_COUNT_HW_STALLED_CYCLES_FRONTEND);
+      // registerCounter("Stalled cycles bkend", PERF_TYPE_HARDWARE, PERF_COUNT_HW_STALLED_CYCLES_BACKEND);
+
       // additional counters can be found in linux/perf_event.h
 
       for (unsigned i=0; i<events.size(); i++) {

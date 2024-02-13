@@ -40,6 +40,7 @@ using LID = u64;   // Log ID
 using TTS = u64;   // Transaction Time Stamp
 using DTID = s64;  // Datastructure ID
 using CPUID = s64;
+using NUMAID = s16;
 // -------------------------------------------------------------------------------------
 using WORKERID = u16;
 using TXID = u64;

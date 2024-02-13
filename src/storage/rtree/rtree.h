@@ -262,11 +262,12 @@ public:
 	//Rectangle MergeRange(const vector<Rectangle*>& entries, const int start_idx, const int end_idx);
     TreeNode* CreateNode();
 
-
+	void NUMAStatus();
     void SortChildrenByArea(TreeNode* tree_node);
     void SortChildrenByMarginArea(TreeNode* tree_node, Rectangle* rec);
 	void SortSplitLocByPerimeter(TreeNode* tree_node);
 	int Query(Rectangle& rectangle);
+	int MigrateNodesQuery(Rectangle& rectangle, int destNUMAID);
 	int KNNQuery(double x, double y, int k, vector<int>& results);
 	double MinDistanceToNode(double x, double y, int tree_node_id);
 	double MinDistanceToRec(double x, double y, int rec_id);
@@ -326,6 +327,7 @@ extern "C"{
 
 	void SetDefaultInsertStrategy(RTree* rtree, int strategy);
 	void SetDefaultSplitStrategy(RTree* rtree, int strategy);
+	int MigrateNodes(RTree* rtree, double left, double right, double bottom, double top, int destNUMAID);
 	int QueryRectangle(RTree* rtree, double left, double right, double bottom, double top);
 	int KNNQuery(RTree* rtree, double x, double y, int k);
 

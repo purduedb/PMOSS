@@ -2377,7 +2377,73 @@ int RTree::Query(Rectangle& rectangle) {
 		if (iter->is_leaf) {
 			for (int i = 0; i < iter->entry_num; i++) {
 				Rectangle* rec_iter = objects_[iter->children[i]];
-				if (rec_iter->IsOverlap(&rectangle)) {
+				// Changed by yr
+				// if (rec_iter->IsOverlap(&rectangle)) {
+				// 	result_count += 1;
+				// }
+				if (rec_iter->Contains(&rectangle)) {
+					result_count += 1;
+				}
+			}
+		}
+		else {
+			for (int i = 0; i < iter->entry_num; i++) {
+				TreeNode* node = tree_nodes_[iter->children[i]];
+				if (node->IsOverlap(&rectangle)) {
+					queue.push_back(node);
+				}
+			}
+		}
+	}
+	return 1;
+}
+void RTree::NUMAStatus(){
+	int cntIndexNodes[8] = {0};
+	for(auto i = 0; i < tree_nodes_.size(); i++){
+		void *ptr_to_check = tree_nodes_[i];
+		int status[1];
+		int ret_code = move_pages(0, 1, &ptr_to_check, NULL, status, 0);
+		cntIndexNodes[status[0]] += 1;
+	}
+	for(auto i = 0; i < 8; i++){
+		cout << cntIndexNodes[i] << " ";
+	}
+	cout << endl;
+}
+
+int RTree::MigrateNodesQuery(Rectangle& rectangle, int destNUMAID) {
+
+	result_count = 0;
+	list<TreeNode*> queue;
+	queue.push_back(tree_nodes_[root_]);
+	stats_.Reset();
+	TreeNode* iter = tree_nodes_[root_];
+	if (!iter->IsOverlap(&rectangle)) {
+		return 0;
+	}
+	while (!queue.empty()) {
+		iter = queue.front();
+
+		// -------------------------------------------------------------------------------------
+		// Move the node to a destination socket
+		void *ptr_to_check = iter;
+		int status[1];
+		const int destNodes[1] = {destNUMAID};
+		int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+		// printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
+		
+		// -------------------------------------------------------------------------------------
+
+		stats_.node_access += 1;
+		queue.pop_front();
+		if (iter->is_leaf) {
+			for (int i = 0; i < iter->entry_num; i++) {
+				Rectangle* rec_iter = objects_[iter->children[i]];
+				// Changed by yr
+				// if (rec_iter->IsOverlap(&rectangle)) {
+				// 	result_count += 1;
+				// }
+				if (rec_iter->Contains(&rectangle)) {
 					result_count += 1;
 				}
 			}
@@ -4620,6 +4686,13 @@ int KNNQuery(RTree* rtree, double x, double y, int k) {
 	// 	cout << brute[i].second << ", ";
 	// }
 	// cout << endl;
+	return node_access;
+}
+
+int MigrateNodes(RTree* rtree, double left, double right, double bottom, double top, int destNUMAID) {
+	Rectangle rec(left, right, bottom, top);
+	rtree->MigrateNodesQuery(rec, destNUMAID);
+	int node_access = rtree->stats_.node_access;
 	return node_access;
 }
 

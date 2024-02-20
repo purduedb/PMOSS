@@ -7,6 +7,8 @@
 #include <random>
 // -------------------------------------------------------------------------------------
 #include <immintrin.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 // -------------------------------------------------------------------------------------
 #include "oneapi/tbb/concurrent_priority_queue.h"
 #include "oneapi/tbb/concurrent_queue.h"
@@ -17,7 +19,8 @@
 #include "shared-headers/PerfEvent.hpp"
 #include "profiling/PerfCounters.hpp"
 // -------------------------------------------------------------------------------------
-#define DIST_UNIFORM 0
+#define WKLOAD 2
+#define CONFIG 0
 // -------------------------------------------------------------------------------------
 using namespace erebus::storage::rtree;
 namespace erebus
@@ -73,12 +76,20 @@ class TPManager{
       std::condition_variable cv;
       
       /**
-       * TODO:  1. Data Distribution
-       *        2. 
+       * TODO:  1. Data Distribution (A single snap: that is accumulated over time)
+       *        2. Correlation matrix (Just a sinlgle snap)
+       *        3. DRAM or Memory Resource Usage (A single snap: that is accumulated over time)
+       *            [Only the one of socket 0 has this]
        * 
        * */ 
       // 
       vector <DataDistSnap> dataDistReel;
+      vector<QueryViewSnap> queryViewReel;
+      vector<memdata_t> DRAMResUsageReel;
+      vector<QueryExecSnap> queryExecReel; 
+      // int corrQueryReel[MAX_GRID_CELL][MAX_GRID_CELL] = {0};
+      
+      
 
       bool running = true;
       bool job_set = false;   // Has job
@@ -102,15 +113,23 @@ class TPManager{
       u64 cpuid;
       std::mutex mutex;
       std::condition_variable cv;
+      
       oneapi::tbb::concurrent_priority_queue<Rectangle, Rectangle::compare_f> jobs;
       
       // This is a local view of the data distribution 
       // TODO: the size should be equal to the max number of grids
+      // These are not needed, there because have them used in a different function
       HWCounterStats shadowDataDist[1000];
       HWCounterStats stats_;
-      
-      oneapi::tbb::concurrent_queue<PerfCounter> perf_stats;  // This is what we are currently using
 
+      oneapi::tbb::concurrent_queue<PerfCounter> perf_stats;  // This is what we are currently using
+      std::unordered_map<CPUID, u64> qExecutedMice;  // Grid Id to Mice Count
+      std::unordered_map<CPUID, u64> qExecutedElephant;
+      std::unordered_map<u64, u64> qExecutedMammoth;
+      // int qExecutedMice[MAX_GRID_CELL] = {0};
+      // int qExecutedElephant[MAX_GRID_CELL] = {0};
+      // int qExecutedMammoth[MAX_GRID_CELL] = {0};
+    
       bool running = true;
       bool job_set = false;   // Has job
       bool job_done = false;  // Job done
@@ -119,6 +138,8 @@ class TPManager{
     struct RouterThread {
       std::thread th;
       u64 cpuid;
+      
+      int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  //It needs to be thread-safe
       
       bool running = true;
       bool job_set = false;   // Has job
@@ -166,9 +187,14 @@ class TPManager{
     void initNCoreSweeperThreads();
 
     void dumpGridHWCounters(int tID);
-    void terminateWorkerThreads();
 
+    void terminateWorkerThreads();
+    void terminateNCoreSweeperThreads();
     void terminateTestWorkerThreads();
+
+    void dumpNCoreSweeperThreads();
+
+
     void dumpTestGridHWCounters(vector<CPUID> cpuIds);
     void dumpGridWorkerThreadCounters(int tID);
 

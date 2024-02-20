@@ -39,6 +39,16 @@ struct DataDistSnap{
     double rawCntSamples[MAX_GRID_CELL] = {0};   
 };
 
+struct QueryViewSnap{
+    int corrQueryReel[MAX_GRID_CELL][MAX_GRID_CELL] = {0};
+};
+
+struct QueryExecSnap{
+    int qExecutedMice[MAX_GRID_CELL] = {0};
+    int qExecutedElephant[MAX_GRID_CELL] = {0};
+    int qExecutedMammoth[MAX_GRID_CELL] = {0};
+};
+
 struct TestInterferenceStats{
     std::vector<double> cycles;
     std::vector<double> results;
@@ -48,11 +58,17 @@ enum QUERY_TYPE{
     QUERY_MICE, QUERY_ELEPHANT, QUERY_MAMMOTH, SYNC_TOKEN
 };
 
+enum WKLOAD_DIST{
+    UNIFORM, SINGLE_HOTSPOT, FOUR_HOTSPOT
+};
+
 struct IntelPCMCounter
 {
     memdata_t sysParams;
     int UPIUtilize[max_sockets][max_qpi];
     int qType;
+
+    // You will need to write copy constructor for
 };
 
 }  // namespace erebus

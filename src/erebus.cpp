@@ -13,6 +13,8 @@
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
+
+
 namespace erebus
 {
 Erebus::Erebus(erebus::storage::rtree::RTree *idx, erebus::dm::GridManager *gm, erebus::scheduler::ResourceManager *rm, erebus::tp::TPManager *tp)
@@ -46,7 +48,7 @@ erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_
 	ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in);
 	
 	
-	for (int i = 0; i < 4000000; i++) {
+	for (int i = 0; i < 30000000; i++) {
 		double l, r, b, t;
 		ifs >> l >> r >> b >> t;
 		Rectangle* rectangle = InsertRec(this->idx, l, r, b, t);
@@ -140,7 +142,9 @@ int main()
 
 	// pcm::SystemCounterState before_sstate = pcm::getSystemCounterState();
 	
-
+	/**
+	 * These are my cores that I will be using, so they should not change.
+	*/
 	// -------------------------------------------------------------------------------------
 	double min_x = -83.478714;
     double max_x = -65.87531;
@@ -180,7 +184,10 @@ int main()
 	
 	for(auto n=0; n < nNUMANodes; n++){
 		mm_cpuids.push_back(cPool[n][0]);
+		
 		rt_cpuids.push_back(cPool[n][1]);
+		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+		
 		ncore_cpuids.push_back(cPool[n][2]);
 		int cnt = 1;
 		for(auto j = 3; j < cPool[n].size(); j++, cnt++){
@@ -191,12 +198,9 @@ int main()
 	}
 	
 
-	// std::vector<CPUID> mm_cpuids = {101, 102};
-	// std::vector<CPUID> wrk_cpuids;
-	// std::vector<CPUID> rt_cpuids = {0, 12, 24, 36, 48, 60, };
-	// Allocate 6 threads off each NUMA Node as worker CUPIDS
-
-	
+	/**
+	 * 
+	 * */	
 	
 	erebus::scheduler::ResourceManager glb_rm;  // dummy, does not work at this point
 	
@@ -224,7 +228,7 @@ int main()
 	#else 
 		glb_tpool.initWorkerThreads();
 		glb_tpool.initRouterThreads();
-		// glb_tpool.initSysSweeperThreads();
+		glb_tpool.initSysSweeperThreads();
 		glb_tpool.initMegaMindThreads();
 		glb_tpool.initNCoreSweeperThreads();
 		
@@ -244,15 +248,20 @@ int main()
 		// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		glb_tpool.dumpTestGridHWCounters(testCpuids);
 	#endif
-	while(1){
-		glb_gm.printQueryDistPushed();
-		glb_gm.printQueryDistCompleted();
-		glb_gm.printQueryDistOstanding();
-		glb_gm.printQueryCorrMatrixView();
-		// glb_gm.printQueryView();
-		std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	}
 
+	// while(1){
+	// 	glb_gm.printQueryDistPushed();
+	// 	glb_gm.printQueryDistCompleted();
+	// 	glb_gm.printQueryDistOstanding();
+	// 	// glb_gm.printQueryCorrMatrixView();
+	// 	// glb_gm.printQueryView();
+	// 	std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+	// }
+	std::this_thread::sleep_for(std::chrono::milliseconds(600000));
+	glb_tpool.terminateNCoreSweeperThreads();
+	std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+	glb_tpool.dumpNCoreSweeperThreads();
+	
 	while(1);
 
 	// -------------------------------------------------------------------------------------

@@ -978,20 +978,21 @@ memdata_t calculate_bandwidth(PCM *m,
 
     const auto CXL_Read_BW = toBW(SPR_CHA_CXL_Count);
 
-    if (csv)
-    {
-        if (csvheader)
-        {
-            display_bandwidth_csv(m, &md, elapsedTime, show_channel_output, Header1, CXL_Read_BW);
-            display_bandwidth_csv(m, &md, elapsedTime, show_channel_output, Header2, CXL_Read_BW);
-            csvheader = false;
-        }
-        display_bandwidth_csv(m, &md, elapsedTime, show_channel_output, Data, CXL_Read_BW);
-    }
-    else
-    {
-        display_bandwidth(m, &md, no_columns, show_channel_output, print_update, CXL_Read_BW);
-    }
+    // For showing the output
+    // if (csv)
+    // {
+    //     if (csvheader)
+    //     {
+    //         display_bandwidth_csv(m, &md, elapsedTime, show_channel_output, Header1, CXL_Read_BW);
+    //         display_bandwidth_csv(m, &md, elapsedTime, show_channel_output, Header2, CXL_Read_BW);
+    //         csvheader = false;
+    //     }
+    //     display_bandwidth_csv(m, &md, elapsedTime, show_channel_output, Data, CXL_Read_BW);
+    // }
+    // else
+    // {
+    //     display_bandwidth(m, &md, no_columns, show_channel_output, print_update, CXL_Read_BW);
+    // }
 
     return md;
 }

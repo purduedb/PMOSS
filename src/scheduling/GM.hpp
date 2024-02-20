@@ -8,7 +8,7 @@
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
-#define MAX_GRID_CELL 1000
+#define MAX_GRID_CELL 100
 #define STAMP_LR_PARAM 4  // For now think of the query MBR as only output
 #define MAX_XPAR 10
 #define MAX_YPAR 10
@@ -34,6 +34,7 @@ class GridManager
     // -------------------------------------------------------------------------------------
     std::unordered_map<u64, std::thread*> CPUCoreToThread;
     std::unordered_multimap<u64, CPUID> NUMAToWorkerCPUs;
+    std::unordered_multimap<u64, CPUID> NUMAToRoutingCPUs;
     // -------------------------------------------------------------------------------------
 
     struct GridCell{
@@ -58,7 +59,8 @@ class GridManager
     GridCell glbGridCell[MAX_GRID_CELL];
     // -------------------------------------------------------------------------------------
     // Correlation Query Matrix of the grid cells [NUM_GRID_CELLS x NUM_GRID_CELLS]
-    int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  
+    // Update: Now each router thread has this
+    int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  //It needs to be thread-safe
     // -------------------------------------------------------------------------------------
     
     int freqQueryDistPushed[MAX_GRID_CELL] = {0};  // TODO: this needs to be thread-safe

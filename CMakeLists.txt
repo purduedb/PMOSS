@@ -23,7 +23,7 @@ SET(CMAKE_CXX_STANDARD_LIBRARIES    "-lnuma")
 # SET(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath=/home/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so")
 
 
-include("${CMAKE_SOURCE_DIR}/libs/gflags.cmake")
+# include("${CMAKE_SOURCE_DIR}/libs/gflags.cmake")
 
 # Third party
 # include_directories(third-party/tlx)

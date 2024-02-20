@@ -3,3 +3,5 @@ build/*
 .vscode/*
 src/dataset/*
 src/interference/*
+kb/*
+src/config/*

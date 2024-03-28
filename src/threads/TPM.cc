@@ -17,9 +17,7 @@ TPManager::TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID>
     this->sys_sweeper_cpuids = sys_sweeper_cpuids;
     this->ncore_sweeper_cpuids = ncore_sweeper_cpuids;
 }
-// TPManager::~TPManager(){
-    
-// }
+
 void TPManager::initWorkerThreads(){
     // -------------------------------------------------------------------------------------
     // initialize worker_threads
@@ -31,7 +29,11 @@ void TPManager::initWorkerThreads(){
             PerfEvent e;
             
             while (1) {  
-                if(!glb_worker_thrds[worker_cpuids[i]].running) break;
+                if(!glb_worker_thrds[worker_cpuids[i]].running) {
+                    // glb_worker_thrds[worker_cpuids[i]].th.detach();
+                    break;
+                }
+                
                 
                 Rectangle rec_pop;
                 int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
@@ -82,6 +84,8 @@ void TPManager::initWorkerThreads(){
                 }
                 
             }
+            
+            // glb_worker_thrds[worker_cpuids[i]].th.detach();
         });
     }
 }
@@ -96,9 +100,15 @@ void TPManager::initRouterThreads(){
             glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
             
             while (1) {
+                if(!glb_router_thrds[router_cpuids[i]].running) {
+                    // glb_router_thrds[router_cpuids[i]].th.detach();
+                    break;
+                }
                 // -------------------------------------------------------------------------------------
                 // Generate a query 
                 std::random_device rd;  // Seed the engine with a random value from the hardware
+                // std::mt19937 gen(12345); // To make the query workload more deterministic
+                std::mt19937 genTem(rd());
                 std::mt19937 gen(rd()); // Mersenne Twister 19937 generator
                 double min_x, max_x, min_y, max_y;
                 min_x = -83.478714;
@@ -106,8 +116,8 @@ void TPManager::initRouterThreads(){
                 min_y = 38.78981;
                 max_y = 47.491634;
                 
-                double max_length = 6;
-                double max_width = 6;
+                double max_length = 2;  // Previously: 6
+                double max_width = 2;
 
     #if WKLOAD == 0
                 std::uniform_real_distribution<> dlx(min_x, max_x);
@@ -197,17 +207,30 @@ void TPManager::initRouterThreads(){
                     0.25  // weight of G[3]
                 };
 
-                auto indexX = w(gen);
-                double lx = GX[indexX](gen);
+                // -------------------------------------------------------------------------------------
+                // For now change it to sth interesting: random
+                // auto indexX = w(gen);
+                // double lx = GX[indexX](gen);
                 
-                auto indexY = w(gen);
-                double ly = GY[indexY](gen);
-
+                // auto indexY = w(gen);
+                // double ly = GY[indexY](gen);
+                auto indexX = w(genTem);
+                double lx = GX[indexX](genTem);
+                
+                auto indexY = w(genTem);
+                double ly = GY[indexY](genTem);
+                // -------------------------------------------------------------------------------------
+                
+                // -------------------------------------------------------------------------------------
+                // For now change it to sth interesting: random
                 std::uniform_real_distribution<> dLength(0, max_length);
                 std::uniform_real_distribution<> dWidth(0, max_width);
+                // double length = dLength(gen);
+                // double width = dWidth(gen);
                 double length = dLength(gen);
                 double width = dWidth(gen);
-                
+                // -------------------------------------------------------------------------------------
+
                 double hx = lx + length;
                 double hy = ly + width;
 
@@ -382,6 +405,7 @@ void TPManager::initRouterThreads(){
                 // -------------------------------------------------------------------------------------
                 // std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
+            
         });
     }
 }
@@ -396,6 +420,11 @@ void TPManager::initMegaMindThreads(){
             int numaID = numa_node_of_cpu(megamind_cpuids[i]);
             while (1) 
             {
+                if(!glb_megamind_thrds[megamind_cpuids[i]].running) {
+                    // glb_megamind_thrds[megamind_cpuids[i]].th.detach();
+                    break;
+                }
+                
                 // std::this_thread::sleep_for(std::chrono::milliseconds(5000));
                 // PerfCounter perf_counter;
                 // perf_counter.qType = SYNC_TOKEN;
@@ -412,6 +441,7 @@ void TPManager::initMegaMindThreads(){
                 
 
             }
+            // glb_megamind_thrds[megamind_cpuids[i]].th.detach();
         });
     }
 }
@@ -435,16 +465,18 @@ void TPManager::initSysSweeperThreads(){
             // -------------------------------------------------------------------------------------
             // Params for UPI links
             // std::vector<CoreCounterState> cstates1, cstates2;
-            // std::vector<SocketCounterState> sktstate1, sktstate2;
-            // SystemCounterState sstate1, sstate2;
+            std::vector<SocketCounterState> sktstate1, sktstate2;
+            SystemCounterState sstate1, sstate2;
             // -------------------------------------------------------------------------------------
             
             
             PCM * m = PCM::getInstance();
             
-            // const PCM::ErrorCode status1 = m->program(PCM::DEFAULT_EVENTS, nullptr, false, -1);
+            // const PCM::ErrorCode status1 = m->program();
             // m->checkError(status1);
-            
+            // Maybe not the default event, only the qpi events
+            // const uint32 qpiLinks = (uint32)m->getQPILinksPerSocket();
+
             PCM::ErrorCode status2 = m->programServerUncoreMemoryMetrics(metrics, rankA, rankB);
             m->checkError(status2);
             
@@ -457,7 +489,7 @@ void TPManager::initSysSweeperThreads(){
 
             uint32 imc_channels = (pcm::uint32)m->getMCChannelsPerSocket();
             uint32 numSockets = m->getNumSockets();
-            const uint32 qpiLinks = (uint32)m->getQPILinksPerSocket();
+            
 
             // -------------------------------------------------------------------------------------
             // Params for DRAM Throughput
@@ -478,10 +510,16 @@ void TPManager::initSysSweeperThreads(){
             
             while (1) 
             {
+                if(!glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].running) {
+                    break;
+                }
+                
                 IntelPCMCounter iPCMCnt;
 
                 readState(BeforeState);
                 // m->getAllCounterStates(sstate1, sktstate1, cstates1);
+                // m->getUncoreCounterStates(sstate2, sktstate2);
+                
                 BeforeTime = m->getTickCount();
                 
 
@@ -493,24 +531,24 @@ void TPManager::initSysSweeperThreads(){
                         show_channel_output, print_update, SPR_CHA_CXL_Event_Count);
 
                 // m->getAllCounterStates(sstate2, sktstate2, cstates2);
-
+                // m->getUncoreCounterStates(sstate2, sktstate2);
                 
                 // TODO: Need to process these values
                 // for (uint32 skt = 0; skt < m->getNumSockets(); ++skt)
                 // {
-                //     // cout << " SKT   " << setw(2) << i << "     ";
-                //     // for (uint32 l = 0; l < qpiLinks; ++l)
-                //     //     cout << unit_format(getIncomingQPILinkBytes(i, l, sstate1, sstate2)) << "   ";
+                //     cout << " SKT   " << setw(2) << i << "     ";
+                //     for (uint32 l = 0; l < qpiLinks; ++l)
+                //         cout << unit_format(getIncomingQPILinkBytes(i, l, sstate1, sstate2)) << "   ";
                 //     if (m->qpiUtilizationMetricsAvailable())
                 //     {
-                //         // cout << "|  ";
+                //         cout << "|  ";
                 //         for (uint32 l = 0; l < qpiLinks; ++l){
                 //             iPCMCnt.UPIUtilize[skt][l]   = int(100. * getIncomingQPILinkUtilization(skt, l, sstate1, sstate2));
-                //             // cout << setw(3) << std::dec << int(100. * getIncomingQPILinkUtilization(i, l, sstate1, sstate2)) << "%   ";
+                //             cout << setw(3) << std::dec << int(100. * getIncomingQPILinkUtilization(i, l, sstate1, sstate2)) << "%   ";
                 //         }
                             
                 //     }
-                //     // cout << "\n";
+                //     cout << "\n";
                 // }
                     
                 
@@ -575,7 +613,7 @@ void TPManager::initNCoreSweeperThreads(){
                 }
                 
                 // -------------------------------------------------------------------------------------
-                // Take a snapshot of the DataView from the router threads
+                // Take a snapshot of the DataView from the  threads
 
                 const int nQCounterCline = PERF_EVENT_CNT/8 + 1;
                 
@@ -691,6 +729,7 @@ void TPManager::initNCoreSweeperThreads(){
                 
                 
             }
+            // glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].th.detach();
         });
     }
 }
@@ -712,15 +751,16 @@ void TPManager::dumpNCoreSweeperThreads(){
              * TODO: Have a global config header file that saves the value of 
              * global hw params
              * 6 definitely needs to be replaced with such param
+             * It should not be numa_num_configured nodes
             */
             // Dump Read Socket Channel
-            for (auto sc = 0; sc < numa_num_configured_nodes(); sc++){
+            for (auto sc = 0; sc < 4; sc++){
                 for(auto ch = 0; ch < 6; ch++){
                     memChannelView <<  glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].iMC_Rd_socket_chan[sc][ch] << " ";
                 }
             }
             // Dump Write Socket Channel
-            for (auto sc = 0; sc < numa_num_configured_nodes(); sc++){
+            for (auto sc = 0; sc < 4; sc++){
                 for(auto ch = 0; ch < 6; ch++){
                     memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].iMC_Wr_socket_chan[sc][ch] << " ";
                 }
@@ -730,7 +770,8 @@ void TPManager::dumpNCoreSweeperThreads(){
         // -------------------------------------------------------------------------------------
         ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
         const int nQCounterCline = PERF_EVENT_CNT/8 + 1;
-        const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline + MAX_GRID_CELL;
+        // const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline + MAX_GRID_CELL;
+        const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
         
         alignas(64) double dataViewScalarDump[scalarDumpSize] = {};
         
@@ -865,15 +906,58 @@ void TPManager::dumpGridWorkerThreadCounters(int tID){
 void TPManager::terminateWorkerThreads(){
     for (const auto & [ key, value ] : glb_worker_thrds) {
         glb_worker_thrds[key].running = false;
+        // glb_worker_thrds[key].th.detach();
     }
 }
 
 void TPManager::terminateNCoreSweeperThreads(){
     for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
         glb_ncore_sweeper_thrds[key].running = false;
+        // glb_ncore_sweeper_thrds[key].th.detach();
     }
 }
 
+
+void TPManager::terminateRouterThreads(){
+    for (const auto & [ key, value ] : glb_router_thrds) {
+        glb_router_thrds[key].running = false;
+        // glb_router_thrds[key].th.detach();
+    }
+}
+
+
+void TPManager::terminateMegaMindThreads(){
+    for (const auto & [ key, value ] : glb_megamind_thrds) {
+        glb_megamind_thrds[key].running = false;
+        // glb_megamind_thrds[key].th.detach();
+    }
+}
+
+void TPManager::terminateSysSweeperThreads(){
+    for (const auto & [ key, value ] : glb_sys_sweeper_thrds) {
+        glb_sys_sweeper_thrds[key].running = false;
+        // glb_sys_sweeper_thrds[key].th.detach();
+    }
+}
+
+void TPManager::detachAllThreads(){
+    for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) 
+        glb_ncore_sweeper_thrds[key].th.detach();
+    
+
+    for (const auto & [ key, value ] : glb_router_thrds)  
+        glb_router_thrds[key].th.detach();
+    
+    for (const auto & [ key, value ] : glb_worker_thrds) 
+        glb_worker_thrds[key].th.detach();
+
+    for (const auto & [ key, value ] : glb_megamind_thrds) 
+        glb_megamind_thrds[key].th.detach();
+    
+    for (const auto & [ key, value ] : glb_sys_sweeper_thrds) 
+        glb_sys_sweeper_thrds[key].th.detach();
+    
+}
 
 
 void TPManager::testInterferenceInitWorkerThreads(vector<CPUID> test_worker_cpuids, int nWThreads){
@@ -1026,6 +1110,77 @@ void TPManager::dumpTestGridHWCounters(vector<CPUID> cpuIds){
         }
         if (i == cpuIds.size()-1)
             cout << "==============================================================" << endl;
+    }
+}
+
+TPManager::~TPManager(){
+    for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
+        try
+        {
+            glb_ncore_sweeper_thrds[key].th.join();
+        }
+        catch(const std::system_error& e)
+        {
+            std::cout << "Caught system_error with code "
+                    "[" << e.code() << "] meaning "
+                    "[" << e.what() << "]\n";
+        }
+        
+    }
+
+    for (const auto & [ key, value ] : glb_router_thrds)  {
+        try
+        {
+            glb_router_thrds[key].th.join();
+        }
+        catch(const std::system_error& e)
+        {
+            std::cout << "Caught system_error with code "
+                    "[" << e.code() << "] meaning "
+                    "[" << e.what() << "]\n";
+        }
+    }
+        
+    
+    for (const auto & [ key, value ] : glb_worker_thrds) {
+        try
+        {
+            glb_worker_thrds[key].th.join();
+        }
+        catch(const std::system_error& e)
+        {
+            std::cout << "Caught system_error with code "
+                    "[" << e.code() << "] meaning "
+                    "[" << e.what() << "]\n";
+        }
+    }
+        
+
+    for (const auto & [ key, value ] : glb_megamind_thrds) {
+        try
+        {
+            glb_megamind_thrds[key].th.join();
+        }
+        catch(const std::system_error& e)
+        {
+            std::cout << "Caught system_error with code "
+                    "[" << e.code() << "] meaning "
+                    "[" << e.what() << "]\n";
+        }
+    }
+        
+    
+    for (const auto & [ key, value ] : glb_sys_sweeper_thrds) {
+        try
+        {
+            glb_sys_sweeper_thrds[key].th.join();
+        }
+        catch(const std::system_error& e)
+        {
+            std::cout << "Caught system_error with code "
+                    "[" << e.code() << "] meaning "
+                    "[" << e.what() << "]\n";
+        }
     }
 }
 

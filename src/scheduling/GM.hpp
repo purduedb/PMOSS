@@ -82,6 +82,7 @@ class GridManager
     
     void buildDataDistIdx();
     void printDataDistIdx();
+    void printDataDistIdxT();
     
     void printQueryView();
     void printQueryCorrMatrixView();

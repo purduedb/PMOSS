@@ -209,17 +209,23 @@ int main()
 	glb_gm.register_index(db.idx);
 
 
+
 	// glb_gm.register_grid_cells(wrk_cpuids);   // send the cpuids that can be used
-	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/config.txt");
+	// From this point onwards repeat
+
+	int cfgIdx = 4004;
+	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
 	
 	
 	
 	glb_gm.printGM();
 	glb_gm.printQueryDistPushed();
 	glb_gm.buildDataDistIdx();
-	glb_gm.printDataDistIdx();
+	// glb_gm.printDataDistIdx();
+	glb_gm.printDataDistIdxT();
 	glb_gm.idx->NUMAStatus();
 	
+	// erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 	
 	#if TEST_WORKLOAD_INTERFERENCE
@@ -234,33 +240,35 @@ int main()
 		
 	#endif 
 
-	// std::this_thread::sleep_for(std::chrono::milliseconds(900000));  //900000
-	// glb_tpool.terminateWorkerThreads();
-	
-	// std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	// glb_gm.printQueryDistPushed();
-	// glb_tpool.dumpGridWorkerThreadCounters(-1);
-	
-	
 	#if TEST_WORKLOAD_INTERFERENCE
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000000));
 		glb_tpool.terminateTestWorkerThreads();
 		// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 		glb_tpool.dumpTestGridHWCounters(testCpuids);
 	#endif
-
-	// while(1){
-	// 	glb_gm.printQueryDistPushed();
-	// 	glb_gm.printQueryDistCompleted();
-	// 	glb_gm.printQueryDistOstanding();
-	// 	// glb_gm.printQueryCorrMatrixView();
-	// 	// glb_gm.printQueryView();
-	// 	std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	// }
-	std::this_thread::sleep_for(std::chrono::milliseconds(600000));
+	
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000000));
 	glb_tpool.terminateNCoreSweeperThreads();
-	std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	glb_tpool.dumpNCoreSweeperThreads();
+	
+	// glb_tpool.terminateRouterThreads();
+	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+	// glb_tpool.terminateWorkerThreads();
+	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+	// glb_tpool.terminateMegaMindThreads();
+	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+	// glb_tpool.terminateSysSweeperThreads();
+	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+
+	// glb_tpool.glb_router_thrds.clear();
+	// glb_tpool.glb_worker_thrds.clear();
+	// glb_tpool.glb_sys_sweeper_thrds.clear();
+	// glb_tpool.glb_megamind_thrds.clear();
+	// glb_tpool.glb_ncore_sweeper_thrds.clear();
+		
+
+	
 	
 	while(1);
 

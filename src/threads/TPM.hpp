@@ -19,8 +19,8 @@
 #include "shared-headers/PerfEvent.hpp"
 #include "profiling/PerfCounters.hpp"
 // -------------------------------------------------------------------------------------
-#define WKLOAD 2
-#define CONFIG 0
+#define WKLOAD 0
+#define CONFIG 4004
 // -------------------------------------------------------------------------------------
 using namespace erebus::storage::rtree;
 namespace erebus
@@ -59,9 +59,8 @@ class TPManager{
     struct SysSweeperThread {
       std::thread th;
       u64 cpuid;
-      std::mutex mutex;
-      std::condition_variable cv;
       
+
       oneapi::tbb::concurrent_queue<IntelPCMCounter> pcmCounters;
       
       bool running = true;
@@ -72,8 +71,7 @@ class TPManager{
     struct NodeCoreSweeperThread {
       std::thread th;
       u64 cpuid;
-      std::mutex mutex;
-      std::condition_variable cv;
+      
       
       /**
        * TODO:  1. Data Distribution (A single snap: that is accumulated over time)
@@ -100,8 +98,7 @@ class TPManager{
     struct MegaMindThread {
       std::thread th;
       u64 cpuid;
-      std::mutex mutex;
-      std::condition_variable cv;
+      
       
       bool running = true;
       bool job_set = false;   // Has job
@@ -111,8 +108,6 @@ class TPManager{
     struct WorkerThread {
       std::thread th;
       u64 cpuid;
-      std::mutex mutex;
-      std::condition_variable cv;
       
       oneapi::tbb::concurrent_priority_queue<Rectangle, Rectangle::compare_f> jobs;
       
@@ -149,8 +144,7 @@ class TPManager{
     struct StandbyThread {
       std::thread th;
       u64 cpuid;
-      std::mutex mutex;
-      std::condition_variable cv;
+      
       // oneapi::tbb::concurrent_priority_queue<std::function<void()>> jobs;
       
       bool running = true;
@@ -179,6 +173,7 @@ class TPManager{
     // WorkerThread worker_threads_meta[MAX_WORKER_THREADS];
     // RouterThread router_threads_meta[MAX_ROUTER_THREADS];
     // -------------------------------------------------------------------------------------
+    TPManager();
     TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID> sys_sweeper_cpuids, std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
     void initWorkerThreads();
     void initRouterThreads();
@@ -190,6 +185,12 @@ class TPManager{
 
     void terminateWorkerThreads();
     void terminateNCoreSweeperThreads();
+    void terminateRouterThreads();
+    void terminateMegaMindThreads();
+    void terminateSysSweeperThreads();
+    
+    void detachAllThreads();
+
     void terminateTestWorkerThreads();
 
     void dumpNCoreSweeperThreads();
@@ -199,7 +200,7 @@ class TPManager{
     void dumpGridWorkerThreadCounters(int tID);
 
     void testInterferenceInitWorkerThreads(vector<CPUID> worker_cpuids, int nWThreads);
-    // ~TPManager();
+    ~TPManager();
     // -------------------------------------------------------------------------------------
 };
 

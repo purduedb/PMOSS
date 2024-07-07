@@ -27,7 +27,8 @@ void TPManager::initWorkerThreads(){
             glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
             
             PerfEvent e;
-            
+            static int cnt = 0;
+
             while (1) {  
                 if(!glb_worker_thrds[worker_cpuids[i]].running) {
                     // glb_worker_thrds[worker_cpuids[i]].th.detach();
@@ -40,34 +41,56 @@ void TPManager::initWorkerThreads(){
                 
                 if (size_jobqueue != 0){
                     glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
+                    /**
+                     * TODO: If we have stats for each query, some of the stats value are missed,
+                     * actually a lot of the stats value are missed, hence the issue
+                     * Added the if condition
+                    */
+                    // if (cnt % PERF_STAT_COLLECTION_INTERVAL == 0) {
+                    //     e.startCounters();
+                    // }
                     e.startCounters();
                     
                     int result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
                     
+                    /**
+                     * TODO: If we have stats for each query, some of the stats value are missed,
+                     * actually a lot of the stats value are missed, hence the issue
+                     * Added the if condition
+                    */
                     
+                    // cnt +=1;
+                    
+                    // if (cnt % PERF_STAT_COLLECTION_INTERVAL == (PERF_STAT_COLLECTION_INTERVAL-1)){
                     e.stopCounters();
                     
                     PerfCounter perf_counter;
                     for(auto j=0; j < e.events.size(); j++){
-					    perf_counter.raw_counter_values[j] = e.events[j].readCounter();
+                        if (isnan(e.events[j].readCounter()))
+                            perf_counter.raw_counter_values[j] = 0;
+                        else
+                            perf_counter.raw_counter_values[j] = e.events[j].readCounter();
                     }
-				    
-                    
-                    perf_counter.normalizationConstant = 1;
+                        
+                        
+                    perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
                     perf_counter.rscan_query = rec_pop;
                     perf_counter.result = result;
                     perf_counter.gIdx = rec_pop.aGrid;
-                    
+                        
                     // You push this info to all the grids this incomoig query intersect
                     // for(auto qlog = 0; qlog < rec_pop.validGridIds.size(); qlog++){
                     //     int gridId = rec_pop.validGridIds[qlog];
                     //     glb_worker_thrds[worker_cpuids[i]].shadowDataDist[gridId].perf_stats.push_back(perf_counter);
                     // }
-                    
-                    
+                        
+                        
                     // glb_worker_thrds[worker_cpuids[i]].shadowDataDist[rec_pop.aGrid].perf_stats.push_back(perf_counter);
                     glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
+                    // cnt = 0;
+                    
 
+                    
                     /**
                      * TODO: You should be updating the outstanding queries 
                     */
@@ -111,23 +134,41 @@ void TPManager::initRouterThreads(){
                 std::mt19937 genTem(rd());
                 std::mt19937 gen(rd()); // Mersenne Twister 19937 generator
                 double min_x, max_x, min_y, max_y;
+                
+                // ------------------------US-NORTHEAST----------------------------------------------------
                 min_x = -83.478714;
                 max_x = -65.87531;
                 min_y = 38.78981;
                 max_y = 47.491634;
+                double max_length = 6;  // Previously: 6
+                double max_width = 6;
                 
-                double max_length = 2;  // Previously: 6
-                double max_width = 2;
+                // ------------------------GEOLITE----------------------------------------------------
+                // min_x = -179.9695933;
+                // max_x = 179.9969416;
+                // min_y = 1.044024;
+                // max_y = 64.751993; // 400.166666666667;
+                // double max_length = 30;  // Previously: 6
+                // double max_width = 30;
+                
+                // ------------------------BMOD02----------------------------------------------------
+                // min_x = 1308;
+                // max_x = 12785;
+                // min_y = 1308;
+                // max_y = 12785; 
+                // double max_length = 3000;  // Previously: 6
+                // double max_width = 3000;
 
+    // Uniform workload
     #if WKLOAD == 0
                 std::uniform_real_distribution<> dlx(min_x, max_x);
                 std::uniform_real_distribution<> dly(min_y, max_y);
                 double lx = dlx(gen);
                 double ly = dly(gen);
 
-                // 0 means it will be a point query
-                std::uniform_real_distribution<> dLength(0, max_length);
-                std::uniform_real_distribution<> dWidth(0, max_width);
+                // 0 means it will be a point query, however the point may not exist in the dataset
+                std::uniform_real_distribution<> dLength(1, max_length);
+                std::uniform_real_distribution<> dWidth(1, max_width);
                 double length = dLength(gen);
                 double width = dWidth(gen);
                 
@@ -135,13 +176,22 @@ void TPManager::initRouterThreads(){
                 double hy = ly + width;
 
                 Rectangle query(lx, hx, ly, hy);
-                
+    
+    // Normal workload, where the peak is at the average
     #elif WKLOAD == 1
+                // -------------------------------US-NORTHEAST---------------------------------------
                 double avg_x = (max_x + min_x) / 2;
                 double avg_y = (max_y + min_y)/ 2;
                 
                 double dev_x = 3;
                 double dev_y = 3;
+                
+                // -------------------------------GEOLITE---------------------------------------
+                // double avg_x = 130;
+                // double avg_y = 30;
+                
+                // double dev_x = 7;
+                // double dev_y = 7;
 
                 std::normal_distribution<double> dlx(avg_x, dev_x);
                 std::normal_distribution<double> dly(avg_y, dev_y);
@@ -159,7 +209,8 @@ void TPManager::initRouterThreads(){
 
                 Rectangle query(lx, hx, ly, hy);
 
-    #else
+    // Multi-modal with 4 peaks
+    #elif WKLOAD == 2
                 /**
                  * https://stackoverflow.com/questions/37320025/mixture-of-gaussian-distribution-in-c
                 */
@@ -167,25 +218,48 @@ void TPManager::initRouterThreads(){
                 using normal_dist   = std::normal_distribution<>;
                 using discrete_dist = std::discrete_distribution<std::size_t>;
 
-                double avg_x1 = (-79.95 -78.19) / 2;
-                double avg_y1 = (45.75 + 46.62)/ 2;
-                double dev_x1 = 3;
-                double dev_y1 = 2;
+                // -------------------------------US-NORTHEAST---------------------------------------
+                // For now change it to sth interesting: random
+                // double avg_x1 = (-79.95 -78.19) / 2;
+                // double avg_y1 = (45.75 + 46.62)/ 2;
+                // double dev_x1 = 3;
+                // double dev_y1 = 3;
 
-                double avg_x2 = (-79.95 - 76.44) / 2;
-                double avg_y2 = (41.00 + 43.14)/ 2;
+                // double avg_x2 = (-79.95 - 76.44) / 2;
+                // double avg_y2 = (41.00 + 43.14)/ 2;
+                // double dev_x2 = 3;
+                // double dev_y2 = 3;
+
+                // double avg_x3 = (-72.92 -71.15) / 2;
+                // double avg_y3 = (43.14 + 44.84)/ 2;
+                // double dev_x3 = 3;
+                // double dev_y3 = 3;
+
+                // double avg_x4 = -69.35;
+                // double avg_y4 = (39.65 + 40.53)/ 2;
+                // double dev_x4 = 3;
+                // double dev_y4 = 3;
+
+                // -------------------------------GEOLITE---------------------------------------
+                double avg_x1 = 120;
+                double avg_y1 = 20;
+                double dev_x1 = 3;
+                double dev_y1 = 3;
+
+                double avg_x2 = 140;
+                double avg_y2 = 20;
                 double dev_x2 = 3;
                 double dev_y2 = 3;
 
-                double avg_x3 = (-72.92 -71.15) / 2;
-                double avg_y3 = (43.14 + 44.84)/ 2;
-                double dev_x3 = 4;
+                double avg_x3 = 140;
+                double avg_y3 = 60;
+                double dev_x3 = 3;
                 double dev_y3 = 3;
 
-                double avg_x4 = -69.35;
-                double avg_y4 = (39.65 + 40.53)/ 2;
-                double dev_x4 = 2;
-                double dev_y4 = 2;
+                double avg_x4 = -160;
+                double avg_y4 = 20;
+                double dev_x4 = 3;
+                double dev_y4 = 3;
 
                 auto GX = std::array<normal_dist, 4>{
                     normal_dist{avg_x1, dev_x1}, // mean, stddev of G[0]
@@ -223,8 +297,95 @@ void TPManager::initRouterThreads(){
                 
                 // -------------------------------------------------------------------------------------
                 // For now change it to sth interesting: random
-                std::uniform_real_distribution<> dLength(0, max_length);
-                std::uniform_real_distribution<> dWidth(0, max_width);
+                std::uniform_real_distribution<> dLength(1, max_length);
+                std::uniform_real_distribution<> dWidth(1, max_width);
+                // double length = dLength(gen);
+                // double width = dWidth(gen);
+                double length = dLength(gen);
+                double width = dWidth(gen);
+                // -------------------------------------------------------------------------------------
+
+                double hx = lx + length;
+                double hy = ly + width;
+
+                Rectangle query(lx, hx, ly, hy);
+    
+    // Multi-modal with 3 peaks
+    #elif WKLOAD == 3
+                /**
+                 * https://stackoverflow.com/questions/37320025/mixture-of-gaussian-distribution-in-c
+                */
+
+                using normal_dist   = std::normal_distribution<>;
+                using discrete_dist = std::discrete_distribution<std::size_t>;
+                
+                // -------------------------------US-NORTHEAST---------------------------------------
+                // double avg_x1 = (-75.65 -69.79) / 2;
+                // double avg_y1 = (41.69 + 38.79)/ 2;
+                // double dev_x1 = 3;
+                // double dev_y1 = 3;
+
+                // double avg_x2 = (-71.74 - 65.68) / 2;
+                // double avg_y2 = (45.56 + 47.49)/ 2;
+                // double dev_x2 = 2;
+                // double dev_y2 = 2;
+
+                // double avg_x3 = (-83.478714 -65.87531) / 2;
+                // double avg_y3 = (38.78981 + 47.491634) / 2;
+                // double dev_x3 = 3;
+                // double dev_y3 = 3;
+
+                // -------------------------------GEOLITE---------------------------------------
+                double avg_x1 = 120;
+                double avg_y1 = 20;
+                double dev_x1 = 3;
+                double dev_y1 = 3;
+
+                double avg_x3 = 140;
+                double avg_y3 = 60;
+                double dev_x3 = 3;
+                double dev_y3 = 3;
+
+                double avg_x2 = -160;
+                double avg_y2 = 20;
+                double dev_x2 = 3;
+                double dev_y2 = 3;
+
+                auto GX = std::array<normal_dist, 3>{
+                    normal_dist{avg_x1, dev_x1}, // mean, stddev of G[0]
+                    normal_dist{avg_x2, dev_x2}, // mean, stddev of G[1]
+                    normal_dist{avg_x3, dev_x3} // mean, stddev of G[2]
+                };
+                auto GY = std::array<normal_dist, 3>{
+                    normal_dist{avg_y1, dev_y1}, // mean, stddev of G[0]
+                    normal_dist{avg_y2, dev_y2}, // mean, stddev of G[1]
+                    normal_dist{avg_y3, dev_y3} // mean, stddev of G[1]
+                };
+
+                auto w = discrete_dist{
+                    0.33, // weight of G[0]
+                    0.33, // weight of G[1]
+                    0.34  // weight of G[2]
+                };
+
+                // -------------------------------------------------------------------------------------
+                // For now change it to sth interesting: random
+                // auto indexX = w(gen);
+                // double lx = GX[indexX](gen);
+                
+                // auto indexY = w(gen);
+                // double ly = GY[indexY](gen);
+                auto indexX = w(genTem);
+                double lx = GX[indexX](genTem);
+                
+                auto indexY = w(genTem);
+                double ly = GY[indexY](genTem);
+                // -------------------------------------------------------------------------------------
+                
+                // -------------------------------------------------------------------------------------
+                // For now change it to sth interesting: random
+                std::uniform_real_distribution<> dLength(1, max_length);
+                std::uniform_real_distribution<> dWidth(1, max_width);
                 // double length = dLength(gen);
                 // double width = dWidth(gen);
                 double length = dLength(gen);
@@ -236,6 +397,52 @@ void TPManager::initRouterThreads(){
 
                 Rectangle query(lx, hx, ly, hy);
 
+    #elif WKLOAD == 4
+                int max_objects = this->gm->idx->objects_.size();
+                
+                std::uniform_int_distribution<> dob(0, max_objects-1);
+                int idx_to_search = dob(gen);
+                
+                double lx = this->gm->idx->objects_[idx_to_search]->left_;
+                double ly = this->gm->idx->objects_[idx_to_search]->bottom_;
+                
+                double hx = lx;
+                double hy = ly;
+                
+                Rectangle query(lx, hx, ly, hy);
+    
+    
+    // Log Normal 
+    #else
+                // -------------------------------US-NORTHEAST---------------------------------------
+                // double avg_x = (max_x + min_x) / 2;
+                // double avg_y = (max_y + min_y)/ 2;
+                
+                // double dev_x = 3;
+                // double dev_y = 3;
+                
+                // -------------------------------GEOLITE---------------------------------------
+                double avg_x = 130;
+                double avg_y = 30;
+                
+                double dev_x = 10;
+                double dev_y = 10;
+
+                std::lognormal_distribution<double> dlx(avg_x, dev_x);
+                std::lognormal_distribution<double> dly(avg_y, dev_y);
+                
+                double lx = dlx(gen);
+                double ly = dly(gen);
+
+                std::uniform_real_distribution<> dLength(1, max_length);
+                std::uniform_real_distribution<> dWidth(1, max_width);
+                double length = dLength(gen);
+                double width = dWidth(gen);
+                
+                double hx = lx + length;
+                double hy = ly + width;
+
+                Rectangle query(lx, hx, ly, hy);
     #endif
 
                 // -------------------------------------------------------------------------------------
@@ -409,7 +616,6 @@ void TPManager::initRouterThreads(){
         });
     }
 }
-
 
 void TPManager::initMegaMindThreads(){
     // -------------------------------------------------------------------------------------
@@ -640,7 +846,7 @@ void TPManager::initNCoreSweeperThreads(){
                             }
                     
                             // Use SIMD to compute the DataView
-                            ddSnap.rawCntSamples[pc.gIdx] += 1; 
+                            ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
                             __m512d rawQCounter[nQCounterCline];
                             __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
                             for (auto vCline = 0; vCline < nQCounterCline; vCline++){

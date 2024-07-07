@@ -19,8 +19,8 @@
 #include "shared-headers/PerfEvent.hpp"
 #include "profiling/PerfCounters.hpp"
 // -------------------------------------------------------------------------------------
-#define WKLOAD 0
-#define CONFIG 4004
+#define WKLOAD 1
+#define CONFIG 10 // 
 // -------------------------------------------------------------------------------------
 using namespace erebus::storage::rtree;
 namespace erebus

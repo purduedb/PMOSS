@@ -50,6 +50,7 @@ find_package(TBB REQUIRED)
 set(SOURCE_FILES
     src/threads/TPM.cc
     src/storage/rtree/rtree.cpp
+    src/storage/qtree/qtree.cpp
     src/erebus.cpp
     src/utils/Misc.cpp
     src/scheduling/RM.cpp

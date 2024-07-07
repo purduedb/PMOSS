@@ -4,6 +4,7 @@
 // -------------------------------------------------------------------------------------
 #include "utils/Misc.hpp"
 #include "storage/rtree/rtree.h"
+#include "storage/qtree/qtree.h"  // inserted new
 // -------------------------------------------------------------------------------------
 using std::ifstream;
 using std::ofstream;

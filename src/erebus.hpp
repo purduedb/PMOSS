@@ -15,6 +15,8 @@ class Erebus
 {
   public:
     erebus::storage::rtree::RTree *idx;
+    erebus::storage::qtree::QuadTree *idx_qtree;  // everywhere where is this->idx needs to be replaced by this
+    
     erebus::dm::GridManager *glb_gm;
     erebus::scheduler::ResourceManager *glb_rm;
     erebus::tp::TPManager *glb_tpool;
@@ -25,6 +27,7 @@ class Erebus
     // ~Erebus();
     // -------------------------------------------------------------------------------------
     erebus::storage::rtree::RTree* build_idx(int insert_strategy, int split_strategy);
+    erebus::storage::qtree::QuadTree* build_idx(float min_x, float max_x, float min_y, float max_y);
     void register_threadpool(erebus::tp::TPManager *tp);
 };
 

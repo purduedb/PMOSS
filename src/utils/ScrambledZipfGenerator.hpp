@@ -1,10 +1,10 @@
 #include "FNVHash.hpp"
-#include "Units.hpp"
+#include "shared-headers/Units.hpp"
 #include "ZipfGenerator.hpp"
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
-namespace leanstore
+namespace erebus
 {
 namespace utils
 {
@@ -22,4 +22,4 @@ class ScrambledZipfGenerator
 };
 // -------------------------------------------------------------------------------------
 }  // namespace utils
-}  // namespace leanstore
+}  // namespace erebus

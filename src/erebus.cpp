@@ -45,13 +45,22 @@ erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_
 	SetDefaultInsertStrategy(this->idx, insert_strategy);
 	SetDefaultSplitStrategy(this->idx, split_strategy);
 	int total_access = 0;
-	ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-	// ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-	// ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+	
+	#if DATASET == 0
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
 
-	
-	
-	for (int i = 0; i < 90000000; i++) {
+	for (int i = 0; i < totPoints; i++) {
 		double l, r, b, t;
 		ifs >> l >> r >> b >> t;
 		Rectangle* rectangle = InsertRec(this->idx, l, r, b, t);
@@ -115,14 +124,24 @@ erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_
 
 erebus::storage::qtree::QuadTree* Erebus::build_idx(float min_x, float max_x, float min_y, float max_y) 
 {
-	// ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-	// ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-	ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+	#if DATASET == 0
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
 	
 	this->idx_qtree = new erebus::storage::qtree::QuadTree(
 		{min_x, min_y, (max_x-min_x), (max_y-min_y)}, 100, 100
 		);
-	for (int i = 0; i < 11975098; i++) {
+	for (int i = 0; i < totPoints; i++) {
 		double l, r, b, t;
 		ifs >> l >> r >> b >> t;
 		int data = i;
@@ -242,25 +261,26 @@ int main()
 	/**
 	 * These are my cores that I will be using, so they should not change.
 	*/
-	// ------------------------------US-NORTHEAST--------------------------------------------
-	// double min_x = -83.478714;
-    // double max_x = -65.87531;
-    // double min_y = 38.78981;
-    // double max_y = 47.491634;
-	// erebus::dm::GridManager glb_gm(10, 10, min_x, max_x, min_y, max_y);
-	// -------------------------------------------------------------------------------------
-	// ---------------------------GEOLITE---------------------------------------------------
-	// double min_x = -179.9695933;
-    // double max_x = 179.9969416;
-    // double min_y = 1.044024;
-    // double max_y = 64.751993; // 200.166666666667;
-	// erebus::dm::GridManager glb_gm(10, 10, min_x, max_x, min_y, max_y);
-	// -------------------------------------------------------------------------------------
-	// ---------------------------BMOD02---------------------------------------------------
-	double min_x = 1308;
-    double max_x = 12785;
-    double min_y = 1308;
-    double max_y = 12785; 
+	double min_x, max_x, min_y, max_y;
+	#if DATASET == 0
+		// ------------------------------US-NORTHEAST--------------------------------------------
+		min_x = -83.478714;
+		max_x = -65.87531;
+		min_y = 38.78981;
+		max_y = 47.491634;
+	#elif DATASET == 1
+		// ---------------------------GEOLIFE---------------------------------------------------
+		min_x = -179.9695933;
+		max_x = 179.9969416;
+		min_y = 1.044024;
+		max_y = 64.751993; // 200.166666666667
+	#elif DATASET == 2
+		// ---------------------------BMOD02---------------------------------------------------
+		min_x = 1308;
+		max_x = 12785;
+		min_y = 1308;
+		max_y = 12785; 
+	#endif
 	erebus::dm::GridManager glb_gm(10, 10, min_x, max_x, min_y, max_y);
 	// -------------------------------------------------------------------------------------
 	
@@ -338,7 +358,7 @@ int main()
 	// glb_gm.register_grid_cells(wrk_cpuids);   // send the cpuids that can be used
 	// From this point onwards repeat
 
-	int cfgIdx = 100600;
+	int cfgIdx = 10;
 	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
 	
 	
@@ -353,16 +373,16 @@ int main()
 	
 	// WHICH INDEX?
 	// -------------------------------------------------------------------------------------
-	#if STORAGE == 0
-		glb_gm.idx->NUMAStatus();
-	#elif STORAGE ==1
-		erebus::storage::qtree::NUMAstat ns;
-		glb_gm.idx_quadtree->NUMAStatus(ns);
-		for (int i =0; i < 8;i++){
-			cout << ns.cntIndexNodes[i] << ' ';
-		}
-		cout << endl;	
-	#endif
+	// #if STORAGE == 0
+	// 	glb_gm.idx->NUMAStatus();
+	// #elif STORAGE ==1
+	// 	erebus::storage::qtree::NUMAstat ns;
+	// 	glb_gm.idx_quadtree->NUMAStatus(ns);
+	// 	for (int i =0; i < 8;i++){
+	// 		cout << ns.cntIndexNodes[i] << ' ';
+	// 	}
+	// 	cout << endl;	
+	// #endif
 	// -------------------------------------------------------------------------------------
 	
 	
@@ -374,10 +394,7 @@ int main()
 		glb_tpool.testInterferenceInitWorkerThreads(testCpuids, testCpuids.size());
 	#else 
 		glb_tpool.initWorkerThreads();
-		// Here 
-		// glb_tpool.initRouterThreads();
-		glb_tpool.initRouterThreadsNew();
-		
+		glb_tpool.initRouterThreads();
 		glb_tpool.initSysSweeperThreads();
 		glb_tpool.initMegaMindThreads();
 		glb_tpool.initNCoreSweeperThreads();

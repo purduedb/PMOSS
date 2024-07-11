@@ -58,6 +58,8 @@ set(SOURCE_FILES
     src/profiling/PCMMem.cpp
     src/utils/ZipfGenerator.cpp
     src/utils/RandomGenerator.cpp
+    src/utils/ScrambledZipfGenerator.cpp
+    src/utils/FNVHash.cpp
     # src/config/config.cpp
 )
 

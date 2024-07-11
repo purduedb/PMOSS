@@ -17,6 +17,9 @@ using std::ofstream;
 # define USE_MODEL 0 
 // -------------------------------------------------------------------------------------
 #define STORAGE 0  // RTree(0), QTree(1), KD-Tree
+#define DATASET 0  // OSM(0), GEOLIFE(1), BMOD02(2)
+// -------------------------------------------------------------------------------------
+
 namespace erebus
 {
 namespace dm

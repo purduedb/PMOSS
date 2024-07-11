@@ -1,4 +1,4 @@
-#include "ScrambledZipfGenerator.hpp"
+#include "shared-headers/Units.hpp"
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
@@ -7,11 +7,15 @@ namespace erebus
 namespace utils
 {
 // -------------------------------------------------------------------------------------
-u64 ScrambledZipfGenerator::rand()
+class FNV
 {
-   u64 zipf_value = zipf_generator.rand();
-   return min + (FNV::hash(zipf_value) % n);
-}
+  private:
+   static constexpr u64 FNV_OFFSET_BASIS_64 = 0xCBF29CE484222325L;
+   static constexpr u64 FNV_PRIME_64 = 1099511628211L;
+
+  public:
+   static u64 hash(u64 val);
+};
 // -------------------------------------------------------------------------------------
 }  // namespace utils
 }  // namespace erebus

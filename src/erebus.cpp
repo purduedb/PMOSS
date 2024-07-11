@@ -115,22 +115,47 @@ erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_
 
 erebus::storage::qtree::QuadTree* Erebus::build_idx(float min_x, float max_x, float min_y, float max_y) 
 {
-	ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+	// ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 	// ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-	// ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+	ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
 	
-	this->idx_qtree = new erebus::storage::qtree::QuadTree({ min_x, min_y, max_x - min_x, max_y - min_y}, 8, 16);
-	
-	for (int i = 0; i < 90000000; i++) {
+	this->idx_qtree = new erebus::storage::qtree::QuadTree(
+		{min_x, min_y, (max_x-min_x), (max_y-min_y)}, 100, 100
+		);
+	for (int i = 0; i < 11975098; i++) {
 		double l, r, b, t;
 		ifs >> l >> r >> b >> t;
 		int data = i;
-		erebus::storage::qtree::Collidable obj = erebus::storage::qtree::Collidable({ l, r, 0, 0 }, data);
-		this->idx_qtree->insert(&obj);
+		erebus::storage::qtree::Collidable* obj = new erebus::storage::qtree::Collidable({ l, b, 0, 0 }, data);
+		this->idx_qtree->insert(obj);
 	}
 	std::cout << this->idx_qtree->totalChildren() << "\n";
 	std::cout << this->idx_qtree->totalObjects() << "\n";
-	ifs.close();
+	// this->idx_qtree->dfs(this->idx_qtree);
+	return this->idx_qtree;
+	
+	// erebus::storage::qtree::Point start(-1, -1);
+    // std::vector<erebus::storage::qtree::Point> pointsVector(100, start);
+	// // this->idx_qtree = new erebus::storage::qtree::QuadTree(min_x, min_y, max_x, max_y, pointsVector);
+	// erebus::storage::qtree::QuadTree tree(min_x, min_y, max_x, max_y, pointsVector);
+	// for (int i = 0; i < 1000000; i++) {
+	// 	double l, r, b, t;
+	// 	ifs >> l >> r >> b >> t;
+	// 	tree.insert(l, b);
+	// }
+	
+	
+	
+	// for (int i = 0; i < 90000000; i++) {
+	// 	double l, r, b, t;
+	// 	ifs >> l >> r >> b >> t;
+	// 	int data = i;
+	// 	erebus::storage::qtree::Collidable obj = erebus::storage::qtree::Collidable({ l, r, 0, 0 }, data);
+	// 	this->idx_qtree->insert(&obj);
+	// }
+	// std::cout << this->idx_qtree->totalChildren() << "\n";
+	// std::cout << this->idx_qtree->totalObjects() << "\n";
+	// ifs.close();
 	// cout << this->idx->height_ << " " << GetIndexSizeInMB(this->idx) << endl;
 	
 	// Stuff about paging
@@ -180,7 +205,7 @@ erebus::storage::qtree::QuadTree* Erebus::build_idx(float min_x, float max_x, fl
 		
 	// }
 		
-	return this->idx_qtree;
+	
 }
 
 void Erebus::register_threadpool(erebus::tp::TPManager *tp)
@@ -218,11 +243,11 @@ int main()
 	 * These are my cores that I will be using, so they should not change.
 	*/
 	// ------------------------------US-NORTHEAST--------------------------------------------
-	double min_x = -83.478714;
-    double max_x = -65.87531;
-    double min_y = 38.78981;
-    double max_y = 47.491634;
-	erebus::dm::GridManager glb_gm(10, 10, min_x, max_x, min_y, max_y);
+	// double min_x = -83.478714;
+    // double max_x = -65.87531;
+    // double min_y = 38.78981;
+    // double max_y = 47.491634;
+	// erebus::dm::GridManager glb_gm(10, 10, min_x, max_x, min_y, max_y);
 	// -------------------------------------------------------------------------------------
 	// ---------------------------GEOLITE---------------------------------------------------
 	// double min_x = -179.9695933;
@@ -232,11 +257,11 @@ int main()
 	// erebus::dm::GridManager glb_gm(10, 10, min_x, max_x, min_y, max_y);
 	// -------------------------------------------------------------------------------------
 	// ---------------------------BMOD02---------------------------------------------------
-	// double min_x = 1308;
-    // double max_x = 12785;
-    // double min_y = 1308;
-    // double max_y = 12785; 
-	// erebus::dm::GridManager glb_gm(10, 10, min_x, max_x, min_y, max_y);
+	double min_x = 1308;
+    double max_x = 12785;
+    double min_y = 1308;
+    double max_y = 12785; 
+	erebus::dm::GridManager glb_gm(10, 10, min_x, max_x, min_y, max_y);
 	// -------------------------------------------------------------------------------------
 	
 
@@ -291,26 +316,55 @@ int main()
 	erebus::scheduler::ResourceManager glb_rm;  // dummy, does not work at this point
 	
 	erebus::Erebus db(&glb_gm, &glb_rm);
-	// db.build_idx(min_x, max_x, min_y, max_y);
-	db.build_idx(1, 1);
-	glb_gm.register_index(db.idx);
-
-
+	// WHICH INDEX?
+	// -------------------------------------------------------------------------------------
+	#if STORAGE == 0
+		db.build_idx(1, 1);
+		glb_gm.register_index(db.idx);
+	#elif STORAGE ==1
+		db.build_idx(min_x, max_x, min_y, max_y);
+		glb_gm.register_index(db.idx_qtree);
+	#endif
+	// -------------------------------------------------------------------------------------	
+	// erebus::storage::qtree::Rect bounds(
+	// 	min_x,
+	// 	min_y,
+	// 	max_x - min_x,
+	// 	max_y - min_y
+	// );
+	// int li_size = glb_gm.idx_quadtree->getObjectsInBound(bounds);
+	// std::cout << li_size << endl;
 
 	// glb_gm.register_grid_cells(wrk_cpuids);   // send the cpuids that can be used
 	// From this point onwards repeat
 
-	int cfgIdx = 10;
+	int cfgIdx = 100600;
 	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
 	
 	
 	
 	glb_gm.printGM();
 	glb_gm.printQueryDistPushed();
-	glb_gm.buildDataDistIdx();
+	#if STORAGE == 0
+		glb_gm.buildDataDistIdx();
+	#endif
 	// glb_gm.printDataDistIdx();
 	glb_gm.printDataDistIdxT();
-	glb_gm.idx->NUMAStatus();
+	
+	// WHICH INDEX?
+	// -------------------------------------------------------------------------------------
+	#if STORAGE == 0
+		glb_gm.idx->NUMAStatus();
+	#elif STORAGE ==1
+		erebus::storage::qtree::NUMAstat ns;
+		glb_gm.idx_quadtree->NUMAStatus(ns);
+		for (int i =0; i < 8;i++){
+			cout << ns.cntIndexNodes[i] << ' ';
+		}
+		cout << endl;	
+	#endif
+	// -------------------------------------------------------------------------------------
+	
 	
 	// erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
@@ -320,7 +374,10 @@ int main()
 		glb_tpool.testInterferenceInitWorkerThreads(testCpuids, testCpuids.size());
 	#else 
 		glb_tpool.initWorkerThreads();
-		glb_tpool.initRouterThreads();
+		// Here 
+		// glb_tpool.initRouterThreads();
+		glb_tpool.initRouterThreadsNew();
+		
 		glb_tpool.initSysSweeperThreads();
 		glb_tpool.initMegaMindThreads();
 		glb_tpool.initNCoreSweeperThreads();

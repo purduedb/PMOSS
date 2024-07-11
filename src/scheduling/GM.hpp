@@ -15,6 +15,8 @@ using std::ofstream;
 #define MAX_YPAR 10
 // -------------------------------------------------------------------------------------
 # define USE_MODEL 0 
+// -------------------------------------------------------------------------------------
+#define STORAGE 0  // RTree(0), QTree(1), KD-Tree
 namespace erebus
 {
 namespace dm
@@ -32,6 +34,7 @@ class GridManager
     int nGridCellsPerThread;
     // -------------------------------------------------------------------------------------
     erebus::storage::rtree::RTree *idx;
+    erebus::storage::qtree::QuadTree *idx_quadtree;
     // -------------------------------------------------------------------------------------
     std::unordered_map<u64, std::thread*> CPUCoreToThread;
     std::unordered_multimap<u64, CPUID> NUMAToWorkerCPUs;
@@ -75,6 +78,7 @@ class GridManager
     void register_grid_cells(vector<CPUID> availCPUs);
     void register_grid_cells(string configFile);
     void register_index(erebus::storage::rtree::RTree *idx);
+    void register_index(erebus::storage::qtree::QuadTree *idx_quadtree);
     
     void printGM();
     void printQueryDistPushed();

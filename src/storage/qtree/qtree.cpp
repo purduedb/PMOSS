@@ -47,7 +47,7 @@ QuadTree::QuadTree(const Rect &_bound, unsigned _capacity, unsigned _maxLevel) :
     capacity(_capacity),
     maxLevel(_maxLevel) {
     objects.reserve(_capacity);
-    foundObjects.reserve(_capacity);
+    // foundObjects.reserve(_capacity);
 }
 
 // Inserts an object into this quadtree
@@ -61,7 +61,7 @@ bool QuadTree::insert(Collidable *obj) {
             return child->insert(obj);
     }
     objects.push_back(obj);
-    // obj->qt = this;
+    obj->qt = this;
 
     // Subdivide if required
     if (isLeaf && level < maxLevel && objects.size() >= capacity) {
@@ -98,26 +98,62 @@ bool QuadTree::update(Collidable *obj) {
 }
 
 // Searches quadtree for objects within the provided boundary and returns them in vector
-std::vector<Collidable*> &QuadTree::getObjectsInBound(const Rect &bound) {
-    foundObjects.clear();
-    for (const auto &obj : objects) {
-        // Only check for intersection with OTHER boundaries
-        if (&obj->bound != &bound && obj->bound.intersects(bound))
-            foundObjects.push_back(obj);
-    }
-    if (!isLeaf) {
-        // Get objects from leaves
-        if (QuadTree *child = getChild(bound)) {
-            child->getObjectsInBound(bound);
-            foundObjects.insert(foundObjects.end(), child->foundObjects.begin(), child->foundObjects.end());
-        } else for (QuadTree *leaf : children) {
-            if (leaf->bounds.intersects(bound)) {
-                leaf->getObjectsInBound(bound);
-                foundObjects.insert(foundObjects.end(), leaf->foundObjects.begin(), leaf->foundObjects.end());
-            }
+int QuadTree::getObjectsInBound(const Rect &bound) {
+    std::vector<Collidable*> result;
+    
+    list<QuadTree*> queue;
+	queue.push_back(this);
+	
+    QuadTree* iter = this;
+   
+    while(!queue.empty()){
+        iter = queue.front();
+        // 	// -------------------------------------------------------------------------------------
+		for (const auto &obj : iter->objects) {
+            // Only check for intersection with OTHER boundaries
+            if (&obj->bound != &bound && obj->bound.intersects(bound))
+                result.push_back(obj);
         }
+		// -------------------------------------------------------------------------------------
+        queue.pop_front();
+        if (iter->isLeaf) {}
+		else {
+			if (QuadTree *child = iter->getChild(bound)) {
+                queue.push_back(child);
+                
+            } else {
+                for (QuadTree *leaf : iter->children) {
+                    if (leaf->bounds.intersects(bound)) {
+                        queue.push_back(leaf);
+                    }
+                }
+            }
+		}
+
     }
-    return foundObjects;
+    
+    return result.size();
+    // foundObjects.clear();
+    // for (const auto &obj : objects) {
+    //     // Only check for intersection with OTHER boundaries
+    //     if (&obj->bound != &bound && obj->bound.intersects(bound))
+    //         foundObjects.push_back(obj);
+    // }
+    // if (!isLeaf) {
+    //     // Get objects from leaves
+    //     if (QuadTree *child = getChild(bound)) {
+    //         child->getObjectsInBound(bound);
+    //         foundObjects.insert(foundObjects.end(), child->foundObjects.begin(), child->foundObjects.end());
+    //     } else {
+    //         for (QuadTree *leaf : children) {
+    //             if (leaf->bounds.intersects(bound)) {
+    //                 leaf->getObjectsInBound(bound);
+    //                 // foundObjects.insert(foundObjects.end(), leaf->foundObjects.begin(), leaf->foundObjects.end());
+    //             }
+    //         }
+    //     }
+    // }
+    // return foundObjects;
 }
 
 // Returns total children count for this quadtree
@@ -127,6 +163,17 @@ unsigned QuadTree::totalChildren() const noexcept {
     for (QuadTree *child : children)
         total += child->totalChildren();
     return 4 + total;
+}
+
+void QuadTree::NUMAStatus(NUMAstat &nstat){	
+    void *ptr_to_check = this;
+    int status[1];
+    int ret_code = move_pages(0, 1, &ptr_to_check, NULL, status, 0);
+    nstat.cntIndexNodes[status[0]] += 1;
+    if (isLeaf) return;
+	for (QuadTree *child : children)
+        child->NUMAStatus(nstat);
+	return;
 }
 
 // Returns total object count for this quadtree
@@ -206,6 +253,94 @@ QuadTree::~QuadTree() {
     if (children[2]) delete children[2];
     if (children[3]) delete children[3];
 }
+
+
+void QuadTree::dfs(QuadTree* root){
+    list<QuadTree*> queue_Visited;
+    list<QuadTree*> queue_ToVisit;
+	queue_ToVisit.push_back(root);
+	QuadTree* iter = root;
+    while(!queue_ToVisit.empty()){
+        iter = queue_ToVisit.front();
+        queue_Visited.push_back(iter);
+
+        if (iter->isLeaf) {
+            for (int i = 0; i < 4; i++) {
+				QuadTree* node = iter->children[i];
+				if (node != nullptr) {
+                    std::cout << "something wrong here!";
+                }
+			}
+        }
+		else {
+			for (int i = 0; i < 4; i++) {
+				QuadTree* node = iter->children[i];
+					queue_ToVisit.push_back(node);
+			}
+		}
+        queue_ToVisit.pop_front();
+    }
+    std::cout << "size= " << queue_Visited.size() << std::endl;
+    return;
+}
+
+int MigrateNodesQuery(QuadTree* root, const Rect &bound, int destNUMAID){
+	list<QuadTree*> queue;
+	queue.push_back(root);
+	QuadTree* iter = root;
+    if (!iter->bounds.intersects(bound)){
+        return 0;
+    }
+    while(!queue.empty()){
+        iter = queue.front();
+        // 	// -------------------------------------------------------------------------------------
+		// Move the node to a destination socket
+		void *ptr_to_check = iter;
+		int status[1];
+		const int destNodes[1] = {destNUMAID};
+		int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+		// printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
+		// -------------------------------------------------------------------------------------
+        queue.pop_front();
+        if (iter->isLeaf) {}
+		else {
+			for (int i = 0; i < 4; i++) {
+				QuadTree* node = iter->children[i];
+				if (bound.intersects(node->bounds)) {
+					queue.push_back(node);
+				}
+			}
+		}
+
+    }
+    return 1;
+    // if the node intersects the bound, then move its page 
+    // void *ptr_to_check = root;
+	// int status[1];
+	// const int destNodes[1] = {destNUMAID};
+	// int	ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+    // // printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
+    // if (!root->isLeaf) {
+    //     // Get objects from leaves
+    //     // if (QuadTree *child = getChild(bound)) {
+    //     //     child->MigrateNodesQuery(bound, destNUMAID);
+    //     // } else{ 
+    //     for (QuadTree *leaf : root->children) {
+    //         if (leaf->bounds.intersects(bound)) {
+    //             MigrateNodesQuery(leaf, bound, destNUMAID);
+    //         }
+    //     }
+    //     // }
+    // }
+    // return ret_code;
+}
+int MigrateNodesQuad(QuadTree* qtree, double left, double right, double bottom, double top, int destNUMAID) {
+	Rect rec(left, bottom, (right-left), (top-bottom));
+	MigrateNodesQuery(qtree, rec, destNUMAID);
+	return -1;
+}
+
+
 }
 }
 }

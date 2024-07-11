@@ -4,4 +4,5 @@ build/*
 src/dataset/*
 src/interference/*
 kb/*
+kb_quad/*
 src/config/*

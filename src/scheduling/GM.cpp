@@ -147,7 +147,23 @@ void GridManager::register_grid_cells(string configFile){
             this->glbGridCell[trk_cid].idCPU = cpuConfig[trk_cid]; 
             
             // Use this to allocate pages 
-            MigrateNodes(this->idx, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
+            // WHICH INDEX?
+            // -------------------------------------------------------------------------------------
+            #if STORAGE == 0
+                MigrateNodes(this->idx, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
+            #elif STORAGE == 1
+                // cout << sizeof(erebus::storage::qtree::QuadTree) << endl;
+                // cout << sizeof(erebus::storage::rtree::TreeNode) << endl;
+                MigrateNodesQuad(this->idx_quadtree, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
+                // erebus::storage::qtree::NUMAstat ns;
+                // this->idx_quadtree->NUMAStatus(ns);
+                // for (int i =0; i < 8; i++){
+                //     cout << ns.cntIndexNodes[i] << ' ';
+                // }
+                // cout << endl;
+            #endif
+            // -------------------------------------------------------------------------------------
+
             // -------------------------------------------------------------------------------------
             #if USE_MODEL
             for(auto pI = 0; pI < STAMP_LR_PARAM; pI++){
@@ -168,6 +184,10 @@ void GridManager::register_index(erebus::storage::rtree::RTree * idx)
 
     // TODO: go over the grid index and based on the config issue range scans 
 
+}
+void GridManager::register_index(erebus::storage::qtree::QuadTree * idx_quadtree)
+{
+    this->idx_quadtree = idx_quadtree;
 }
 
 void GridManager::printGM(){

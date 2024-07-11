@@ -19,8 +19,8 @@
 #include "shared-headers/PerfEvent.hpp"
 #include "profiling/PerfCounters.hpp"
 // -------------------------------------------------------------------------------------
-#define WKLOAD 1
-#define CONFIG 10 // 
+#define WKLOAD 2
+#define CONFIG 100600 // 
 // -------------------------------------------------------------------------------------
 using namespace erebus::storage::rtree;
 namespace erebus
@@ -177,6 +177,7 @@ class TPManager{
     TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID> sys_sweeper_cpuids, std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
     void initWorkerThreads();
     void initRouterThreads();
+    void initRouterThreadsNew();
     void initMegaMindThreads();
     void initSysSweeperThreads();
     void initNCoreSweeperThreads();

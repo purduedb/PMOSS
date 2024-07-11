@@ -3,14 +3,27 @@
 #include <any>
 #include <vector>
 #include <algorithm>
+#include<list>
+#include<queue>
+#include <iostream>
 // -------------------------------------------------------------------------------------
+#include <numa.h> 
+#include <numaif.h>
+#include <stdio.h>
+// -------------------------------------------------------------------------------------
+using std::list;
+
 namespace erebus
 {
 namespace storage
 {
 namespace qtree
 {
-    
+
+struct NUMAstat {
+    int cntIndexNodes[8] = {0};
+};
+
 struct Rect {
     double x, y, width, height;
 
@@ -48,13 +61,16 @@ public:
     bool insert(Collidable *obj);
     bool remove(Collidable *obj);
     bool update(Collidable *obj);
-    std::vector<Collidable*> &getObjectsInBound(const Rect &bound);
+    int getObjectsInBound(const Rect &bound);
+    
+    void NUMAStatus(NUMAstat &nstat);
+
     unsigned totalChildren() const noexcept;
     unsigned totalObjects() const noexcept;
     void clear() noexcept;
 
     ~QuadTree();
-private:
+// private:
     bool      isLeaf = true;
     unsigned  level  = 0;
     unsigned  capacity;
@@ -67,8 +83,13 @@ private:
     void subdivide();
     void discardEmptyBuckets();
     inline QuadTree *getChild(const Rect &bound) const noexcept;
+    void dfs(QuadTree* root);
 };
 
+extern "C"{
+    int MigrateNodesQuad(QuadTree* qtree, double left, double right, double bottom, double top, int destNUMAID);
+    int MigrateNodesQuery(QuadTree* qtree, const Rect &bound, int destNUMAID);
+}
 
 }
 }

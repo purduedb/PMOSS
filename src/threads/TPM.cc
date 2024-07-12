@@ -1425,7 +1425,7 @@ void TPManager::initRouterThreads(){
             // Dataset Boundary
             double min_x, max_x, min_y, max_y;
             double max_length, max_width;
-            # if DATASET == 0
+            #if DATASET == 0
                 // ------------------------US-NORTHEAST----------------------------------------------------
                 min_x = -83.478714;
                 max_x = -65.87531;
@@ -1433,7 +1433,7 @@ void TPManager::initRouterThreads(){
                 max_y = 47.491634;
                 max_length = 6;  // Previously: 6
                 max_width = 6;
-            # elif DATASET == 1 
+            #elif DATASET == 1 
                 // ------------------------GEOLITE----------------------------------------------------
                 min_x = -179.9695933;
                 max_x = 179.9969416;
@@ -1449,6 +1449,14 @@ void TPManager::initRouterThreads(){
                 max_y = 12785; 
                 max_length = 3000;  // Previously: 6
                 max_width = 3000;
+            #else
+                // ------------------------US-NORTHEAST----------------------------------------------------
+                min_x = -83.478714;
+                max_x = -65.87531;
+                min_y = 38.78981;
+                max_y = 47.491634;
+                max_length = 6;  // Previously: 6
+                max_width = 6;
             # endif
 
     # if WKLOAD == 0
@@ -1635,8 +1643,8 @@ void TPManager::initRouterThreads(){
             std::uniform_int_distribution<> dob(0, max_objects-1);
     // Zipfian
     #elif WKLOAD == 5
-            auto zipf_random_x = std::make_unique<erebus::utils::ScrambledZipfGenerator>(min_x, max_x, 0.2);
-            auto zipf_random_y = std::make_unique<erebus::utils::ScrambledZipfGenerator>(min_y, max_y, 0.2);
+            auto zipf_random_x = std::make_unique<erebus::utils::ScrambledZipfGenerator>(min_x, max_x, 1);
+            auto zipf_random_y = std::make_unique<erebus::utils::ScrambledZipfGenerator>(min_y, max_y, 1);
             
             std::uniform_real_distribution<> dLength(1, max_length);
             std::uniform_real_distribution<> dWidth(1, max_width);
@@ -1644,11 +1652,13 @@ void TPManager::initRouterThreads(){
     # else
             # if DATASET == 0
                 // -------------------------------US-NORTHEAST---------------------------------------
-                double avg_x = (max_x + min_x) / 2;
-                double avg_y = (max_y + min_y) / 2;
+                double pseudo_min_x = 1;
+                double pseudo_max_x = 1 + (max_x - min_x);
+                double avg_x = (log(pseudo_max_x) + log(pseudo_min_x)) / 2;
+                double avg_y = (log(max_y) + log(min_y)) / 2;
 
-                double dev_x = (max_x - min_x) / 6;
-                double dev_y = (max_y - min_y) / 6;
+                double dev_x = (log(pseudo_max_x) - log(pseudo_min_x)) / 6;
+                double dev_y = (log(max_y) - log(min_y)) / 6;
 
             # elif DATASET == 1
                 // -------------------------------GEOLITE---------------------------------------
@@ -1754,11 +1764,13 @@ void TPManager::initRouterThreads(){
     #else
                 double lx = dlx(gen);
                 double ly = dly(gen);
-                while(lx > max_x || lx < min_x)
+                while(lx > pseudo_max_x || lx < pseudo_min_x)
                     lx = dlx(gen);
                 while(ly > max_y || ly < min_y)
                     ly = dly(gen);
                 
+                lx = lx - (1 - min_x);
+
                 double length = dLength(gen);
                 double width = dWidth(gen);
                 

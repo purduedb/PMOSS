@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <random>
 // -------------------------------------------------------------------------------------
+#include <bits/stdc++.h>
 #include <immintrin.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -18,9 +19,10 @@
 #include "scheduling/GM.hpp"
 #include "shared-headers/PerfEvent.hpp"
 #include "profiling/PerfCounters.hpp"
+#include "utils/ScrambledZipfGenerator.hpp"
 // -------------------------------------------------------------------------------------
 #define WKLOAD 10
-#define CONFIG 10 // 
+#define CONFIG 1 // 
 // -------------------------------------------------------------------------------------
 using namespace erebus::storage::rtree;
 namespace erebus

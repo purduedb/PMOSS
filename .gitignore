@@ -6,3 +6,4 @@ src/interference/*
 kb/*
 kb_quad/*
 src/config/*
+src/profiling/PCMMem.cpp

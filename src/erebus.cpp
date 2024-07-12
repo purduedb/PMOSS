@@ -283,8 +283,6 @@ int main()
 	#endif
 	erebus::dm::GridManager glb_gm(10, 10, min_x, max_x, min_y, max_y);
 	// -------------------------------------------------------------------------------------
-	
-
 	std::vector<CPUID> mm_cpuids;
 	std::vector<CPUID> wrk_cpuids;
 	std::vector<CPUID> rt_cpuids;
@@ -358,11 +356,9 @@ int main()
 	// glb_gm.register_grid_cells(wrk_cpuids);   // send the cpuids that can be used
 	// From this point onwards repeat
 
-	int cfgIdx = 10;
+	int cfgIdx = 40;
 	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
-	
-	
-	
+		
 	glb_gm.printGM();
 	glb_gm.printQueryDistPushed();
 	#if STORAGE == 0

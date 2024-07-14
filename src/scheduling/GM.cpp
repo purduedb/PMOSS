@@ -149,6 +149,7 @@ void GridManager::register_grid_cells(string configFile){
             // Use this to allocate pages 
             // WHICH INDEX?
             // -------------------------------------------------------------------------------------
+            #if LINUX != 0
             #if STORAGE == 0
                 MigrateNodes(this->idx, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
             #elif STORAGE == 1
@@ -161,6 +162,7 @@ void GridManager::register_grid_cells(string configFile){
                 //     cout << ns.cntIndexNodes[i] << ' ';
                 // }
                 // cout << endl;
+            #endif
             #endif
             // -------------------------------------------------------------------------------------
 
@@ -176,6 +178,7 @@ void GridManager::register_grid_cells(string configFile){
         }
     }
 }
+
 
 void GridManager::register_index(erebus::storage::rtree::RTree * idx)
 {

@@ -18,6 +18,12 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define STORAGE 0  // RTree(0), QTree(1), KD-Tree
 #define DATASET 0  // OSM(0), GEOLIFE(1), BMOD02(2)
+#define MACHINE 0 // 0 (BIGDATA), 1(DBSERVER)
+#define LINUX 1 // 0 (SE 0, SE-NUMA 1, SN, NUMA 2, OURS, 3)
+// -------------------------------------------------------------------------------------
+#define WKLOAD 0
+#define CONFIG 901 // 
+// -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 
 namespace erebus
@@ -95,6 +101,7 @@ class GridManager
     void printQueryView();
     void printQueryCorrMatrixView();
     
+    // void GMMigrate();
 
 };
 

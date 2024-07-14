@@ -20,10 +20,9 @@
 #include "shared-headers/PerfEvent.hpp"
 #include "profiling/PerfCounters.hpp"
 #include "utils/ScrambledZipfGenerator.hpp"
-// -------------------------------------------------------------------------------------
-#define WKLOAD 10
-#define CONFIG 1 // 
-// -------------------------------------------------------------------------------------
+#include "utils/ZipfDist.hpp"
+
+
 using namespace erebus::storage::rtree;
 namespace erebus
 {
@@ -48,11 +47,26 @@ class TPManager{
     static const int MAX_WORKER_THREADS = 200;
     static const int MAX_ROUTER_THREADS = 20;
     
+#if MACHINE == 0
     static const int CURR_NCORE_SWEEPER_THREADS = 8;
     static const int CURR_SYS_SWEEPER_THREADS = 1;
     static const int CURR_MEGAMIND_THREADS = 8;
-    static const int CURR_WORKER_THREADS = 56;
     static const int CURR_ROUTER_THREADS = 8;
+	  static const int CURR_WORKER_THREADS = 56;
+#elif MACHINE == 1
+    static const int CURR_NCORE_SWEEPER_THREADS = 2;
+    static const int CURR_SYS_SWEEPER_THREADS = 1;
+    static const int CURR_MEGAMIND_THREADS = 2;
+    static const int CURR_ROUTER_THREADS = 2;
+	  static const int CURR_WORKER_THREADS = 80;
+#else
+	  static const int CURR_WORKER_THREADS = 56;
+#endif
+    // static const int CURR_NCORE_SWEEPER_THREADS = 8;
+    // static const int CURR_SYS_SWEEPER_THREADS = 1;
+    // static const int CURR_MEGAMIND_THREADS = 8;
+    // static const int CURR_WORKER_THREADS = 56;
+    // static const int CURR_ROUTER_THREADS = 8;
     
     // -------------------------------------------------------------------------------------    
     static const u64 PERF_STAT_COLLECTION_INTERVAL = 1;

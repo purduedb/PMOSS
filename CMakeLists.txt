@@ -70,6 +70,7 @@ add_executable(erebus ${SOURCE_FILES})
 target_link_libraries(erebus 
                     TBB::tbb
                     /homes/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so
+                    -fsanitize=address
                     # libpcm.so
                     # -L /home/yrayhan/works/erebus/third-party/pcm/build/lib/libpcm.so
                     # -pcm

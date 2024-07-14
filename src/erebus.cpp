@@ -45,7 +45,7 @@ erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_
 	SetDefaultInsertStrategy(this->idx, insert_strategy);
 	SetDefaultSplitStrategy(this->idx, split_strategy);
 	int total_access = 0;
-	
+	#if MACHINE == 0 
 	#if DATASET == 0
 		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
@@ -59,7 +59,53 @@ erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_
 		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
 	#endif
-
+	#endif
+	#if MACHINE == 1 
+	#if DATASET == 0
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
+	#endif
+	#if MACHINE == 2 
+	#if DATASET == 0
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
+	#endif
+	#if MACHINE == 3 
+	#if DATASET == 0
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
+	#endif
+	
 	for (int i = 0; i < totPoints; i++) {
 		double l, r, b, t;
 		ifs >> l >> r >> b >> t;
@@ -124,6 +170,7 @@ erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_
 
 erebus::storage::qtree::QuadTree* Erebus::build_idx(float min_x, float max_x, float min_y, float max_y) 
 {
+	#if MACHINE == 0 
 	#if DATASET == 0
 		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
@@ -136,6 +183,52 @@ erebus::storage::qtree::QuadTree* Erebus::build_idx(float min_x, float max_x, fl
 	#else 
 		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
+	#endif
+	#endif
+	#if MACHINE == 1 
+	#if DATASET == 0
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
+	#endif
+	#if MACHINE == 2 
+	#if DATASET == 0
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
+	#endif
+	#if MACHINE == 3 
+	#if DATASET == 0
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
 	#endif
 	
 	this->idx_qtree = new erebus::storage::qtree::QuadTree(

@@ -451,6 +451,7 @@ void TPManager::initNCoreSweeperThreads(){
 void TPManager::dumpNCoreSweeperThreads(){
     cout << "==========================DUMPING Core Sweeper Threads=======================" << endl;
     for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
+        #if MACHINE == 0
         #if STORAGE == 0
             string dirName = "/homes/yrayhan/works/erebus/kb/" + std::to_string(key);
             mkdir(dirName.c_str(), 0777);
@@ -459,6 +460,27 @@ void TPManager::dumpNCoreSweeperThreads(){
             string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
             mkdir(dirName.c_str(), 0777);
             cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+        #endif
+        #elif MACHINE == 1
+        #if STORAGE == 0
+            string dirName = "/home/yrayhan/works/erebus/home/kb/" + std::to_string(key);
+            mkdir(dirName.c_str(), 0777);
+            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+        #elif STORAGE == 1
+            string dirName = "/home/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
+            mkdir(dirName.c_str(), 0777);
+            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+        #endif
+        #elif MACHINE == 2
+        #if STORAGE == 0
+            string dirName = "/home/yrayhan/works/erebus/kb_1S/" + std::to_string(key);
+            mkdir(dirName.c_str(), 0777);
+            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+        #elif STORAGE == 1
+            string dirName = "/home/yrayhan/works/erebus/kb_quad_1S/" + std::to_string(key);
+            mkdir(dirName.c_str(), 0777);
+            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+        #endif
         #endif
         
         // -------------------------------------------------------------------------------------

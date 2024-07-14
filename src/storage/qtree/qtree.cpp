@@ -116,7 +116,9 @@ int QuadTree::getObjectsInBound(const Rect &bound) {
         }
 		// -------------------------------------------------------------------------------------
         queue.pop_front();
-        if (iter->isLeaf) {}
+        if (iter->isLeaf) {
+            
+        }
 		else {
 			if (QuadTree *child = iter->getChild(bound)) {
                 queue.push_back(child);

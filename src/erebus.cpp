@@ -307,7 +307,14 @@ int main()
 	 * Also would remove the number from the TPM.cc file about the #of threads and make it 
 	 * global
 	*/
+	// int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+#if MACHINE == 0
 	int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+#elif MACHINE == 1
+	int nWorkers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
+#else
+	int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+#endif
 	
 	ss_cpuids.push_back(99);
 	
@@ -356,31 +363,32 @@ int main()
 	// glb_gm.register_grid_cells(wrk_cpuids);   // send the cpuids that can be used
 	// From this point onwards repeat
 
-	int cfgIdx = 40;
+	int cfgIdx = 901;
 	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
-		
+	
+
 	glb_gm.printGM();
 	glb_gm.printQueryDistPushed();
-	#if STORAGE == 0
-		glb_gm.buildDataDistIdx();
-	#endif
+	// #if STORAGE == 0
+	// 	glb_gm.buildDataDistIdx();
+	// #endif
 	// glb_gm.printDataDistIdx();
 	glb_gm.printDataDistIdxT();
 	
 	// WHICH INDEX?
 	// -------------------------------------------------------------------------------------
-	// #if STORAGE == 0
-	// 	glb_gm.idx->NUMAStatus();
-	// #elif STORAGE ==1
-	// 	erebus::storage::qtree::NUMAstat ns;
-	// 	glb_gm.idx_quadtree->NUMAStatus(ns);
-	// 	for (int i =0; i < 8;i++){
-	// 		cout << ns.cntIndexNodes[i] << ' ';
-	// 	}
-	// 	cout << endl;	
-	// #endif
+	#if STORAGE == 0
+		glb_gm.idx->NUMAStatus();
+	#elif STORAGE ==1
+		erebus::storage::qtree::NUMAstat ns;
+		glb_gm.idx_quadtree->NUMAStatus(ns);
+		for (int i =0; i < 8;i++){
+			cout << ns.cntIndexNodes[i] << ' ';
+		}
+		cout << endl;	
+	#endif
+
 	// -------------------------------------------------------------------------------------
-	
 	
 	// erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);

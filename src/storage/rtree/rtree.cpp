@@ -2395,7 +2395,8 @@ int RTree::Query(Rectangle& rectangle) {
 			}
 		}
 	}
-	return 1;
+
+	return result_count;
 }
 void RTree::NUMAStatus(){
 	int cntIndexNodes[8] = {0};
@@ -2437,16 +2438,17 @@ int RTree::MigrateNodesQuery(Rectangle& rectangle, int destNUMAID) {
 		stats_.node_access += 1;
 		queue.pop_front();
 		if (iter->is_leaf) {
-			for (int i = 0; i < iter->entry_num; i++) {
-				Rectangle* rec_iter = objects_[iter->children[i]];
-				// Changed by yr
-				// if (rec_iter->IsOverlap(&rectangle)) {
-				// 	result_count += 1;
-				// }
-				if (rec_iter->Contains(&rectangle)) {
-					result_count += 1;
-				}
-			}
+			// changed july 12
+			// for (int i = 0; i < iter->entry_num; i++) {
+			// 	Rectangle* rec_iter = objects_[iter->children[i]];
+			// 	// Changed by yr
+			// 	// if (rec_iter->IsOverlap(&rectangle)) {
+			// 	// 	result_count += 1;
+			// 	// }
+			// 	if (rec_iter->Contains(&rectangle)) {
+			// 		result_count += 1;
+			// 	}
+			// }
 		}
 		else {
 			for (int i = 0; i < iter->entry_num; i++) {

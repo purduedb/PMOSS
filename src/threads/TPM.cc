@@ -481,6 +481,16 @@ void TPManager::dumpNCoreSweeperThreads(){
             mkdir(dirName.c_str(), 0777);
             cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         #endif
+        #elif MACHINE == 3
+        #if STORAGE == 0
+            string dirName = "/homes/yrayhan/works/erebus/kb_4S/" + std::to_string(key);
+            mkdir(dirName.c_str(), 0777);
+            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+        #elif STORAGE == 1
+            string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
+            mkdir(dirName.c_str(), 0777);
+            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+        #endif
         #endif
         
         // -------------------------------------------------------------------------------------
@@ -1164,8 +1174,8 @@ void TPManager::initRouterThreads(){
     // Zipfian
     #elif WKLOAD == 5
             std::default_random_engine generator;
-            erebus::utils::zipfian_int_distribution<int> distX(min_x, max_x, 0.2);
-            erebus::utils::zipfian_int_distribution<int> distY(min_y, max_y, 0.2);
+            erebus::utils::zipfian_int_distribution<int> distX(min_x, max_x, 0.4);
+            erebus::utils::zipfian_int_distribution<int> distY(min_y, max_y, 0.4);
             max_length = 6;
             max_width = 6;
             std::uniform_real_distribution<> dLength(1, max_length);
@@ -1240,6 +1250,62 @@ void TPManager::initRouterThreads(){
             
             std::uniform_real_distribution<> dLength(1, 3);
             std::uniform_real_distribution<> dWidth(1, 3);      
+    #elif WKLOAD == 9
+            using normal_dist   = std::normal_distribution<>;
+            using discrete_dist = std::discrete_distribution<std::size_t>;
+            auto w = discrete_dist{0.25, 0.75};
+
+            std::vector <std::tuple<double, double>> nPoints = {
+                    {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
+                    };
+             std::vector <std::tuple<double, double>> stdDevs = {
+                    {11.0, 1.3}, {11.0, 4.0}
+                    };
+            
+            std::array<normal_dist, 2> GX;
+            std::array<normal_dist, 2> GY;
+            for (int spIdx = 0; spIdx < 2; spIdx++){
+                GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+                GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+            }
+    #elif WKLOAD == 20
+            using normal_dist   = std::normal_distribution<>;
+            using discrete_dist = std::discrete_distribution<std::size_t>;
+            auto w = discrete_dist{0.50, 0.50};
+
+            std::vector <std::tuple<double, double>> nPoints = {
+                    {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
+                    };
+             std::vector <std::tuple<double, double>> stdDevs = {
+                    {11.0, 1.3}, {11.0, 4.0}
+                    };
+            
+            std::array<normal_dist, 2> GX;
+            std::array<normal_dist, 2> GY;
+            for (int spIdx = 0; spIdx < 2; spIdx++){
+                GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+                GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+            }
+
+    #elif WKLOAD == 21
+            using normal_dist   = std::normal_distribution<>;
+            using discrete_dist = std::discrete_distribution<std::size_t>;
+            auto w = discrete_dist{0.75, 0.25};
+
+            std::vector <std::tuple<double, double>> nPoints = {
+                    {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
+                    };
+             std::vector <std::tuple<double, double>> stdDevs = {
+                    {11.0, 1.3}, {11.0, 4.0}
+                    };
+            
+            std::array<normal_dist, 2> GX;
+            std::array<normal_dist, 2> GY;
+            for (int spIdx = 0; spIdx < 2; spIdx++){
+                GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+                GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+            }
+
     // Log Normal 
     # else
             # if DATASET == 0
@@ -1409,6 +1475,58 @@ void TPManager::initRouterThreads(){
                 double hx = lx + length;
                 double hy = ly + width;
 
+                Rectangle query(lx, hx, ly, hy);
+    #elif WKLOAD == 9
+                auto index = w(genTem); // which hotspot to choose?
+                double lx, ly, hx, hy;
+                if (index == 0) { // this is a point search
+                    lx = GX[index](genTem);
+                    ly = GY[index](genTem);
+                    hx = lx + 0;
+                    hy = ly + 0;
+                }
+                else{
+                    lx = GX[index](genTem);
+                    ly = GY[index](genTem);
+
+                    hx = lx + 4;
+                    hy = ly + 2;
+                }
+                Rectangle query(lx, hx, ly, hy);
+
+    #elif WKLOAD == 20
+                auto index = w(genTem); // which hotspot to choose?
+                double lx, ly, hx, hy;
+                if (index == 0) { // this is a point search
+                    lx = GX[index](genTem);
+                    ly = GY[index](genTem);
+                    hx = lx + 0;
+                    hy = ly + 0;
+                }
+                else{
+                    lx = GX[index](genTem);
+                    ly = GY[index](genTem);
+
+                    hx = lx + 4;
+                    hy = ly + 2;
+                }
+                Rectangle query(lx, hx, ly, hy);
+    #elif WKLOAD == 21
+                auto index = w(genTem); // which hotspot to choose?
+                double lx, ly, hx, hy;
+                if (index == 0) { // this is a point search
+                    lx = GX[index](genTem);
+                    ly = GY[index](genTem);
+                    hx = lx + 0;
+                    hy = ly + 0;
+                }
+                else{
+                    lx = GX[index](genTem);
+                    ly = GY[index](genTem);
+
+                    hx = lx + 4;
+                    hy = ly + 2;
+                }
                 Rectangle query(lx, hx, ly, hy);
     // Log Normal 
     #else

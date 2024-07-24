@@ -30,8 +30,8 @@ void GridManager::register_grid_cells(){
     
     // -------------------------------------------------------------------------------------
     // 1. #instruction, 2. #Accesses (Shadows Data)
-    ifstream ifsLRCoeff1("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
-    ifstream ifsLRCoeff2("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
+    ifstream ifsLRCoeff1("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
+    ifstream ifsLRCoeff2("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
     
     for(auto i = 0; i < this->xPar; i++){
         for (auto j = 0; j < this->yPar; j++){
@@ -68,8 +68,8 @@ void GridManager::register_grid_cells(vector<CPUID> availCPUs){
     
     // -------------------------------------------------------------------------------------
     // 1. #instruction, 2. #Accesses (Shadows Data)
-    ifstream ifsLRCoeff1("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
-    ifstream ifsLRCoeff2("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
+    ifstream ifsLRCoeff1("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
+    ifstream ifsLRCoeff2("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
     
 
     int trk_cid = 0;
@@ -127,8 +127,8 @@ void GridManager::register_grid_cells(string configFile){
     // -------------------------------------------------------------------------------------
     // 1. #instruction, 2. #Accesses (Shadows Data)
     #if USE_MODEL
-    ifstream ifsLRCoeff1("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
-    ifstream ifsLRCoeff2("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
+    ifstream ifsLRCoeff1("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
+    ifstream ifsLRCoeff2("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
     #endif
 
     int trk_cid = 0;

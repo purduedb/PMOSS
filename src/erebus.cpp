@@ -47,61 +47,76 @@ erebus::storage::rtree::RTree* Erebus::build_idx(int insert_strategy, int split_
 	int total_access = 0;
 	#if MACHINE == 0 
 	#if DATASET == 0
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
 	#elif DATASET == 1
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
 		int totPoints = 24000000;
 	#elif DATASET == 2
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
 		int totPoints = 11975098;
 	#else 
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		int totPoints = 90000000;
-	#endif
-	#endif
-	#if MACHINE == 1 
-	#if DATASET == 0
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		int totPoints = 90000000;
-	#elif DATASET == 1
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-		int totPoints = 24000000;
-	#elif DATASET == 2
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-		int totPoints = 11975098;
-	#else 
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		int totPoints = 90000000;
-	#endif
-	#endif
-	#if MACHINE == 2 
-	#if DATASET == 0
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		int totPoints = 90000000;
-	#elif DATASET == 1
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-		int totPoints = 24000000;
-	#elif DATASET == 2
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-		int totPoints = 11975098;
-	#else 
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
 	#endif
 	#endif
 	#if MACHINE == 3 
 	#if DATASET == 0
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
 	#elif DATASET == 1
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
 		int totPoints = 24000000;
 	#elif DATASET == 2
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
 		int totPoints = 11975098;
 	#else 
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
+	#endif
+	#if MACHINE == 1 
+	#if DATASET == 0
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
+	#endif
+	#if MACHINE == 2 
+	#if DATASET == 0
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
+	#endif
+	#if MACHINE == 3 
+	#if DATASET == 0
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
 	#endif
 	#endif
@@ -172,61 +187,76 @@ erebus::storage::qtree::QuadTree* Erebus::build_idx(float min_x, float max_x, fl
 {
 	#if MACHINE == 0 
 	#if DATASET == 0
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
 	#elif DATASET == 1
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
 		int totPoints = 24000000;
 	#elif DATASET == 2
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
 		int totPoints = 11975098;
 	#else 
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		int totPoints = 90000000;
-	#endif
-	#endif
-	#if MACHINE == 1 
-	#if DATASET == 0
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		int totPoints = 90000000;
-	#elif DATASET == 1
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-		int totPoints = 24000000;
-	#elif DATASET == 2
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-		int totPoints = 11975098;
-	#else 
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		int totPoints = 90000000;
-	#endif
-	#endif
-	#if MACHINE == 2 
-	#if DATASET == 0
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		int totPoints = 90000000;
-	#elif DATASET == 1
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-		int totPoints = 24000000;
-	#elif DATASET == 2
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-		int totPoints = 11975098;
-	#else 
-		ifstream ifs("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
 	#endif
 	#endif
 	#if MACHINE == 3 
 	#if DATASET == 0
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
 	#elif DATASET == 1
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
 		int totPoints = 24000000;
 	#elif DATASET == 2
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
 		int totPoints = 11975098;
 	#else 
-		ifstream ifs("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
+	#endif
+	#if MACHINE == 1 
+	#if DATASET == 0
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
+	#endif
+	#if MACHINE == 2 
+	#if DATASET == 0
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/home/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#endif
+	#endif
+	#if MACHINE == 3 
+	#if DATASET == 0
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		int totPoints = 90000000;
+	#elif DATASET == 1
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		int totPoints = 24000000;
+	#elif DATASET == 2
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		int totPoints = 11975098;
+	#else 
+		ifstream ifs("/homes/xxxxxxx/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		int totPoints = 90000000;
 	#endif
 	#endif
@@ -403,6 +433,8 @@ int main()
 	// int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 #if MACHINE == 0
 	int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+#elif MACHINE == 3
+	int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 #elif MACHINE == 1
 	int nWorkers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
 #else
@@ -456,8 +488,9 @@ int main()
 	// glb_gm.register_grid_cells(wrk_cpuids);   // send the cpuids that can be used
 	// From this point onwards repeat
 
-	int cfgIdx = 901;
-	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
+	int cfgIdx = 200001;
+	glb_gm.register_grid_cells("/homes/xxxxxxx/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
+	// glb_gm.register_grid_cells("/homes/xxxxxxx/works/erebus/src/config/l-machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
 	
 
 	glb_gm.printGM();
@@ -470,16 +503,16 @@ int main()
 	
 	// WHICH INDEX?
 	// -------------------------------------------------------------------------------------
-	#if STORAGE == 0
-		glb_gm.idx->NUMAStatus();
-	#elif STORAGE ==1
-		erebus::storage::qtree::NUMAstat ns;
-		glb_gm.idx_quadtree->NUMAStatus(ns);
-		for (int i =0; i < 8;i++){
-			cout << ns.cntIndexNodes[i] << ' ';
-		}
-		cout << endl;	
-	#endif
+	// #if STORAGE == 0
+	// 	glb_gm.idx->NUMAStatus();
+	// #elif STORAGE ==1
+	// 	erebus::storage::qtree::NUMAstat ns;
+	// 	glb_gm.idx_quadtree->NUMAStatus(ns);
+	// 	for (int i =0; i < 8;i++){
+	// 		cout << ns.cntIndexNodes[i] << ' ';
+	// 	}
+	// 	cout << endl;	
+	// #endif
 
 	// -------------------------------------------------------------------------------------
 	
@@ -692,7 +725,7 @@ int main()
 // 	// From this point onwards repeat
 
 // 	int cfgIdx = 1;
-// 	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
+// 	glb_gm.register_grid_cells("/homes/xxxxxxx/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
 	
 	
 	

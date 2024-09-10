@@ -51,6 +51,7 @@ set(SOURCE_FILES
     src/threads/TPM.cc
     src/storage/rtree/rtree.cpp
     src/storage/qtree/qtree.cpp
+    src/storage/btree/btree.cpp
     src/erebus.cpp
     src/utils/Misc.cpp
     src/scheduling/RM.cpp

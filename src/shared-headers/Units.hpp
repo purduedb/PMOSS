@@ -68,3 +68,28 @@ constexpr u64 MSB_MASK = ~(MSB);
 constexpr u64 MSB2 = u64(1) << 62;
 constexpr u64 MSB2_MASK = ~(MSB2);
 // -------------------------------------------------------------------------------------
+// These are btree index framework
+typedef uint64_t keytype;
+typedef std::less<uint64_t> keycomp;
+// These are workload operations
+enum {
+  OP_INSERT,
+  OP_READ,
+  OP_UPSERT,
+  OP_SCAN,
+};
+
+// These are YCSB workloads
+enum {
+  WORKLOAD_A,
+  WORKLOAD_C,
+  WORKLOAD_E,
+};
+
+// These are key types we use for running the benchmark
+enum {
+  RAND_KEY,
+  MONO_KEY,
+  RDTSC_KEY,
+  EMAIL_KEY,
+};

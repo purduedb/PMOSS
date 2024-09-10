@@ -24,17 +24,17 @@ wi = [-1, 1, 2, 0, 0, 2, -1, 0, 2, 0, 2, 2, 1, 2, 1, 2, 1, 2, 1, -1]
 
 def load_edge_index(cGridCell):
     if machine == 0:
-        sample_array = np.loadtxt("/homes/xxxxxxx/works/erebus/learned/kb_quad/" + str(CPUID[0]) + "/query_view.txt")
+        sample_array = np.loadtxt("/homes/yrayhan/works/erebus/learned/kb_quad/" + str(CPUID[0]) + "/query_view.txt")
     else:
-        sample_array = np.loadtxt("/homes/xxxxxxx/works/erebus/learned/kb_icelake_quad/" + str(CPUID[0]) + "/query_view.txt")
+        sample_array = np.loadtxt("/homes/yrayhan/works/erebus/learned/kb_icelake_quad/" + str(CPUID[0]) + "/query_view.txt")
     edge_indexes = [[] for _ in range(sample_array.shape[0])]
     edge_indexes_w = [[] for _ in range(sample_array.shape[0])]
 
     for _ in CPUID:
         if machine == 0:
-            RAW_FILE = "/homes/xxxxxxx/works/erebus/learned/kb_quad/" + str(_) + "/query_view.txt"
+            RAW_FILE = "/homes/yrayhan/works/erebus/learned/kb_quad/" + str(_) + "/query_view.txt"
         else:
-            RAW_FILE = "/homes/xxxxxxx/works/erebus/learned/kb_icelake_quad/" + str(_) + "/query_view.txt"
+            RAW_FILE = "/homes/yrayhan/works/erebus/learned/kb_icelake_quad/" + str(_) + "/query_view.txt"
         raw_array = np.loadtxt(RAW_FILE)
         idx_array = raw_array[:, 0:2]
         qCorr_array = np.reshape(raw_array[:, 2:], (raw_array.shape[0], cGridCell, cGridCell))
@@ -64,9 +64,9 @@ def load_grid_features_ts(cGridCell, nFeatures):
     """
     # => july 16
     if machine == 0:
-        sample_array = np.loadtxt("/homes/xxxxxxx/works/erebus/learned/kb_quad/" + str(CPUID[0]) + "/data_view.txt")
+        sample_array = np.loadtxt("/homes/yrayhan/works/erebus/learned/kb_quad/" + str(CPUID[0]) + "/data_view.txt")
     else:
-        sample_array = np.loadtxt("/homes/xxxxxxx/works/erebus/learned/kb_icelake_quad/" + str(CPUID[0]) + "/data_view.txt")
+        sample_array = np.loadtxt("/homes/yrayhan/works/erebus/learned/kb_icelake_quad/" + str(CPUID[0]) + "/data_view.txt")
         
         
     
@@ -76,9 +76,9 @@ def load_grid_features_ts(cGridCell, nFeatures):
     for _ in CPUID:
         # => july 16
         if machine == 0:
-            RAW_FILE = "/homes/xxxxxxx/works/erebus/learned/kb_quad/" + str(_) + "/data_view.txt"
+            RAW_FILE = "/homes/yrayhan/works/erebus/learned/kb_quad/" + str(_) + "/data_view.txt"
         else:
-            RAW_FILE = "/homes/xxxxxxx/works/erebus/learned/kb_icelake_quad/" + str(_) + "/data_view.txt"
+            RAW_FILE = "/homes/yrayhan/works/erebus/learned/kb_icelake_quad/" + str(_) + "/data_view.txt"
         
         raw_array = np.loadtxt(RAW_FILE)
 
@@ -146,12 +146,12 @@ def load_grid_features_ts(cGridCell, nFeatures):
 
 def load_system_features(cntNUMANode, cntMCChannels):
     if machine == 0:
-        RAW_FILE = "/homes/xxxxxxx/works/erebus/learned/kb_quad/" + str(CPUID[0]) + "/mem-channel_view.txt"
+        RAW_FILE = "/homes/yrayhan/works/erebus/learned/kb_quad/" + str(CPUID[0]) + "/mem-channel_view.txt"
         raw_array = np.loadtxt(RAW_FILE)
         read_channels = raw_array[:, 2:2 + cntMCChannels * cntNUMANode]
         write_channels = raw_array[:, 2 + cntMCChannels * cntNUMANode:]
     else:
-        RAW_FILE = "/homes/xxxxxxx/works/erebus/learned/kb_icelake_quad/" + str(CPUID[0]) + "/mem-channel_view.txt"
+        RAW_FILE = "/homes/yrayhan/works/erebus/learned/kb_icelake_quad/" + str(CPUID[0]) + "/mem-channel_view.txt"
         raw_array = np.loadtxt(RAW_FILE)
         read_channels = raw_array[:, 2:2 + 24]
         write_channels = raw_array[:, 2 + 24:]
@@ -180,9 +180,9 @@ def load_query_throughput():
     idx = []
     for _ in CPUID:
         if machine == 0:
-            RAW_FILE = "/homes/xxxxxxx/works/erebus/learned/kb_quad/" + str(_) + "/query-exec_view.txt"
+            RAW_FILE = "/homes/yrayhan/works/erebus/learned/kb_quad/" + str(_) + "/query-exec_view.txt"
         else:
-            RAW_FILE = "/homes/xxxxxxx/works/erebus/learned/kb_icelake_quad/" + str(_) + "/query-exec_view.txt"
+            RAW_FILE = "/homes/yrayhan/works/erebus/learned/kb_icelake_quad/" + str(_) + "/query-exec_view.txt"
 
         raw_array = np.loadtxt(RAW_FILE, dtype=int)
         bw = np.sum(raw_array[:, 2:], axis=1)
@@ -389,9 +389,9 @@ def load_query_throughput_per_data_cell():
     idx = []
     for _ in CPUID:
         if machine == 0:
-            RAW_FILE = "/homes/xxxxxxx/works/erebus/learned/kb_quad/" + str(_) + "/query-exec_view.txt"
+            RAW_FILE = "/homes/yrayhan/works/erebus/learned/kb_quad/" + str(_) + "/query-exec_view.txt"
         else:
-            RAW_FILE = "/homes/xxxxxxx/works/erebus/learned/kb_icelake_quad/" + str(_) + "/query-exec_view.txt"
+            RAW_FILE = "/homes/yrayhan/works/erebus/learned/kb_icelake_quad/" + str(_) + "/query-exec_view.txt"
         raw_array = np.loadtxt(RAW_FILE, dtype=int)
         bw = raw_array[:, 2:]
         raw_tL.append(bw)
@@ -433,7 +433,7 @@ def load_machine_adjacency():
     edge_indexes = []
     edge_indexes_w = []
 
-    RAW_FILE = "/homes/xxxxxxx/works/erebus/learned/machine_configs/raw_config.txt"
+    RAW_FILE = "/homes/yrayhan/works/erebus/learned/machine_configs/raw_config.txt"
     raw_array = np.loadtxt(RAW_FILE)
     for _ in range(raw_array.shape[0]):
         indexes = np.where(raw_array[_] > 0)
@@ -632,7 +632,7 @@ retrieve_config(lice, 9990)  # 40
 
 def sth(cfg_idx):
     # cfg = np.loadtxt("machine_configs/config_" + str(cfg_idx) + ".txt")[10:]
-    cfg = np.loadtxt("/homes/xxxxxxx/works/erebus/learned/machine_configs/config_" + str(cfg_idx) + ".txt")[10:]
+    cfg = np.loadtxt("/homes/yrayhan/works/erebus/learned/machine_configs/config_" + str(cfg_idx) + ".txt")[10:]
     cfg = np.reshape(cfg, (-1, ))
     unique, counts = np.unique(cfg, return_counts=True)
     d = dict(zip(unique, counts))

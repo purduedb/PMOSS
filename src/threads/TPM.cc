@@ -62,6 +62,8 @@ void TPManager::initWorkerThreads(){
                                                                 rec_pop.top_ - rec_pop.bottom_ 
                                                             );
                         int result = this->gm->idx_quadtree->getObjectsInBound(qBox);
+                    #elif STORAGE == 2  
+                        int result;
                     #endif
                     // -------------------------------------------------------------------------------------
                     
@@ -453,46 +455,48 @@ void TPManager::dumpNCoreSweeperThreads(){
     for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
         #if MACHINE == 0
         #if STORAGE == 0
-            string dirName = "/homes/xxxxxxx/works/erebus/kb/" + std::to_string(key);
+            string dirName = "/homes/yrayhan/works/erebus/kb/" + std::to_string(key);
             mkdir(dirName.c_str(), 0777);
             cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         #elif STORAGE == 1
-            string dirName = "/homes/xxxxxxx/works/erebus/kb_quad/" + std::to_string(key);
+            string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
             mkdir(dirName.c_str(), 0777);
             cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         #endif
         #elif MACHINE == 1
         #if STORAGE == 0
-            string dirName = "/home/xxxxxxx/works/erebus/home/kb/" + std::to_string(key);
+            string dirName = "/home/yrayhan/works/erebus/home/kb/" + std::to_string(key);
             mkdir(dirName.c_str(), 0777);
             cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         #elif STORAGE == 1
-            string dirName = "/home/xxxxxxx/works/erebus/kb_quad/" + std::to_string(key);
+            string dirName = "/home/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
             mkdir(dirName.c_str(), 0777);
             cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         #endif
         #elif MACHINE == 2
         #if STORAGE == 0
-            string dirName = "/home/xxxxxxx/works/erebus/kb_1S/" + std::to_string(key);
+            string dirName = "/home/yrayhan/works/erebus/kb_1S/" + std::to_string(key);
             mkdir(dirName.c_str(), 0777);
             cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         #elif STORAGE == 1
-            string dirName = "/home/xxxxxxx/works/erebus/kb_quad_1S/" + std::to_string(key);
+            string dirName = "/home/yrayhan/works/erebus/kb_quad_1S/" + std::to_string(key);
             mkdir(dirName.c_str(), 0777);
             cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         #endif
         #elif MACHINE == 3
         #if STORAGE == 0
-            string dirName = "/homes/xxxxxxx/works/erebus/kb_4S/" + std::to_string(key);
+            string dirName = "/homes/yrayhan/works/erebus/kb_4S/" + std::to_string(key);
             mkdir(dirName.c_str(), 0777);
             cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         #elif STORAGE == 1
-            string dirName = "/homes/xxxxxxx/works/erebus/kb_quad/" + std::to_string(key);
+            string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
             mkdir(dirName.c_str(), 0777);
             cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         #endif
         #endif
         
+        // this needs to be revisited
+        string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
         // -------------------------------------------------------------------------------------
         ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
         for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
@@ -599,7 +603,7 @@ void TPManager::dumpGridHWCounters(int tID){
         //     continue;
         // }
         // -------------------------------------------------------------------------------------
-        ofstream input_qstamp("/homes/xxxxxxx/works/erebus/src/qstamp_features/g" + std::to_string(gIdx) + ".txt", std::ifstream::out);
+        ofstream input_qstamp("/homes/yrayhan/works/erebus/src/qstamp_features/g" + std::to_string(gIdx) + ".txt", std::ifstream::out);
         // -------------------------------------------------------------------------------------
         // Find the appropriate thread
         int cpuid = this->gm->glbGridCell[gIdx].idCPU;
@@ -629,7 +633,7 @@ void TPManager::dumpGridHWCounters(int tID){
 void TPManager::dumpGridWorkerThreadCounters(int tID){
     cout << "==========================DUMPING STUFF=======================" << endl;
     for (const auto & [ key, value ] : glb_worker_thrds) {
-        ofstream input_qstamp("/homes/xxxxxxx/works/erebus/src/qstamp_features_th/t" + std::to_string(key) + ".csv", std::ifstream::app);
+        ofstream input_qstamp("/homes/yrayhan/works/erebus/src/qstamp_features_th/t" + std::to_string(key) + ".csv", std::ifstream::app);
         
         for (auto g = 0; g < 1000; g++){
             int sHist = glb_worker_thrds[key].shadowDataDist[g].perf_stats.size();
@@ -840,7 +844,7 @@ void TPManager::terminateTestWorkerThreads(){
 
 void TPManager::dumpTestGridHWCounters(vector<CPUID> cpuIds){
     // -------------------------------------------------------------------------------------
-    ofstream input_qstamp("/homes/xxxxxxx/works/erebus/src/interference/new/mice24_log.txt", std::ifstream::app);
+    ofstream input_qstamp("/homes/yrayhan/works/erebus/src/interference/new/mice24_log.txt", std::ifstream::app);
     // -------------------------------------------------------------------------------------
     for(auto i = 0; i < cpuIds.size(); i++){
         // Find the appropriate thread

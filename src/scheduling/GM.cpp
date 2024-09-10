@@ -7,17 +7,20 @@ namespace erebus
 namespace dm
 {
 GridManager::GridManager(int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace){
-    this->xPar = xPar;
-    this->yPar = yPar;
-    this->minXSpace = minXSpace;
-    this->maxXSpace = maxXSpace;
-    this->minYSpace = minYSpace;
-    this->maxYSpace = maxYSpace;
-    
-    this->nGridCells = this->xPar * this->yPar;
-    this->idx = nullptr;
+	this->xPar = xPar;
+	this->yPar = yPar;
+	this->minXSpace = minXSpace;
+	this->maxXSpace = maxXSpace;
+	this->minYSpace = minYSpace;
+	this->maxYSpace = maxYSpace;
+#if MULTIDIM == 1
+	this->nGridCells = this->xPar * this->yPar;
+#else MULTIDIM == 0
+	this->nGridCells = this->xPar;
+#endif 
+	this->idx = nullptr;
 
-    for(auto i = 0; i < MAX_GRID_CELL; i++) this->DataDist.push_back(0);
+	for(auto i = 0; i < MAX_GRID_CELL; i++) this->DataDist.push_back(0);
 }
 
 void GridManager::register_grid_cells(){
@@ -30,8 +33,8 @@ void GridManager::register_grid_cells(){
     
     // -------------------------------------------------------------------------------------
     // 1. #instruction, 2. #Accesses (Shadows Data)
-    ifstream ifsLRCoeff1("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
-    ifstream ifsLRCoeff2("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
+    ifstream ifsLRCoeff1("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
+    ifstream ifsLRCoeff2("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
     
     for(auto i = 0; i < this->xPar; i++){
         for (auto j = 0; j < this->yPar; j++){
@@ -68,8 +71,8 @@ void GridManager::register_grid_cells(vector<CPUID> availCPUs){
     
     // -------------------------------------------------------------------------------------
     // 1. #instruction, 2. #Accesses (Shadows Data)
-    ifstream ifsLRCoeff1("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
-    ifstream ifsLRCoeff2("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
+    ifstream ifsLRCoeff1("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
+    ifstream ifsLRCoeff2("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
     
 
     int trk_cid = 0;
@@ -100,83 +103,79 @@ void GridManager::register_grid_cells(vector<CPUID> availCPUs){
 }
 
 void GridManager::register_grid_cells(string configFile){
-    ifstream ifs(configFile, std::ifstream::in);
+	ifstream ifs(configFile, std::ifstream::in);
 	vector<NUMAID> numaConfig; 
-    vector<CPUID> cpuConfig;
+	vector<CPUID> cpuConfig;
     
-    for (int i = 0; i < nGridCells; i++) {
+  for (int i = 0; i < nGridCells; i++) {
 		NUMAID nID;
 		ifs >> nID;
 		numaConfig.push_back(nID);
-        // cout << nID << " ";
+		// cout << nID << " ";
 	}
-    // cout << endl;
-    for (int i = 0; i < nGridCells; i++) {
+  // cout << endl;
+  for (int i = 0; i < nGridCells; i++) {
 		CPUID cpuID;
 		ifs >> cpuID;
 		cpuConfig.push_back(cpuID);
-        // cout << cpuID << " ";
+    // cout << cpuID << " ";
 	}
-    // cout << endl;
-
-    std::vector<double> xList = utils::linspace<double>(this->minXSpace, this->maxXSpace, this->xPar+1);
-    std::vector<double> yList = utils::linspace<double>(this->minYSpace, this->maxYSpace, this->yPar+1);
-    double delX = xList[1] - xList[0];
-    double delY = yList[1] - yList[0];
     
-    // -------------------------------------------------------------------------------------
-    // 1. #instruction, 2. #Accesses (Shadows Data)
-    #if USE_MODEL
-    ifstream ifsLRCoeff1("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
-    ifstream ifsLRCoeff2("/homes/xxxxxxx/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
-    #endif
+	std::vector<double> xList = utils::linspace<double>(this->minXSpace, this->maxXSpace, this->xPar+1);
+	std::vector<double> yList = utils::linspace<double>(this->minYSpace, this->maxYSpace, this->yPar+1);
+	double delX = xList[1] - xList[0];
+	double delY = yList[1] - yList[0];
+	
+	// -------------------------------------------------------------------------------------
+	
+	int trk_cid = 0;
+  
+	
+	for(auto i = 0; i < this->xPar; i++){
+		for (auto j = 0; j < this->yPar; j++){
+			this->glbGridCell[trk_cid].cid = trk_cid;
+			
+			this->glbGridCell[trk_cid].lx = xList[i];
+			this->glbGridCell[trk_cid].ly = yList[j];
+			this->glbGridCell[trk_cid].hx = xList[i]+delX;
+			this->glbGridCell[trk_cid].hy = yList[j]+delY;
+			
+			
+			this->glbGridCell[trk_cid].idNUMA = numaConfig[trk_cid];
+			this->glbGridCell[trk_cid].idCPU = cpuConfig[trk_cid]; 
+			
+			// Reallocate the index nodes according to the configuration
+	#if LINUX != 0
+		#if STORAGE == 0
+			MigrateNodes(this->idx, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
+		#elif STORAGE == 1
+			// cout << sizeof(erebus::storage::qtree::QuadTree) << endl;
+			// cout << sizeof(erebus::storage::rtree::TreeNode) << endl;
+			MigrateNodesQuad(this->idx_quadtree, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
+			// erebus::storage::qtree::NUMAstat ns;
+			// this->idx_quadtree->NUMAStatus(ns);
+			// for (int i =0; i < 8; i++){
+			//     cout << ns.cntIndexNodes[i] << ' ';
+			// }
+			// cout << endl;
+			#elif STORAGE == 2
+				// this->idx_btree->migrate(xList[i], )
+				// INVOKE THE MIGRATE FUNCTION HERE
+				// The current implementation finds the first key then 
+				// =====================================
+				// =====================================
+				// =====================================
+				// =====================================
+				// =====================================
+				// =====================================
+		#endif
+	#endif
+			// -------------------------------------------------------------------------------------
 
-    int trk_cid = 0;
-    
-    for(auto i = 0; i < this->xPar; i++){
-        for (auto j = 0; j < this->yPar; j++){
-            this->glbGridCell[trk_cid].cid = trk_cid;
-            
-            this->glbGridCell[trk_cid].lx = xList[i];
-            this->glbGridCell[trk_cid].ly = yList[j];
-            this->glbGridCell[trk_cid].hx = xList[i]+delX;
-            this->glbGridCell[trk_cid].hy = yList[j]+delY;
-            
-            
-            this->glbGridCell[trk_cid].idNUMA = numaConfig[trk_cid];
-            this->glbGridCell[trk_cid].idCPU = cpuConfig[trk_cid]; 
-            
-            // Use this to allocate pages 
-            // WHICH INDEX?
-            // -------------------------------------------------------------------------------------
-            #if LINUX != 0
-            #if STORAGE == 0
-                MigrateNodes(this->idx, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
-            #elif STORAGE == 1
-                // cout << sizeof(erebus::storage::qtree::QuadTree) << endl;
-                // cout << sizeof(erebus::storage::rtree::TreeNode) << endl;
-                MigrateNodesQuad(this->idx_quadtree, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
-                // erebus::storage::qtree::NUMAstat ns;
-                // this->idx_quadtree->NUMAStatus(ns);
-                // for (int i =0; i < 8; i++){
-                //     cout << ns.cntIndexNodes[i] << ' ';
-                // }
-                // cout << endl;
-            #endif
-            #endif
-            // -------------------------------------------------------------------------------------
-
-            // -------------------------------------------------------------------------------------
-            #if USE_MODEL
-            for(auto pI = 0; pI < STAMP_LR_PARAM; pI++){
-                ifsLRCoeff1 >> this->glbGridCell[trk_cid].lRegCoeff[0][pI];
-                ifsLRCoeff2 >> this->glbGridCell[trk_cid].lRegCoeff[1][pI];
-            }
-            #endif
-
-            trk_cid++; 
-        }
-    }
+			trk_cid++; 
+		}
+	}
+	
 }
 
 
@@ -191,6 +190,10 @@ void GridManager::register_index(erebus::storage::rtree::RTree * idx)
 void GridManager::register_index(erebus::storage::qtree::QuadTree * idx_quadtree)
 {
     this->idx_quadtree = idx_quadtree;
+}
+
+void GridManager::register_index(erebus::storage::BTreeOLCIndex<keytype, keycomp> *idx_btree){
+    this->idx_btree = idx_btree;
 }
 
 void GridManager::printGM(){

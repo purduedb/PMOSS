@@ -3,12 +3,15 @@
 #include <fstream>
 // -------------------------------------------------------------------------------------
 #include "utils/Misc.hpp"
+#include "storage/index.h"  // indirectly includes btree
 #include "storage/rtree/rtree.h"
-#include "storage/qtree/qtree.h"  // inserted new
+#include "storage/qtree/qtree.h"  
 // -------------------------------------------------------------------------------------
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
+#define INIT_LIMIT 50000000   // this is for btree index building
+#define LIMIT 10000000  // this is for btree workload
 #define MAX_GRID_CELL 100
 #define STAMP_LR_PARAM 4  // For now think of the query MBR as only output
 #define MAX_XPAR 10
@@ -16,13 +19,14 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 # define USE_MODEL 0 
 // -------------------------------------------------------------------------------------
-#define STORAGE 0  // RTree(0), QTree(1), KD-Tree
-#define DATASET 1  // OSM(0), GEOLIFE(1), BMOD02(2)
+#define MULTIDIM 0 
+#define STORAGE 2  // RTree(0), QTree(1), BTree
+#define DATASET 0  // OSM(0), GEOLIFE(1), BMOD02(2)
 #define MACHINE 0 // 0 (BIGDATA), 1(DBSERVER)
 #define LINUX 3 // 0 (SE 0, SE-NUMA 1, SN, NUMA 2, OURS, 3)
 // -------------------------------------------------------------------------------------
-#define WKLOAD 21
-#define CONFIG 200001
+#define WKLOAD 0
+#define CONFIG 500001
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 
@@ -44,6 +48,7 @@ class GridManager
     // -------------------------------------------------------------------------------------
     erebus::storage::rtree::RTree *idx;
     erebus::storage::qtree::QuadTree *idx_quadtree;
+    erebus::storage::BTreeOLCIndex<keytype, keycomp> *idx_btree;
     // -------------------------------------------------------------------------------------
     std::unordered_map<u64, std::thread*> CPUCoreToThread;
     std::unordered_multimap<u64, CPUID> NUMAToWorkerCPUs;
@@ -88,6 +93,7 @@ class GridManager
     void register_grid_cells(string configFile);
     void register_index(erebus::storage::rtree::RTree *idx);
     void register_index(erebus::storage::qtree::QuadTree *idx_quadtree);
+    void register_index(erebus::storage::BTreeOLCIndex<keytype, keycomp> *idx_btree);
     
     void printGM();
     void printQueryDistPushed();

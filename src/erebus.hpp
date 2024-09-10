@@ -15,19 +15,21 @@ class Erebus
 {
   public:
     erebus::storage::rtree::RTree *idx;
-    erebus::storage::qtree::QuadTree *idx_qtree;  // everywhere where is this->idx needs to be replaced by this
-    
+    erebus::storage::qtree::QuadTree *idx_qtree;
+    erebus::storage::BTreeOLCIndex<keytype, keycomp> *idx_btree;
+
     erebus::dm::GridManager *glb_gm;
     erebus::scheduler::ResourceManager *glb_rm;
     erebus::tp::TPManager *glb_tpool;
+    
     // -------------------------------------------------------------------------------------
-    Erebus(erebus::storage::rtree::RTree *idx, erebus::dm::GridManager *gm, erebus::scheduler::ResourceManager *rm, erebus::tp::TPManager *tp);
-    Erebus(erebus::storage::rtree::RTree *idx, erebus::dm::GridManager *gm, erebus::scheduler::ResourceManager *rm);
     Erebus(erebus::dm::GridManager *gm, erebus::scheduler::ResourceManager *rm);
     // ~Erebus();
+    
     // -------------------------------------------------------------------------------------
     erebus::storage::rtree::RTree* build_idx(int insert_strategy, int split_strategy);
     erebus::storage::qtree::QuadTree* build_idx(float min_x, float max_x, float min_y, float max_y);
+    erebus::storage::BTreeOLCIndex<keytype, keycomp>* build_btree(const uint64_t wl, const uint64_t kt);
     void register_threadpool(erebus::tp::TPManager *tp);
 };
 

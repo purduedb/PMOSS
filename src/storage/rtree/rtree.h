@@ -72,7 +72,6 @@ struct Point{
 };
 
 
-
 class Rectangle{
     public:
         double left_;

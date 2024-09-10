@@ -2,8 +2,11 @@ CMakeLists.txt
 build/*
 .vscode/*
 src/dataset/*
+src/workloads/*
 src/interference/*
 kb/*
 kb_quad/*
+kb_b/*
 src/config/*
 src/profiling/PCMMem.cpp
+learned/*

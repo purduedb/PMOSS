@@ -260,8 +260,7 @@ erebus::storage::qtree::QuadTree* Erebus::build_idx(float min_x, float max_x, fl
 
 erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint64_t wl, const uint64_t kt){
 	this->idx_btree = new erebus::storage::BTreeOLCIndex<keytype, keycomp>(kt);
-	
-	cout << "====== inside b tree function" << endl;
+
 	std::vector<keytype> init_keys;
 	std::vector<keytype> keys;
 	std::vector<uint64_t> values;
@@ -308,7 +307,6 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
     exit(1);
   }
 
-	cout << "====== loading the index data files" << endl;
   std::ifstream infile_load(init_file);
 
   std::string op;
@@ -365,9 +363,9 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	cout << total_num_key << endl;
 	for(size_t i = 0; i < total_num_key; i++) {
 		this->idx_btree->insert(init_keys[i], values[i]);
-		// cout << init_keys[i] << " " << values[i] << endl;
   }
 
+/* 
   // If we also execute transaction then open the 
   // transacton file here
   std::ifstream infile_txn(txn_file);
@@ -447,7 +445,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 		}
 		counter++;
 	}
-
+	*/
 	return this->idx_btree;
 
 
@@ -462,29 +460,15 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 
 int main()
 {	
-	
-	/**
-	 * These are my cores that I will be using, so they should not change.
-	*/
 	double min_x, max_x, min_y, max_y;
-#if DATASET == 0
-	// ------------------------------US-NORTHEAST--------------------------------------------
-	min_x = -83.478714;
-	max_x = -65.87531;
-	min_y = 38.78981;
-	max_y = 47.491634;
-#elif DATASET == 1
-	// ---------------------------GEOLIFE---------------------------------------------------
-	min_x = -179.9695933;
-	max_x = 179.9969416;
-	min_y = 1.044024;
-	max_y = 64.751993; // 200.166666666667
-#elif DATASET == 2
-	// ---------------------------BMOD02---------------------------------------------------
-	min_x = 1308;
-	max_x = 12785;
-	min_y = 1308;
-	max_y = 12785; 
+#if DATASET == 0  // US-NORTHEAST
+	min_x = -83.478714; max_x = -65.87531; min_y = 38.78981; max_y = 47.491634;
+#elif DATASET == 1  // GEOLIFE
+	min_x = -179.9695933; max_x = 179.9969416; min_y = 1.044024; max_y = 64.751993; // 200.166666666667
+#elif DATASET == 2  // BMOD02
+	min_x = 1308; max_x = 12785; min_y = 1308; max_y = 12785; 
+#elif DATASET == 3 // YCSB
+	min_x = 330885895843; max_x = 9223370062054235050; min_y = -1; max_y = -1; 
 #endif
 
 #if MULTIDIM == 1
@@ -494,11 +478,11 @@ int main()
 #endif
 
 	// -------------------------------------------------------------------------------------
-	std::vector<CPUID> mm_cpuids;
-	std::vector<CPUID> wrk_cpuids;
-	std::vector<CPUID> rt_cpuids;
+	std::vector<CPUID> mm_cpuids;  		// 
+	std::vector<CPUID> wrk_cpuids;  	// worker cores
+	std::vector<CPUID> rt_cpuids;  		// router cores
 	std::vector<CPUID> ss_cpuids;
-	std::vector<CPUID> ncore_cpuids;
+	std::vector<CPUID> ncore_cpuids;	//
 	
 	int nNUMANodes = numa_num_configured_nodes();
 	int nCPUCores = numa_num_possible_cpus();
@@ -546,15 +530,10 @@ int main()
 		}
 	}
 	
-
-	/**
-	 * 
-	 * */	
 	
-	erebus::scheduler::ResourceManager glb_rm;  // dummy, does not work at this point
-	
+	erebus::scheduler::ResourceManager glb_rm;  
 	erebus::Erebus db(&glb_gm, &glb_rm);
-	// WHICH INDEX?
+	
 	// -------------------------------------------------------------------------------------
 	#if STORAGE == 0
 		db.build_idx(1, 1);
@@ -572,16 +551,19 @@ int main()
 
 	int cfgIdx = 500001;
 	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
-	// glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/l-machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
+#if STORAGE == 2
+	db.idx_btree->count_numa_division(min_x, max_x, 100000);
+#endif
 	
 
+	
 	glb_gm.printGM();
-	glb_gm.printQueryDistPushed();
-	// #if STORAGE == 0
-	// 	glb_gm.buildDataDistIdx();
-	// #endif
+	// glb_gm.printQueryDistPushed();
+	
+	
+	// glb_gm.buildDataDistIdx();
 	// glb_gm.printDataDistIdx();
-	glb_gm.printDataDistIdxT();
+	// glb_gm.printDataDistIdxT();
 	
 	// WHICH INDEX?
 	// -------------------------------------------------------------------------------------
@@ -602,11 +584,11 @@ int main()
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 	
 	glb_tpool.initWorkerThreads();
-	glb_tpool.initRouterThreads();
+	glb_tpool.initRouterThreads(min_x, max_x, min_y, max_y);
 	glb_tpool.initSysSweeperThreads();
 	glb_tpool.initMegaMindThreads();
 	glb_tpool.initNCoreSweeperThreads();
-		
+	
 	std::this_thread::sleep_for(std::chrono::milliseconds(420000));  // 1000000 previously
 	glb_tpool.terminateNCoreSweeperThreads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));

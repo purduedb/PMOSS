@@ -21,110 +21,93 @@ TPManager::TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID>
 void TPManager::initWorkerThreads(){
     // -------------------------------------------------------------------------------------
     // initialize worker_threads
-    for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
-        glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this]{
-            erebus::utils::PinThisThread(worker_cpuids[i]);
-            glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
-            
-            PerfEvent e;
-            static int cnt = 0;
+	for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
+		glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this]{
+			erebus::utils::PinThisThread(worker_cpuids[i]);
+			glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
+			
+			PerfEvent e;
+			static int cnt = 0;
 
-            while (1) {  
-                if(!glb_worker_thrds[worker_cpuids[i]].running) {
-                    // glb_worker_thrds[worker_cpuids[i]].th.detach();
-                    break;
-                }
-                
-                
-                Rectangle rec_pop;
-                int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
-                
-                if (size_jobqueue != 0){
-                    glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
-                    /**
-                     * TODO: If we have stats for each query, some of the stats value are missed,
-                     * actually a lot of the stats value are missed, hence the issue
-                     * Added the if condition
-                    */
-                    // if (cnt % PERF_STAT_COLLECTION_INTERVAL == 0) {
-                    //     e.startCounters();
-                    // }
-                    e.startCounters();
-                    // WHICH INDEX?
-                    // -------------------------------------------------------------------------------------
-                    #if STORAGE == 0
-                        int result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
-                    #elif STORAGE == 1
-                        erebus::storage::qtree::Rect qBox = erebus::storage::qtree::Rect (
-                                                                rec_pop.left_,
-                                                                rec_pop.bottom_,
-                                                                rec_pop.right_ - rec_pop.left_,
-                                                                rec_pop.top_ - rec_pop.bottom_ 
-                                                            );
-                        int result = this->gm->idx_quadtree->getObjectsInBound(qBox);
-                    #elif STORAGE == 2  
-                        int result;
-                    #endif
-                    // -------------------------------------------------------------------------------------
-                    
-                    /**
-                     * TODO: If we have stats for each query, some of the stats value are missed,
-                     * actually a lot of the stats value are missed, hence the issue
-                     * Added the if condition
-                    */
-                    
-                    // cnt +=1;
-                    
-                    // if (cnt % PERF_STAT_COLLECTION_INTERVAL == (PERF_STAT_COLLECTION_INTERVAL-1)){
-                    e.stopCounters();
-                    
-                    PerfCounter perf_counter;
-                    for(auto j=0; j < e.events.size(); j++){
-                        if (isnan(e.events[j].readCounter()))
-                            perf_counter.raw_counter_values[j] = 0;
-                        else
-                            perf_counter.raw_counter_values[j] = e.events[j].readCounter();
-                    }
-                        
-                        
-                    perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
-                    perf_counter.rscan_query = rec_pop;
-                    perf_counter.result = result;
-                    perf_counter.gIdx = rec_pop.aGrid;
-                        
-                    // You push this info to all the grids this incomoig query intersect
-                    // for(auto qlog = 0; qlog < rec_pop.validGridIds.size(); qlog++){
-                    //     int gridId = rec_pop.validGridIds[qlog];
-                    //     glb_worker_thrds[worker_cpuids[i]].shadowDataDist[gridId].perf_stats.push_back(perf_counter);
-                    // }
-                        
-                        
-                    // glb_worker_thrds[worker_cpuids[i]].shadowDataDist[rec_pop.aGrid].perf_stats.push_back(perf_counter);
-                    glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
-                    // cnt = 0;
-                    
+			while (1) {  
+				if(!glb_worker_thrds[worker_cpuids[i]].running) {
+					// glb_worker_thrds[worker_cpuids[i]].th.detach();
+					break;
+				}
+					
+					
+			Rectangle rec_pop;
+			int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
+					
+			if (size_jobqueue != 0){
+				glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
+				// if (cnt % PERF_STAT_COLLECTION_INTERVAL == 0) {
+				//     e.startCounters();
+				// }
+				e.startCounters();
+					
+					// -------------------------------------------------------------------------------------
+			#if STORAGE == 0
+				int result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
+			#elif STORAGE == 1
+				erebus::storage::qtree::Rect qBox = erebus::storage::qtree::Rect ( rec_pop.left_,
+                        rec_pop.bottom_,
+                        rec_pop.right_ - rec_pop.left_,
+                        rec_pop.top_ - rec_pop.bottom_ 
+                );
+				int result = this->gm->idx_quadtree->getObjectsInBound(qBox);
+			#elif STORAGE == 2  
+				int result = this->gm->idx_btree->scan(static_cast<int>(rec_pop.left_), static_cast<int>(rec_pop.right_));
+			#endif
+					
+				// cnt +=1;
+				// if (cnt % PERF_STAT_COLLECTION_INTERVAL == (PERF_STAT_COLLECTION_INTERVAL-1)){
+				e.stopCounters();
+					
+				PerfCounter perf_counter;
+				for(auto j=0; j < e.events.size(); j++){
+					if (isnan(e.events[j].readCounter())) perf_counter.raw_counter_values[j] = 0;
+					else perf_counter.raw_counter_values[j] = e.events[j].readCounter();
+				}
+							
+				perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
+				perf_counter.rscan_query = rec_pop;
+				perf_counter.result = result;
+				perf_counter.gIdx = rec_pop.aGrid;
+							
+				// You push this info to all the grids this incomoig query intersect
+				// for(auto qlog = 0; qlog < rec_pop.validGridIds.size(); qlog++){
+				//     int gridId = rec_pop.validGridIds[qlog];
+				//     glb_worker_thrds[worker_cpuids[i]].shadowDataDist[gridId].perf_stats.push_back(perf_counter);
+				// }
+						
+						
+				// glb_worker_thrds[worker_cpuids[i]].shadowDataDist[rec_pop.aGrid].perf_stats.push_back(perf_counter);
+				glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
+				// cnt = 0;
+				
 
-                    
-                    /**
-                     * TODO: You should be updating the outstanding queries 
-                    */
-                    gm->freqQueryDistCompleted[rec_pop.aGrid] += 1;
-                    
-                    auto itQExecMice = glb_worker_thrds[worker_cpuids[i]].qExecutedMice.find(rec_pop.aGrid);
-                    if(itQExecMice != glb_worker_thrds[worker_cpuids[i]].qExecutedMice.end()) 
-                        itQExecMice->second += 1;
-                    else 
-                        glb_worker_thrds[worker_cpuids[i]].qExecutedMice.insert({rec_pop.aGrid, 1});
-            
-                    // cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
-                    // std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                }
-                
-            }
-            
-            // glb_worker_thrds[worker_cpuids[i]].th.detach();
-        });
-    }
+					
+				/**
+				 * TODO: You should be updating the outstanding queries 
+				*/
+				gm->freqQueryDistCompleted[rec_pop.aGrid] += 1;
+				
+				auto itQExecMice = glb_worker_thrds[worker_cpuids[i]].qExecutedMice.find(rec_pop.aGrid);
+				if(itQExecMice != glb_worker_thrds[worker_cpuids[i]].qExecutedMice.end()) 
+						itQExecMice->second += 1;
+				else 
+						glb_worker_thrds[worker_cpuids[i]].qExecutedMice.insert({rec_pop.aGrid, 1});
+
+				// cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
+				// std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			}
+				
+		}
+				
+				// glb_worker_thrds[worker_cpuids[i]].th.detach();
+		});
+	}
 }
 
 void TPManager::initMegaMindThreads(){
@@ -453,50 +436,63 @@ void TPManager::initNCoreSweeperThreads(){
 void TPManager::dumpNCoreSweeperThreads(){
     cout << "==========================DUMPING Core Sweeper Threads=======================" << endl;
     for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
-        #if MACHINE == 0
-        #if STORAGE == 0
-            string dirName = "/homes/yrayhan/works/erebus/kb/" + std::to_string(key);
-            mkdir(dirName.c_str(), 0777);
-            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-        #elif STORAGE == 1
-            string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
-            mkdir(dirName.c_str(), 0777);
-            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-        #endif
-        #elif MACHINE == 1
-        #if STORAGE == 0
-            string dirName = "/home/yrayhan/works/erebus/home/kb/" + std::to_string(key);
-            mkdir(dirName.c_str(), 0777);
-            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-        #elif STORAGE == 1
-            string dirName = "/home/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
-            mkdir(dirName.c_str(), 0777);
-            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-        #endif
-        #elif MACHINE == 2
-        #if STORAGE == 0
-            string dirName = "/home/yrayhan/works/erebus/kb_1S/" + std::to_string(key);
-            mkdir(dirName.c_str(), 0777);
-            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-        #elif STORAGE == 1
-            string dirName = "/home/yrayhan/works/erebus/kb_quad_1S/" + std::to_string(key);
-            mkdir(dirName.c_str(), 0777);
-            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-        #endif
-        #elif MACHINE == 3
-        #if STORAGE == 0
-            string dirName = "/homes/yrayhan/works/erebus/kb_4S/" + std::to_string(key);
-            mkdir(dirName.c_str(), 0777);
-            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-        #elif STORAGE == 1
-            string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
-            mkdir(dirName.c_str(), 0777);
-            cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-        #endif
-        #endif
-        
-        // this needs to be revisited
-        string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
+#if MACHINE == 0
+  #if STORAGE == 0
+      string dirName = "/homes/yrayhan/works/erebus/kb/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #elif STORAGE == 1
+      string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #elif STORAGE == 2
+      string dirName = "/homes/yrayhan/works/erebus/kb_b/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #endif
+#elif MACHINE == 1
+  #if STORAGE == 0
+      string dirName = "/home/yrayhan/works/erebus/home/kb/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #elif STORAGE == 1
+      string dirName = "/home/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #elif STORAGE == 2
+      string dirName = "/home/yrayhan/works/erebus/kb_b/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #endif
+#elif MACHINE == 2
+  #if STORAGE == 0
+      string dirName = "/home/yrayhan/works/erebus/kb_1S/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #elif STORAGE == 1
+      string dirName = "/home/yrayhan/works/erebus/kb_quad_1S/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #elif STORAGE == 2
+      string dirName = "/home/yrayhan/works/erebus/kb_b/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #endif
+#elif MACHINE == 3
+  #if STORAGE == 0
+      string dirName = "/homes/yrayhan/works/erebus/kb_4S/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #elif STORAGE == 1
+      string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #elif STORAGE == 2
+      string dirName = "/homes/yrayhan/works/erebus/kb_b/" + std::to_string(key);
+      mkdir(dirName.c_str(), 0777);
+      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  #endif
+#endif
         // -------------------------------------------------------------------------------------
         ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
         for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
@@ -940,797 +936,731 @@ TPManager::~TPManager(){
     }
 }
 
-void TPManager::initRouterThreads(){
+void TPManager::initRouterThreads(double min_x, double max_x, double min_y, double max_y){
+  for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {
+    glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, min_x, max_x, min_y, max_y] {
+    erebus::utils::PinThisThread(router_cpuids[i]);
+    glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
+              
     // -------------------------------------------------------------------------------------
-    // initialize router threads
-    for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {
-        glb_router_thrds[router_cpuids[i]].th = std::thread([i, this] {
-            erebus::utils::PinThisThread(router_cpuids[i]);
-            glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
-            
-            // -------------------------------------------------------------------------------------
-            // Set the seed and random engine
-            std::random_device rd;      // Seed the engine with a random value from the hardware
-            std::mt19937 genTem(rd());
-            std::mt19937 gen(rd());     // Mersenne Twister 19937 generator
-            // std::mt19937 gen(12345); // To make the query workload more deterministic
-            
-            // -------------------------------------------------------------------------------------
-            // Dataset Boundary
-            double min_x, max_x, min_y, max_y;
-            double max_length, max_width;
-            #if DATASET == 0
-                // ------------------------US-NORTHEAST----------------------------------------------------
-                min_x = -83.478714;
-                max_x = -65.87531;
-                min_y = 38.78981;
-                max_y = 47.491634;
-                max_length = 6;  // Previously: 6
-                max_width = 6;
-            #elif DATASET == 1 
-                // ------------------------GEOLITE----------------------------------------------------
-                min_x = -179.9695933;
-                max_x = 179.9969416;
-                min_y = 1.044024;
-                max_y = 64.751993; // 400.166666666667;
-                max_length = 30;  // Previously: 6
-                max_width = 30;
-            # elif DATASET == 2
-                // ------------------------BMOD02----------------------------------------------------
-                min_x = 1308;
-                max_x = 12785;
-                min_y = 1308;
-                max_y = 12785; 
-                max_length = 3000;  // Previously: 6
-                max_width = 3000;
-            #else
-                // ------------------------US-NORTHEAST----------------------------------------------------
-                min_x = -83.478714;
-                max_x = -65.87531;
-                min_y = 38.78981;
-                max_y = 47.491634;
-                max_length = 6;  // Previously: 6
-                max_width = 6;
-            # endif
-
-    # if WKLOAD == 0
-            std::uniform_real_distribution<> dlx(min_x, max_x);
-            std::uniform_real_distribution<> dly(min_y, max_y);
-            
-            // 0 means it will be a point query, however the point may not exist in the dataset
-            std::uniform_real_distribution<> dLength(1, max_length);
-            std::uniform_real_distribution<> dWidth(1, max_width);
-    // Normal workload, where the peak is at the average
-    # elif WKLOAD == 1
-            // -------------------------------------------------------------------------------------
-            # if DATASET == 0
-                // -------------------------------US-NORTHEAST---------------------------------------
-                double avg_x = (max_x + min_x) / 2;
-                double avg_y = (max_y + min_y) / 2;
-
-                double dev_x = (max_x - min_x) / 6;
-                double dev_y = (max_y - min_y) / 6;
-
-                // double dev_x = 1.76 / 2;
-                // double dev_y = 0.87 / 2;
-            # elif DATASET == 1
-                // -------------------------------GEOLITE---------------------------------------
-                double avg_x = 130;
-                double avg_y = 30;
-                
-                double dev_x = 7;
-                double dev_y = 7;
-                // -------------------------------------------------------------------------------------
-            #endif
-
-            std::normal_distribution<double> dlx(avg_x, dev_x);
-            std::normal_distribution<double> dly(avg_y, dev_y);
-
-            std::uniform_real_distribution<> dLength(1, max_length);
-            std::uniform_real_distribution<> dWidth(1, max_width);
-                
-    // Multi-modal with 4 peaks
-    # elif WKLOAD == 2
-            /**
-             * https://stackoverflow.com/questions/37320025/mixture-of-gaussian-distribution-in-c
-            */
-
-            using normal_dist   = std::normal_distribution<>;
-            using discrete_dist = std::discrete_distribution<std::size_t>;
-
-            # if DATASET == 0
-                // -------------------------------US-NORTHEAST---------------------------------------
-                // For now change it to sth interesting: random
-                double avg_x1 = (-79.95 -78.19) / 2;
-                double avg_y1 = (45.75 + 46.62)/ 2;
-                double dev_x1 = 3;
-                double dev_y1 = 3;
-
-                double avg_x2 = (-79.95 - 76.44) / 2;
-                double avg_y2 = (41.00 + 43.14)/ 2;
-                double dev_x2 = 3;
-                double dev_y2 = 3;
-
-                double avg_x3 = (-72.92 -71.15) / 2;
-                double avg_y3 = (43.14 + 44.84)/ 2;
-                double dev_x3 = 3;
-                double dev_y3 = 3;
-
-                double avg_x4 = -69.35;
-                double avg_y4 = (39.65 + 40.53)/ 2;
-                double dev_x4 = 3;
-                double dev_y4 = 3;
-            
-            # elif DATASET == 1
-                // -------------------------------GEOLITE---------------------------------------
-                double avg_x1 = 120;
-                double avg_y1 = 20;
-                double dev_x1 = 3;
-                double dev_y1 = 3;
-
-                double avg_x2 = 140;
-                double avg_y2 = 20;
-                double dev_x2 = 3;
-                double dev_y2 = 3;
-
-                double avg_x3 = 140;
-                double avg_y3 = 60;
-                double dev_x3 = 3;
-                double dev_y3 = 3;
-
-                double avg_x4 = -160;
-                double avg_y4 = 20;
-                double dev_x4 = 3;
-                double dev_y4 = 3;
-            # else 
-                double dummy_x;
-            # endif 
-
-            auto GX = std::array<normal_dist, 4>{
-                normal_dist{avg_x1, dev_x1}, // mean, stddev of G[0]
-                normal_dist{avg_x2, dev_x2}, // mean, stddev of G[1]
-                normal_dist{avg_x3, dev_x3},  // mean, stddev of G[2]
-                normal_dist{avg_x4, dev_x4}  // mean, stddev of G[3]
-            };
-            auto GY = std::array<normal_dist, 4>{
-                normal_dist{avg_y1, dev_y1}, // mean, stddev of G[0]
-                normal_dist{avg_y2, dev_y2}, // mean, stddev of G[1]
-                normal_dist{avg_y3, dev_y3},  // mean, stddev of G[2]
-                normal_dist{avg_y4, dev_y4}  // mean, stddev of G[3]
-            };
-
-            auto w = discrete_dist{
-                0.25, // weight of G[0]
-                0.25, // weight of G[1]
-                0.25,  // weight of G[2]
-                0.25  // weight of G[3]
-            };
-
-            // For now change it to sth interesting: random
-            std::uniform_real_distribution<> dLength(1, max_length);
-            std::uniform_real_distribution<> dWidth(1, max_width);
-            
-    // Multi-modal with 3 peaks
-    # elif WKLOAD == 3
-            /**
-             * https://stackoverflow.com/questions/37320025/mixture-of-gaussian-distribution-in-c
-            */
-
-            using normal_dist   = std::normal_distribution<>;
-            using discrete_dist = std::discrete_distribution<std::size_t>;
-            # if DATASET == 0
-                // -------------------------------US-NORTHEAST---------------------------------------
-                double avg_x1 = (-75.65 -69.79) / 2;
-                double avg_y1 = (41.69 + 38.79)/ 2;
-                double dev_x1 = 2;
-                double dev_y1 = 2;
-
-                double avg_x2 = (-71.74 - 65.68) / 2;
-                double avg_y2 = (45.56 + 47.49)/ 2;
-                double dev_x2 = 2;
-                double dev_y2 = 2;
-
-                double avg_x3 = (-83.478714 -65.87531) / 2;
-                double avg_y3 = (38.78981 + 47.491634) / 2;
-                double dev_x3 = 2;
-                double dev_y3 = 2;
-            # elif DATASET == 1
-                // -------------------------------GEOLITE---------------------------------------
-                // double avg_x1 = 120;
-                // double avg_y1 = 20;
-                // double dev_x1 = 3;
-                // double dev_y1 = 3;
-
-                // double avg_x3 = 140;
-                // double avg_y3 = 60;
-                // double dev_x3 = 3;
-                // double dev_y3 = 3;
-
-                // double avg_x2 = -160;
-                // double avg_y2 = 20;
-                // double dev_x2 = 3;
-                // double dev_y2 = 3;
-            # endif
-
-            auto GX = std::array<normal_dist, 3>{
-                normal_dist{avg_x1, dev_x1}, // mean, stddev of G[0]
-                normal_dist{avg_x2, dev_x2}, // mean, stddev of G[1]
-                normal_dist{avg_x3, dev_x3} // mean, stddev of G[2]
-            };
-            auto GY = std::array<normal_dist, 3>{
-                normal_dist{avg_y1, dev_y1}, // mean, stddev of G[0]
-                normal_dist{avg_y2, dev_y2}, // mean, stddev of G[1]
-                normal_dist{avg_y3, dev_y3} // mean, stddev of G[1]
-            };
-
-            auto w = discrete_dist{
-                0.33, // weight of G[0]
-                0.33, // weight of G[1]
-                0.34  // weight of G[2]
-            };
-
-            std::uniform_real_distribution<> dLength(1, max_length);
-            std::uniform_real_distribution<> dWidth(1, max_width);
-    // Lookup
-    # elif WKLOAD == 4
-            int max_objects = this->gm->idx->objects_.size();
-            std::uniform_int_distribution<> dob(0, max_objects-1);
-    // Zipfian
-    #elif WKLOAD == 5
-            std::default_random_engine generator;
-            erebus::utils::zipfian_int_distribution<int> distX(min_x, max_x, 0.4);
-            erebus::utils::zipfian_int_distribution<int> distY(min_y, max_y, 0.4);
-            max_length = 6;
-            max_width = 6;
-            std::uniform_real_distribution<> dLength(1, max_length);
-            std::uniform_real_distribution<> dWidth(1, max_width);
-    #elif WKLOAD == 6
-            using normal_dist   = std::normal_distribution<>;
-            using discrete_dist = std::discrete_distribution<std::size_t>;
-            const int nHotSpots =3;
-            # if DATASET == 0
-                // -------------------------------US-NORTHEAST---------------------------------------
-                std::vector <std::tuple<double, double>> nPoints = {{-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396}};
-                std::tuple<double, double> stdDevs = {0.880170200000002, 0.4350911999999987};
-            #endif 
-            std::array<normal_dist, nHotSpots> GX;
-            std::array<normal_dist, nHotSpots> GY;
-            for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
-                GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
-                GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
-            }
-            auto w = discrete_dist{0.25, 0.25, 0.25, 0.25};
-            std::uniform_real_distribution<> dlx(min_x, max_x);
-            std::uniform_real_distribution<> dly(min_y, max_y);
-            
-            std::uniform_real_distribution<> dLength(1, 3);
-            std::uniform_real_distribution<> dWidth(1, 3);
-    #elif WKLOAD == 7
-            using normal_dist   = std::normal_distribution<>;
-            using discrete_dist = std::discrete_distribution<std::size_t>;
-            const int nHotSpots = 5;
-            # if DATASET == 0
-                // -------------------------------US-NORTHEAST---------------------------------------
-                std::vector <std::tuple<double, double>> nPoints = {
-                    {-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396},
-                    {-72.9166716, 44.0109044}, {-69.3959908, 45.7512692}
-                    };
-                std::tuple<double, double> stdDevs = {0.880170200000002, 0.4350911999999987};
-            #endif 
-            std::array<normal_dist, nHotSpots> GX;
-            std::array<normal_dist, nHotSpots> GY;
-            for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
-                GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
-                GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
-            }
-            auto w = discrete_dist{0.15, 0.15, 0.15, 0.15, 0.15, 0.25};
-            std::uniform_real_distribution<> dlx(min_x, max_x);
-            std::uniform_real_distribution<> dly(min_y, max_y);
-            
-            std::uniform_real_distribution<> dLength(1, 3);
-            std::uniform_real_distribution<> dWidth(1, 3);        
-    #elif WKLOAD == 8
-            using normal_dist   = std::normal_distribution<>;
-            using discrete_dist = std::discrete_distribution<std::size_t>;
-            const int nHotSpots = 7;
-            # if DATASET == 0
-                // -------------------------------US-NORTHEAST---------------------------------------
-                std::vector <std::tuple<double, double>> nPoints = {
-                    {-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396},
-                    {-72.9166716, 44.0109044}, {-69.3959908, 45.7512692},
-                    {-78.1976928, 43.140722}, {-76.4373524, 40.5301748}
-                    };
-                std::tuple<double, double> stdDevs = {0.880170200000002, 0.4350911999999987};
-            #endif 
-            std::array<normal_dist, nHotSpots> GX;
-            std::array<normal_dist, nHotSpots> GY;
-            for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
-                GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
-                GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
-            }
-            auto w = discrete_dist{0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.09};
-            std::uniform_real_distribution<> dlx(min_x, max_x);
-            std::uniform_real_distribution<> dly(min_y, max_y);
-            
-            std::uniform_real_distribution<> dLength(1, 3);
-            std::uniform_real_distribution<> dWidth(1, 3);      
-    #elif WKLOAD == 9
-            using normal_dist   = std::normal_distribution<>;
-            using discrete_dist = std::discrete_distribution<std::size_t>;
-            auto w = discrete_dist{0.25, 0.75};
-
-            std::vector <std::tuple<double, double>> nPoints = {
-                    {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
-                    };
-             std::vector <std::tuple<double, double>> stdDevs = {
-                    {11.0, 1.3}, {11.0, 4.0}
-                    };
-            
-            std::array<normal_dist, 2> GX;
-            std::array<normal_dist, 2> GY;
-            for (int spIdx = 0; spIdx < 2; spIdx++){
-                GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-                GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-            }
-    #elif WKLOAD == 20
-            using normal_dist   = std::normal_distribution<>;
-            using discrete_dist = std::discrete_distribution<std::size_t>;
-            auto w = discrete_dist{0.50, 0.50};
-
-            std::vector <std::tuple<double, double>> nPoints = {
-                    {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
-                    };
-             std::vector <std::tuple<double, double>> stdDevs = {
-                    {11.0, 1.3}, {11.0, 4.0}
-                    };
-            
-            std::array<normal_dist, 2> GX;
-            std::array<normal_dist, 2> GY;
-            for (int spIdx = 0; spIdx < 2; spIdx++){
-                GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-                GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-            }
-
-    #elif WKLOAD == 21
-            using normal_dist   = std::normal_distribution<>;
-            using discrete_dist = std::discrete_distribution<std::size_t>;
-            auto w = discrete_dist{0.75, 0.25};
-
-            std::vector <std::tuple<double, double>> nPoints = {
-                    {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
-                    };
-             std::vector <std::tuple<double, double>> stdDevs = {
-                    {11.0, 1.3}, {11.0, 4.0}
-                    };
-            
-            std::array<normal_dist, 2> GX;
-            std::array<normal_dist, 2> GY;
-            for (int spIdx = 0; spIdx < 2; spIdx++){
-                GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-                GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-            }
-
-    // Log Normal 
-    # else
-            # if DATASET == 0
-                // -------------------------------US-NORTHEAST---------------------------------------
-                double pseudo_min_x = 1;
-                double pseudo_max_x = 1 + (max_x - min_x);
-                double avg_x = (log(pseudo_max_x) + log(pseudo_min_x)) / 2;
-                double avg_y = (log(max_y) + log(min_y)) / 2;
-
-                double dev_x = (log(pseudo_max_x) - log(pseudo_min_x)) / 6;
-                double dev_y = (log(max_y) - log(min_y)) / 6;
-
-            # elif DATASET == 1
-                // -------------------------------GEOLITE---------------------------------------
-                // double avg_x = 130;
-                // double avg_y = 30;
-                
-                // double dev_x = 10;
-                // double dev_y = 10;
-            # endif
-
-            std::lognormal_distribution<double> dlx(avg_x, dev_x);
-            std::lognormal_distribution<double> dly(avg_y, dev_y);
-
-            std::uniform_real_distribution<> dLength(1, max_length);
-            std::uniform_real_distribution<> dWidth(1, max_width);
-    # endif
+    std::random_device rd;      
+    std::mt19937 genTem(rd());
+    std::mt19937 gen(rd());     
     // -------------------------------------------------------------------------------------
-            while (1) {
-                if(!glb_router_thrds[router_cpuids[i]].running) {
-                    // glb_router_thrds[router_cpuids[i]].th.detach();
-                    break;
-                }
-                
-    // Uniform workload
-    #if WKLOAD == 0
-                double lx = dlx(gen);
-                double ly = dly(gen);
-
-                double length = dLength(gen);
-                double width = dWidth(gen);
-                
-                double hx = lx + length;
-                double hy = ly + width;
-
-                Rectangle query(lx, hx, ly, hy);
     
-    // Normal workload, where the peak is at the average
-    #elif WKLOAD == 1
-                double lx = dlx(gen);
-                double ly = dly(gen);
+    double max_length, max_width;
 
-                double length = dLength(gen);
-                double width = dWidth(gen);
+#if DATASET == 0  // US-NORTHEAST
+  max_length = 6;  // Previously: 6
+  max_width = 6;
+#elif DATASET == 1  // GEOLITE
+  max_length = 30;  // Previously: 6
+  max_width = 30;
+# elif DATASET == 2 // BMOD02
+  max_length = 3000;  // Previously: 6
+  max_width = 3000;
+#elif DATASET == 3  // YCSB
+  max_length = 6; // represents the number of keys we want 
+  max_width = -1; 
+# endif
+
+# if WKLOAD == 0
+  std::uniform_real_distribution<> dlx(min_x, max_x);
+  std::uniform_real_distribution<> dly(min_y, max_y);
+  
+  // 0 means it will be a point query, however the point may not exist in the dataset
+  std::uniform_real_distribution<> dLength(1, max_length);
+  std::uniform_real_distribution<> dWidth(1, max_width);
+
+# elif WKLOAD == 1  // Normal workload, where the peak is at the average
+# if DATASET == 0
+  double avg_x = (max_x + min_x) / 2;
+  double avg_y = (max_y + min_y) / 2;
+  double dev_x = (max_x - min_x) / 6;
+  double dev_y = (max_y - min_y) / 6;
+# elif DATASET == 1
+  double avg_x = 130;
+  double avg_y = 30;
+  double dev_x = 7;
+  double dev_y = 7;
+  // -------------------------------------------------------------------------------------
+#endif
+  std::normal_distribution<double> dlx(avg_x, dev_x);
+  std::normal_distribution<double> dly(avg_y, dev_y);
+
+  std::uniform_real_distribution<> dLength(1, max_length);
+  std::uniform_real_distribution<> dWidth(1, max_width);
                 
-                double hx = lx + length;
-                double hy = ly + width;
-
-                Rectangle query(lx, hx, ly, hy);
-
-    // Multi-modal with 4 peaks
-    #elif WKLOAD == 2
-                auto indexX = w(genTem);
-                double lx = GX[indexX](genTem);
-                
-                auto indexY = w(genTem);
-                double ly = GY[indexY](genTem);
-                
-                double length = dLength(gen);
-                double width = dWidth(gen);
-
-                double hx = lx + length;
-                double hy = ly + width;
-
-                Rectangle query(lx, hx, ly, hy);
     
-    // Multi-modal with 3 peaks
-    #elif WKLOAD == 3
-                auto indexX = w(genTem);
-                double lx = GX[indexX](genTem);
-                
-                auto indexY = w(genTem);
-                double ly = GY[indexY](genTem);
-                
-                double length = dLength(gen);
-                double width = dWidth(gen);
-                
-                double hx = lx + length;
-                double hy = ly + width;
+# elif WKLOAD == 2  // Multi-modal with 4 peaks
+  /**
+   * https://stackoverflow.com/questions/37320025/mixture-of-gaussian-distribution-in-c
+  */
 
-                Rectangle query(lx, hx, ly, hy);
+  using normal_dist   = std::normal_distribution<>;
+  using discrete_dist = std::discrete_distribution<std::size_t>;
 
-    #elif WKLOAD == 4
-                int idx_to_search = dob(gen);
-                double lx = this->gm->idx->objects_[idx_to_search]->left_;
-                double ly = this->gm->idx->objects_[idx_to_search]->bottom_;
-                
-                double hx = lx;
-                double hy = ly;
-                
-                Rectangle query(lx, hx, ly, hy);
-    #elif WKLOAD == 5
-                
-                double lx = distX(generator);
-                double ly = distY(generator);
-                
-                double length = dLength(gen);
-                double width = dWidth(gen);
-                
-                double hx = lx + length;
-                double hy = ly + width;
+  # if DATASET == 0
+      // -------------------------------US-NORTHEAST---------------------------------------
+      // For now change it to sth interesting: random
+      double avg_x1 = (-79.95 -78.19) / 2;
+      double avg_y1 = (45.75 + 46.62)/ 2;
+      double dev_x1 = 3;
+      double dev_y1 = 3;
 
-                Rectangle query(lx, hx, ly, hy);
-    #elif WKLOAD == 6
-                auto index = w(genTem); // which hotspot to choose?
-                double lx, ly;
-                if (index == nHotSpots) {
-                    lx = dlx(gen);
-                    ly = dly(gen);
-                }
-                else{
-                    lx = GX[index](genTem) + 0.880170200000002;
-                    ly = GY[index](genTem) - 0.4350911999999987;
-                }
+      double avg_x2 = (-79.95 - 76.44) / 2;
+      double avg_y2 = (41.00 + 43.14)/ 2;
+      double dev_x2 = 3;
+      double dev_y2 = 3;
+
+      double avg_x3 = (-72.92 -71.15) / 2;
+      double avg_y3 = (43.14 + 44.84)/ 2;
+      double dev_x3 = 3;
+      double dev_y3 = 3;
+
+      double avg_x4 = -69.35;
+      double avg_y4 = (39.65 + 40.53)/ 2;
+      double dev_x4 = 3;
+      double dev_y4 = 3;
+
+  # elif DATASET == 1
+      // -------------------------------GEOLITE---------------------------------------
+      double avg_x1 = 120;
+      double avg_y1 = 20;
+      double dev_x1 = 3;
+      double dev_y1 = 3;
+
+      double avg_x2 = 140;
+      double avg_y2 = 20;
+      double dev_x2 = 3;
+      double dev_y2 = 3;
+
+      double avg_x3 = 140;
+      double avg_y3 = 60;
+      double dev_x3 = 3;
+      double dev_y3 = 3;
+
+      double avg_x4 = -160;
+      double avg_y4 = 20;
+      double dev_x4 = 3;
+      double dev_y4 = 3;
+  # else 
+      double dummy_x;
+  # endif 
+
+  auto GX = std::array<normal_dist, 4>{
+      normal_dist{avg_x1, dev_x1}, // mean, stddev of G[0]
+      normal_dist{avg_x2, dev_x2}, // mean, stddev of G[1]
+      normal_dist{avg_x3, dev_x3},  // mean, stddev of G[2]
+      normal_dist{avg_x4, dev_x4}  // mean, stddev of G[3]
+  };
+  auto GY = std::array<normal_dist, 4>{
+      normal_dist{avg_y1, dev_y1}, // mean, stddev of G[0]
+      normal_dist{avg_y2, dev_y2}, // mean, stddev of G[1]
+      normal_dist{avg_y3, dev_y3},  // mean, stddev of G[2]
+      normal_dist{avg_y4, dev_y4}  // mean, stddev of G[3]
+  };
+
+  auto w = discrete_dist{
+      0.25, // weight of G[0]
+      0.25, // weight of G[1]
+      0.25,  // weight of G[2]
+      0.25  // weight of G[3]
+  };
+
+  // For now change it to sth interesting: random
+  std::uniform_real_distribution<> dLength(1, max_length);
+  std::uniform_real_distribution<> dWidth(1, max_width);
+
+    
+# elif WKLOAD == 3 // Multi-modal with 3 peaks
+  /**
+   * https://stackoverflow.com/questions/37320025/mixture-of-gaussian-distribution-in-c
+  */
+
+  using normal_dist   = std::normal_distribution<>;
+  using discrete_dist = std::discrete_distribution<std::size_t>;
+  # if DATASET == 0
+      // -------------------------------US-NORTHEAST---------------------------------------
+      double avg_x1 = (-75.65 -69.79) / 2;
+      double avg_y1 = (41.69 + 38.79)/ 2;
+      double dev_x1 = 2;
+      double dev_y1 = 2;
+
+      double avg_x2 = (-71.74 - 65.68) / 2;
+      double avg_y2 = (45.56 + 47.49)/ 2;
+      double dev_x2 = 2;
+      double dev_y2 = 2;
+
+      double avg_x3 = (-83.478714 -65.87531) / 2;
+      double avg_y3 = (38.78981 + 47.491634) / 2;
+      double dev_x3 = 2;
+      double dev_y3 = 2;
+  # elif DATASET == 1
+      // -------------------------------GEOLITE---------------------------------------
+      // double avg_x1 = 120;
+      // double avg_y1 = 20;
+      // double dev_x1 = 3;
+      // double dev_y1 = 3;
+
+      // double avg_x3 = 140;
+      // double avg_y3 = 60;
+      // double dev_x3 = 3;
+      // double dev_y3 = 3;
+
+      // double avg_x2 = -160;
+      // double avg_y2 = 20;
+      // double dev_x2 = 3;
+      // double dev_y2 = 3;
+  # endif
+
+  auto GX = std::array<normal_dist, 3>{
+      normal_dist{avg_x1, dev_x1}, // mean, stddev of G[0]
+      normal_dist{avg_x2, dev_x2}, // mean, stddev of G[1]
+      normal_dist{avg_x3, dev_x3} // mean, stddev of G[2]
+  };
+  auto GY = std::array<normal_dist, 3>{
+      normal_dist{avg_y1, dev_y1}, // mean, stddev of G[0]
+      normal_dist{avg_y2, dev_y2}, // mean, stddev of G[1]
+      normal_dist{avg_y3, dev_y3} // mean, stddev of G[1]
+  };
+
+  auto w = discrete_dist{
+      0.33, // weight of G[0]
+      0.33, // weight of G[1]
+      0.34  // weight of G[2]
+  };
+
+  std::uniform_real_distribution<> dLength(1, max_length);
+  std::uniform_real_distribution<> dWidth(1, max_width);
+    
+# elif WKLOAD == 4  // Lookup
+  int max_objects = this->gm->idx->objects_.size();
+  std::uniform_int_distribution<> dob(0, max_objects-1);
+#elif WKLOAD == 5  // Zipfian
+  std::default_random_engine generator;
+  erebus::utils::zipfian_int_distribution<int> distX(min_x, max_x, 0.4);
+  erebus::utils::zipfian_int_distribution<int> distY(min_y, max_y, 0.4);
+  max_length = 6;
+  max_width = 6;
+  std::uniform_real_distribution<> dLength(1, max_length);
+  std::uniform_real_distribution<> dWidth(1, max_width);
+#elif WKLOAD == 6
+  using normal_dist   = std::normal_distribution<>;
+  using discrete_dist = std::discrete_distribution<std::size_t>;
+  const int nHotSpots =3;
+  # if DATASET == 0
+      // -------------------------------US-NORTHEAST---------------------------------------
+      std::vector <std::tuple<double, double>> nPoints = {{-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396}};
+      std::tuple<double, double> stdDevs = {0.880170200000002, 0.4350911999999987};
+  #endif 
+  std::array<normal_dist, nHotSpots> GX;
+  std::array<normal_dist, nHotSpots> GY;
+  for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
+      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
+      GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
+  }
+  auto w = discrete_dist{0.25, 0.25, 0.25, 0.25};
+  std::uniform_real_distribution<> dlx(min_x, max_x);
+  std::uniform_real_distribution<> dly(min_y, max_y);
+  
+  std::uniform_real_distribution<> dLength(1, 3);
+  std::uniform_real_distribution<> dWidth(1, 3);
+#elif WKLOAD == 7
+  using normal_dist   = std::normal_distribution<>;
+  using discrete_dist = std::discrete_distribution<std::size_t>;
+  const int nHotSpots = 5;
+  # if DATASET == 0
+      // -------------------------------US-NORTHEAST---------------------------------------
+      std::vector <std::tuple<double, double>> nPoints = {
+          {-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396},
+          {-72.9166716, 44.0109044}, {-69.3959908, 45.7512692}
+          };
+      std::tuple<double, double> stdDevs = {0.880170200000002, 0.4350911999999987};
+  #endif 
+  std::array<normal_dist, nHotSpots> GX;
+  std::array<normal_dist, nHotSpots> GY;
+  for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
+      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
+      GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
+  }
+  auto w = discrete_dist{0.15, 0.15, 0.15, 0.15, 0.15, 0.25};
+  std::uniform_real_distribution<> dlx(min_x, max_x);
+  std::uniform_real_distribution<> dly(min_y, max_y);
+  
+  std::uniform_real_distribution<> dLength(1, 3);
+  std::uniform_real_distribution<> dWidth(1, 3);        
+#elif WKLOAD == 8
+  using normal_dist   = std::normal_distribution<>;
+  using discrete_dist = std::discrete_distribution<std::size_t>;
+  const int nHotSpots = 7;
+  # if DATASET == 0
+      // -------------------------------US-NORTHEAST---------------------------------------
+      std::vector <std::tuple<double, double>> nPoints = {
+          {-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396},
+          {-72.9166716, 44.0109044}, {-69.3959908, 45.7512692},
+          {-78.1976928, 43.140722}, {-76.4373524, 40.5301748}
+          };
+      std::tuple<double, double> stdDevs = {0.880170200000002, 0.4350911999999987};
+  #endif 
+  std::array<normal_dist, nHotSpots> GX;
+  std::array<normal_dist, nHotSpots> GY;
+  for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
+      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
+      GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
+  }
+  auto w = discrete_dist{0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.09};
+  std::uniform_real_distribution<> dlx(min_x, max_x);
+  std::uniform_real_distribution<> dly(min_y, max_y);
+  
+  std::uniform_real_distribution<> dLength(1, 3);
+  std::uniform_real_distribution<> dWidth(1, 3);      
+#elif WKLOAD == 9
+  using normal_dist   = std::normal_distribution<>;
+  using discrete_dist = std::discrete_distribution<std::size_t>;
+  auto w = discrete_dist{0.25, 0.75};
+
+  std::vector <std::tuple<double, double>> nPoints = {
+          {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
+          };
+    std::vector <std::tuple<double, double>> stdDevs = {
+          {11.0, 1.3}, {11.0, 4.0}
+          };
+  
+  std::array<normal_dist, 2> GX;
+  std::array<normal_dist, 2> GY;
+  for (int spIdx = 0; spIdx < 2; spIdx++){
+      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+      GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+  }
+#elif WKLOAD == 20
+  using normal_dist   = std::normal_distribution<>;
+  using discrete_dist = std::discrete_distribution<std::size_t>;
+  auto w = discrete_dist{0.50, 0.50};
+
+  std::vector <std::tuple<double, double>> nPoints = {
+          {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
+          };
+    std::vector <std::tuple<double, double>> stdDevs = {
+          {11.0, 1.3}, {11.0, 4.0}
+          };
+  
+  std::array<normal_dist, 2> GX;
+  std::array<normal_dist, 2> GY;
+  for (int spIdx = 0; spIdx < 2; spIdx++){
+      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+      GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+  }
+#elif WKLOAD == 21
+  using normal_dist   = std::normal_distribution<>;
+  using discrete_dist = std::discrete_distribution<std::size_t>;
+  auto w = discrete_dist{0.75, 0.25};
+
+  std::vector <std::tuple<double, double>> nPoints = {
+          {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
+          };
+  std::vector <std::tuple<double, double>> stdDevs = {
+        {11.0, 1.3}, {11.0, 4.0}
+        };
+  
+  std::array<normal_dist, 2> GX;
+  std::array<normal_dist, 2> GY;
+  for (int spIdx = 0; spIdx < 2; spIdx++){
+      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+      GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+  }
+#elif WKLOAD == 22 // Log Normal 
+  # if DATASET == 0
+    double pseudo_min_x = 1;
+    double pseudo_max_x = 1 + (max_x - min_x);
+    double avg_x = (log(pseudo_max_x) + log(pseudo_min_x)) / 2;
+    double avg_y = (log(max_y) + log(min_y)) / 2;
+
+    double dev_x = (log(pseudo_max_x) - log(pseudo_min_x)) / 6;
+    double dev_y = (log(max_y) - log(min_y)) / 6;
+  # elif DATASET == 1
+    // double avg_x = 130;
+    // double avg_y = 30;
+    
+    // double dev_x = 10;
+    // double dev_y = 10;
+  # endif
+
+  std::lognormal_distribution<double> dlx(avg_x, dev_x);
+  std::lognormal_distribution<double> dly(avg_y, dev_y);
+
+  std::uniform_real_distribution<> dLength(1, max_length);
+  std::uniform_real_distribution<> dWidth(1, max_width);
+#elif WKLOAD == 30 // ycsb workload, range scans, 
+  // std::default_random_engine generator;
+  // erebus::utils::zipfian_int_distribution<int> distX(min_x, max_x, 0.4);
+  std::uniform_int_distribution<uint64_t> distX(min_x, max_x);
+  max_length = 1000000;
+  std::uniform_int_distribution<uint64_t> dLength(1, max_length);
+# endif
+
+    // -------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------
+    while (1) {
+      if(!glb_router_thrds[router_cpuids[i]].running) {
+          break;
+      }
                 
-                double length = dLength(gen);
-                double width = dWidth(gen);
-                
-                double hx = lx + length;
-                double hy = ly + width;
+    
+#if WKLOAD == 0 // Uniform workload
+  double lx = dlx(gen);
+  double ly = dly(gen);
+  double length = dLength(gen);
+  double width = dWidth(gen);
+  double hx = lx + length;
+  double hy = ly + width;
+  Rectangle query(lx, hx, ly, hy);
 
-                Rectangle query(lx, hx, ly, hy);
-    #elif WKLOAD == 7
-                auto index = w(genTem); // which hotspot to choose?
-                double lx, ly;
-                if (index == nHotSpots) {
-                    lx = dlx(gen);
-                    ly = dly(gen);
-                }
-                else{
-                    lx = GX[index](genTem) + 0.880170200000002;
-                    ly = GY[index](genTem) - 0.4350911999999987;
-                }
-                
-                double length = dLength(gen);
-                double width = dWidth(gen);
-                
-                double hx = lx + length;
-                double hy = ly + width;
+#elif WKLOAD == 1  // Normal workload, where the peak is at the average
+  double lx = dlx(gen);
+  double ly = dly(gen);
+  double length = dLength(gen);
+  double width = dWidth(gen);
+  double hx = lx + length;
+  double hy = ly + width;
+  Rectangle query(lx, hx, ly, hy);
 
-                Rectangle query(lx, hx, ly, hy);
-    #elif WKLOAD == 8
-                auto index = w(genTem); // which hotspot to choose?
-                double lx, ly;
-                if (index == nHotSpots) {
-                    lx = dlx(gen);
-                    ly = dly(gen);
-                }
-                else{
-                    lx = GX[index](genTem) + 0.880170200000002;
-                    ly = GY[index](genTem) - 0.4350911999999987;
-                }
-                
-                double length = dLength(gen);
-                double width = dWidth(gen);
-                
-                double hx = lx + length;
-                double hy = ly + width;
+#elif WKLOAD == 2  // Multi-modal with 4 peaks
+  auto indexX = w(genTem);
+  double lx = GX[indexX](genTem);
+  auto indexY = w(genTem);
+  double ly = GY[indexY](genTem);
+  double length = dLength(gen);
+  double width = dWidth(gen);
+  double hx = lx + length;
+  double hy = ly + width;
+  Rectangle query(lx, hx, ly, hy);
 
-                Rectangle query(lx, hx, ly, hy);
-    #elif WKLOAD == 9
-                auto index = w(genTem); // which hotspot to choose?
-                double lx, ly, hx, hy;
-                if (index == 0) { // this is a point search
-                    lx = GX[index](genTem);
-                    ly = GY[index](genTem);
-                    hx = lx + 0;
-                    hy = ly + 0;
-                }
-                else{
-                    lx = GX[index](genTem);
-                    ly = GY[index](genTem);
+#elif WKLOAD == 3  // Multi-modal with 3 peaks
+  auto indexX = w(genTem);
+  double lx = GX[indexX](genTem);
+  auto indexY = w(genTem);
+  double ly = GY[indexY](genTem);
+  double length = dLength(gen);
+  double width = dWidth(gen);
+  double hx = lx + length;
+  double hy = ly + width;
+  Rectangle query(lx, hx, ly, hy);
 
-                    hx = lx + 4;
-                    hy = ly + 2;
-                }
-                Rectangle query(lx, hx, ly, hy);
+#elif WKLOAD == 4
+  int idx_to_search = dob(gen);
+  double lx = this->gm->idx->objects_[idx_to_search]->left_;
+  double ly = this->gm->idx->objects_[idx_to_search]->bottom_;
+  double hx = lx;
+  double hy = ly;
+  Rectangle query(lx, hx, ly, hy);
 
-    #elif WKLOAD == 20
-                auto index = w(genTem); // which hotspot to choose?
-                double lx, ly, hx, hy;
-                if (index == 0) { // this is a point search
-                    lx = GX[index](genTem);
-                    ly = GY[index](genTem);
-                    hx = lx + 0;
-                    hy = ly + 0;
-                }
-                else{
-                    lx = GX[index](genTem);
-                    ly = GY[index](genTem);
+#elif WKLOAD == 5  
+  double lx = distX(generator);
+  double ly = distY(generator);
+  double length = dLength(gen);
+  double width = dWidth(gen);
+  double hx = lx + length;
+  double hy = ly + width;
+  Rectangle query(lx, hx, ly, hy);
 
-                    hx = lx + 4;
-                    hy = ly + 2;
-                }
-                Rectangle query(lx, hx, ly, hy);
-    #elif WKLOAD == 21
-                auto index = w(genTem); // which hotspot to choose?
-                double lx, ly, hx, hy;
-                if (index == 0) { // this is a point search
-                    lx = GX[index](genTem);
-                    ly = GY[index](genTem);
-                    hx = lx + 0;
-                    hy = ly + 0;
-                }
-                else{
-                    lx = GX[index](genTem);
-                    ly = GY[index](genTem);
+#elif WKLOAD == 6
+  auto index = w(genTem); // which hotspot to choose?
+  double lx, ly;
+  if (index == nHotSpots) {
+      lx = dlx(gen);
+      ly = dly(gen);
+  }
+  else{
+      lx = GX[index](genTem) + 0.880170200000002;
+      ly = GY[index](genTem) - 0.4350911999999987;
+  }  
+  double length = dLength(gen);
+  double width = dWidth(gen);
+  double hx = lx + length;
+  double hy = ly + width;
+  Rectangle query(lx, hx, ly, hy);
 
-                    hx = lx + 4;
-                    hy = ly + 2;
-                }
-                Rectangle query(lx, hx, ly, hy);
-    // Log Normal 
-    #else
-                double lx = dlx(gen);
-                double ly = dly(gen);
-                while(lx > pseudo_max_x || lx < pseudo_min_x)
-                    lx = dlx(gen);
-                while(ly > max_y || ly < min_y)
-                    ly = dly(gen);
-                
-                lx = lx - (1 - min_x);
+#elif WKLOAD == 7
+  auto index = w(genTem); // which hotspot to choose?
+  double lx, ly;
+  if (index == nHotSpots) {
+      lx = dlx(gen);
+      ly = dly(gen);
+  }
+  else{
+      lx = GX[index](genTem) + 0.880170200000002;
+      ly = GY[index](genTem) - 0.4350911999999987;
+  }
+  double length = dLength(gen);
+  double width = dWidth(gen);
+  double hx = lx + length;
+  double hy = ly + width;
+  Rectangle query(lx, hx, ly, hy);
 
-                double length = dLength(gen);
-                double width = dWidth(gen);
-                
-                double hx = lx + length;
-                double hy = ly + width;
+#elif WKLOAD == 8
+  auto index = w(genTem); // which hotspot to choose?
+  double lx, ly;
+  if (index == nHotSpots) {
+      lx = dlx(gen);
+      ly = dly(gen);
+  }
+  else{
+      lx = GX[index](genTem) + 0.880170200000002;
+      ly = GY[index](genTem) - 0.4350911999999987;
+  }
+  double length = dLength(gen);
+  double width = dWidth(gen);
+  double hx = lx + length;
+  double hy = ly + width;
+  Rectangle query(lx, hx, ly, hy);
 
-                Rectangle query(lx, hx, ly, hy);
-    #endif
+#elif WKLOAD == 9
+  auto index = w(genTem); // which hotspot to choose?
+  double lx, ly, hx, hy;
+  if (index == 0) { // this is a point search
+      lx = GX[index](genTem);
+      ly = GY[index](genTem);
+      hx = lx + 0;
+      hy = ly + 0;
+  }
+  else{
+      lx = GX[index](genTem);
+      ly = GY[index](genTem);
+      hx = lx + 4;
+      hy = ly + 2;
+  }
+  Rectangle query(lx, hx, ly, hy);
 
-                // -------------------------------------------------------------------------------------
-                // Check which grid the query belongs to 
-                std::vector<int> valid_gcells;
-    #if LINUX == 3
-                for (auto gc = 0; gc < gm->nGridCells; gc++){
-                
-                    double glx = gm->glbGridCell[gc].lx;
-                    double gly = gm->glbGridCell[gc].ly;
-                    double ghx = gm->glbGridCell[gc].hx;
-                    double ghy = gm->glbGridCell[gc].hy;
+#elif WKLOAD == 20
+  auto index = w(genTem); // which hotspot to choose?
+  double lx, ly, hx, hy;
+  if (index == 0) { // this is a point search
+      lx = GX[index](genTem);
+      ly = GY[index](genTem);
+      hx = lx + 0;
+      hy = ly + 0;
+  }
+  else{
+      lx = GX[index](genTem);
+      ly = GY[index](genTem);
+      hx = lx + 4;
+      hy = ly + 2;
+  }
+  Rectangle query(lx, hx, ly, hy);
 
-                    if (hx < glx || lx > ghx || hy < gly || ly > ghy)
-                        continue;
-                    else {
-                        /**
-                         * 1. Store IDs of the Grids that the query intersects
-                         * 2. Update the query frequency
-                         * 3. Update the query's valid grid cells so that it can maintain a local view of the data distribution
-                        */
-                        valid_gcells.push_back(gc);  
-                        // gm->freqQueryDistPushed[gc]++;  // I am currently only keeping where it goes, don't care about  the intersections
-                        query.validGridIds.push_back(gc);
-                    }        
-                
-                }
-    #else
-                for (auto gc = 0; gc < gm->nGridCells; gc++){
-                    valid_gcells.push_back(gc); 
-                    query.validGridIds.push_back(gc); // May not be necessary
-                }
+#elif WKLOAD == 21
+  auto index = w(genTem); // which hotspot to choose?
+  double lx, ly, hx, hy;
+  if (index == 0) { // this is a point search
+      lx = GX[index](genTem);
+      ly = GY[index](genTem);
+      hx = lx + 0;
+      hy = ly + 0;
+  }
+  else{
+      lx = GX[index](genTem);
+      ly = GY[index](genTem);
+      hx = lx + 4;
+      hy = ly + 2;
+  }
+  Rectangle query(lx, hx, ly, hy);
+
+#elif WKLOAD == 22  // Log Normal 
+  double lx = dlx(gen);
+  double ly = dly(gen);
+  while(lx > pseudo_max_x || lx < pseudo_min_x)
+      lx = dlx(gen);
+  while(ly > max_y || ly < min_y)
+      ly = dly(gen);  
+  lx = lx - (1 - min_x);
+  double length = dLength(gen);
+  double width = dWidth(gen);
+  double hx = lx + length;
+  double hy = ly + width;
+  Rectangle query(lx, hx, ly, hy);
+
+#elif WKLOAD == 30
+  double lx = distX(gen);
+  double length = dLength(gen);
+  Rectangle query(lx, length, -1, -1);
+#endif
+
+      // -------------------------------------------------------------------------------------
+      // Check which grid the query belongs to 
+      std::vector<int> valid_gcells;
+#if LINUX == 3
+      for (auto gc = 0; gc < gm->nGridCells; gc++){
+      
+        double glx = gm->glbGridCell[gc].lx;
+        double gly = gm->glbGridCell[gc].ly;
+        double ghx = gm->glbGridCell[gc].hx;
+        double ghy = gm->glbGridCell[gc].hy;
+#if MULTIDIM == 1
+        if (hx < glx || lx > ghx || hy < gly || ly > ghy)
+            continue;
+        else {
+            /**
+             * 1. Store IDs of the Grids that the query intersects
+             * 2. Update the query frequency
+             * 3. Update the query's valid grid cells so that it can maintain a local view of the data distribution
+            */
+            valid_gcells.push_back(gc);  
+            // gm->freqQueryDistPushed[gc]++;  // I am currently only keeping where it goes, don't care about  the intersections
+            query.validGridIds.push_back(gc);
+        }
+#else
+        if (lx <= ghx && lx >= glx){
+          valid_gcells.push_back(gc);  
+          query.validGridIds.push_back(gc);
+        }
+        else continue;
+#endif 
+      
+      }
+#else
+      for (auto gc = 0; gc < gm->nGridCells; gc++){
+          valid_gcells.push_back(gc); 
+          query.validGridIds.push_back(gc); // May not be necessary
+      }
                     
-    #endif 
+#endif 
                 
-                // -------------------------------------------------------------------------------------
-                // Check the sanity of the query
-                if (valid_gcells.size() == 0) continue;
-                // -------------------------------------------------------------------------------------
-                // TODO: Update the Query Correlation Matrix
-                for(size_t qc1 = 0; qc1 < valid_gcells.size()-1; qc1++){
-                    int pCell = valid_gcells[qc1];
-                    for(size_t qc2 = qc1; qc2 < valid_gcells.size(); qc2++){
-                        int cCell = valid_gcells[qc2];
-                        glb_router_thrds[router_cpuids[i]].qCorrMatrix[pCell][cCell] ++;
-                        glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
-                    }
-                }
-                // -------------------------------------------------------------------------------------
-                /**
-                 * TODO: Stamp the query whether it is a mice, elephant or mammoth
-                 * I: Requires an inference model or RL model.
-                 * 
-                 * Things to consider: Of course you have MICE|ELEPHANT|MAMMOTH
-                 * Q: What if the MICE and ELEPHANTs are accessing the same area?
-                 * A: Then whoever goes first helps the other MICE|ELEPHANT.
-                 * SO, they sohould be run one after another, so that they can benefit from one another. 
-                 * DONOT put prioritize MICEs in such case. 
-                 * TAKEAWAY: In the JOBQUEUE the spatial distance between the queries are important as well 
-                 * besides the regular query classifications.
-                 * 
-                 * REQUIREMENT: This needs to be as lightweight as possible, why? 
-                 * REQUIREMENT: Can you implement this with SIMD to make it train faster?
-                 * REQUIREMENT: You want to spend as little time as possible while doing this administrative stuff before executing the queries 
-                 * itself.
-                 * What is interesting compared to the Onur Motlu paper: 
-                 *      1. We have an index to consider.
-                 *      2. We have the system
-                 *      3. The definition should change considering the state of the index and the system as well.
-                 *          Q: For different sized index, does the definition of the MICE, ELEPHANT and MAMMOTH change?
-                 *              A: It could be counters related to CPU, Cache and Memory
-                 *          Q: How to capture different sized index into features? 
-                 *          Q: Can hw counters help in capturing the data distribution of the index?
-                 *          Q: How to ensure this robustness?
-                 *      
-                 * 
-                 * Features: What features do we have [before] running the query iteself?
-                 *      1. QUERY SEMANTICS: SELECT, RANGE QUERY, KNN QUERY (we will think of only RANGE QUERIES OR POINT QUERIES)
-                 *      2. RANGE QUERY: lx, ly, hx, hy
-                 *      3. PREVIOUS HW COUNTERS OF THE DESTINATION CORE OF THIS QUERY:
-                 *      4. PREVIOUS HW COUNTERS ACROSS ALL THE CORES:
-                 * 
-                 *      
-                 * Prediction: What could we predict that will help us decide MICE|ELEPHANT|MAMMOTH?
-                 *      1. CPU INSTRUCTIONS
-                 *      2. CACHE ACCESSES OR MISSES (which one?)
-                 * 
-                 *      
-                 * I donot think we care about NUMA here, only the pure values that this query will generate.
-                 * 
-                 * POSSIBLE MODELS: Linear Regression, Spline Regression
-                 * 
-                 * 
-                 * O: Now the query is a mice, elephant or mammoth is relative to the work put in by the index itself.
-                 * Do we go for the maximum of the system or the maximum by the index?
-                 * E.g., 10 MemMissesPerKInstruction = Mice, 100 MemMissesPerKInstruction = Elephant, 1000 MemMissesPerKInstruction = Mammoth
-                 * But they do not saturate the memory bw of the system, neither they affect each other 
-                 * Remember the index dummy experiment I did, that should give an idea
-                 * My guess is: there is a tipping point for those 
-                 * 
-                 * Similar Job: Predicting selectivity with lightweight models
-                 * 
-                 * It does not necessarily have to be hw counters; but of course that helps!
-                 * 
-                 * O: The best way would be: you look at the query points and you have a notion about the current status of the index (the hw parameters you are generating),
-                 * based on that you can prdict the hw counters (a specific hw counter, which helps you to classify it). E.g., Memory Misses per instruction 
-                 * Reference: [Onur Motlu Paper], [selectivity functions are learnable paper]
-                 * 
-                 * Q: Given the hw counters and the type of queries can you decide on the data distribution of the index?
-                 * 
-                 * O: It could be a conitnuous RL setting 
-                 * 
-                 * O: When do you re-train the model, when the data distribution of the index has changed. NO RL, just inference
-                 * Reference: https://arxiv.org/pdf/2210.05508.pdf
-                 * 
-                 * O: Why not correct the model after running the query, you generate the statistics and see if the query stamp that was 
-                 * stamped by the router thread is correct or not. IF not, then have a counter, given it reaches a certain threshold 
-                 * it will let the router know that it needs to update itself or RL agent know that it needs to explore more?
-                 * 
-                 * 
-                 * 
-                 * I: Clustering could be another way as well which is different from query stamping, however let's not dive intot that
-                 * 
-                 * 
-                */
-                
+      if (valid_gcells.size() == 0) continue;  // Check the sanity of the query
+      // -------------------------------------------------------------------------------------
+      // Update the Query Correlation Matrix
+      for(size_t qc1 = 0; qc1 < valid_gcells.size()-1; qc1++){
+          int pCell = valid_gcells[qc1];
+          for(size_t qc2 = qc1; qc2 < valid_gcells.size(); qc2++){
+              int cCell = valid_gcells[qc2];
+              glb_router_thrds[router_cpuids[i]].qCorrMatrix[pCell][cCell] ++;
+              glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
+          }
+      }
+      // -------------------------------------------------------------------------------------
+      /**
+       * TODO: Stamp the query whether it is a mice, elephant or mammoth
+       * I: Requires an inference model or RL model.
+       * 
+       * Things to consider: Of course you have MICE|ELEPHANT|MAMMOTH
+       * Q: What if the MICE and ELEPHANTs are accessing the same area?
+       * A: Then whoever goes first helps the other MICE|ELEPHANT.
+       * SO, they sohould be run one after another, so that they can benefit from one another. 
+       * DONOT put prioritize MICEs in such case. 
+       * TAKEAWAY: In the JOBQUEUE the spatial distance between the queries are important as well 
+       * besides the regular query classifications.
+       * 
+       * REQUIREMENT: This needs to be as lightweight as possible, why? 
+       * REQUIREMENT: Can you implement this with SIMD to make it train faster?
+       * REQUIREMENT: You want to spend as little time as possible while doing this administrative stuff before executing the queries 
+       * itself.
+       * What is interesting compared to the Onur Motlu paper: 
+       *      1. We have an index to consider.
+       *      2. We have the system
+       *      3. The definition should change considering the state of the index and the system as well.
+       *          Q: For different sized index, does the definition of the MICE, ELEPHANT and MAMMOTH change?
+       *              A: It could be counters related to CPU, Cache and Memory
+       *          Q: How to capture different sized index into features? 
+       *          Q: Can hw counters help in capturing the data distribution of the index?
+       *          Q: How to ensure this robustness?
+       *      
+       * 
+       * Features: What features do we have [before] running the query iteself?
+       *      1. QUERY SEMANTICS: SELECT, RANGE QUERY, KNN QUERY (we will think of only RANGE QUERIES OR POINT QUERIES)
+       *      2. RANGE QUERY: lx, ly, hx, hy
+       *      3. PREVIOUS HW COUNTERS OF THE DESTINATION CORE OF THIS QUERY:
+       *      4. PREVIOUS HW COUNTERS ACROSS ALL THE CORES:
+       * 
+       *      
+       * Prediction: What could we predict that will help us decide MICE|ELEPHANT|MAMMOTH?
+       *      1. CPU INSTRUCTIONS
+       *      2. CACHE ACCESSES OR MISSES (which one?)
+       * 
+       *      
+       * I donot think we care about NUMA here, only the pure values that this query will generate.
+       * 
+       * POSSIBLE MODELS: Linear Regression, Spline Regression
+       * 
+       * 
+       * O: Now the query is a mice, elephant or mammoth is relative to the work put in by the index itself.
+       * Do we go for the maximum of the system or the maximum by the index?
+       * E.g., 10 MemMissesPerKInstruction = Mice, 100 MemMissesPerKInstruction = Elephant, 1000 MemMissesPerKInstruction = Mammoth
+       * But they do not saturate the memory bw of the system, neither they affect each other 
+       * Remember the index dummy experiment I did, that should give an idea
+       * My guess is: there is a tipping point for those 
+       * 
+       * Similar Job: Predicting selectivity with lightweight models
+       * 
+       * It does not necessarily have to be hw counters; but of course that helps!
+       * 
+       * O: The best way would be: you look at the query points and you have a notion about the current status of the index (the hw parameters you are generating),
+       * based on that you can prdict the hw counters (a specific hw counter, which helps you to classify it). E.g., Memory Misses per instruction 
+       * Reference: [Onur Motlu Paper], [selectivity functions are learnable paper]
+       * 
+       * Q: Given the hw counters and the type of queries can you decide on the data distribution of the index?
+       * 
+       * O: It could be a conitnuous RL setting 
+       * 
+       * O: When do you re-train the model, when the data distribution of the index has changed. NO RL, just inference
+       * Reference: https://arxiv.org/pdf/2210.05508.pdf
+       * 
+       * O: Why not correct the model after running the query, you generate the statistics and see if the query stamp that was 
+       * stamped by the router thread is correct or not. IF not, then have a counter, given it reaches a certain threshold 
+       * it will let the router know that it needs to update itself or RL agent know that it needs to explore more?
+       * 
+       * 
+       * 
+       * I: Clustering could be another way as well which is different from query stamping, however let's not dive intot that
+       * 
+       * 
+      */
+      // -------------------------------------------------------------------------------------
+      
+      // Push the query to the correct worker thread's job queue
+      std::mt19937 genInt(rd());
+      std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
+      int insert_tid = dq(genInt);
 
+      int glbGridCellInsert = valid_gcells[insert_tid];
                 
-                // -------------------------------------------------------------------------------------
-                
-                // cout << valid_gcells.size() << " " << endl;
-                
-                // Push the query to the correct worker thread's job queue
-                std::mt19937 genInt(rd());
-                std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
-                int insert_tid = dq(genInt);
+      // Stamping the query with something: You need to do the inverse of log_2
+#if USE_MODEL
+    double predictIns = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][0] + 
+                        query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][1]+ 
+                        query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][2]+ 
+                        query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][3];
+    double predictAcc = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][0] + 
+                        query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][1]+ 
+                        query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][2]+ 
+                        query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][3];
+    if (predictIns < QUERY_THRESHOLD_INS && predictAcc < QUERY_THRESHOLD_ACC) 
+        query.qStamp = QUERY_MICE;
+    else if (predictIns >= QUERY_THRESHOLD_INS && predictAcc >= QUERY_THRESHOLD_ACC)
+        query.qStamp = QUERY_MAMMOTH;
+    else 
+        query.qStamp = QUERY_ELEPHANT;
+#endif
 
-                int glbGridCellInsert = valid_gcells[insert_tid];
-                
-                // -------------------------------------------------------------------------------------
-                // Stamping the query with something: You need to do the inverse of log_2
-                // For now skipping
-            #if USE_MODEL
-                double predictIns = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][0] + 
-                                    query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][1]+ 
-                                    query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][2]+ 
-                                    query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][3];
-                
-                double predictAcc = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][0] + 
-                                    query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][1]+ 
-                                    query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][2]+ 
-                                    query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][3];
-                
-                
-                if (predictIns < QUERY_THRESHOLD_INS && predictAcc < QUERY_THRESHOLD_ACC) 
-                    query.qStamp = QUERY_MICE;
-                else if (predictIns >= QUERY_THRESHOLD_INS && predictAcc >= QUERY_THRESHOLD_ACC)
-                    query.qStamp = QUERY_MAMMOTH;
-                else 
-                    query.qStamp = QUERY_ELEPHANT;
-            #endif
-
-                // -------------------------------------------------------------------------------------
-                query.aGrid = glbGridCellInsert;
-                // -------------------------------------------------------------------------------------
-                // Update the query view of each cell
-                gm->glbGridCell[glbGridCellInsert].qType[query.qStamp] += 1;
-                gm->freqQueryDistPushed[glbGridCellInsert]++;
-                gm->freqQueryDistCompleted[glbGridCellInsert]++;
-                // -------------------------------------------------------------------------------------
-                /**
-                 * TODO: The idCpu can be a vector, as multiple threads might be allocated to this grid 
-                */
-                int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
-                glb_worker_thrds[cpuid].jobs.push(query);
-                // -------------------------------------------------------------------------------------
-                // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
+        // -------------------------------------------------------------------------------------
+        query.aGrid = glbGridCellInsert;
+        // -------------------------------------------------------------------------------------
+        // Update the query view of each cell
+        gm->glbGridCell[glbGridCellInsert].qType[query.qStamp] += 1;
+        gm->freqQueryDistPushed[glbGridCellInsert]++;
+        gm->freqQueryDistCompleted[glbGridCellInsert]++;
+        // -------------------------------------------------------------------------------------
+        /**
+         * TODO: The idCpu can be a vector, as multiple threads might be allocated to this grid 
+        */
+        int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
+        glb_worker_thrds[cpuid].jobs.push(query);
+        // -------------------------------------------------------------------------------------
+        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
             
-        });
-    }
+    });
+  }
 }
 
 }  //namespace tp

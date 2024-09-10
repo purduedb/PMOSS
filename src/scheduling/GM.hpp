@@ -3,15 +3,15 @@
 #include <fstream>
 // -------------------------------------------------------------------------------------
 #include "utils/Misc.hpp"
-#include "storage/index.h"  // indirectly includes btree
+#include "storage/index.h"  
 #include "storage/rtree/rtree.h"
 #include "storage/qtree/qtree.h"  
 // -------------------------------------------------------------------------------------
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
-#define INIT_LIMIT 50000000   // this is for btree index building
-#define LIMIT 10000000  // this is for btree workload
+#define INIT_LIMIT 5000000   // this is for btree index building
+#define LIMIT 1000  // this is for btree workload
 #define MAX_GRID_CELL 100
 #define STAMP_LR_PARAM 4  // For now think of the query MBR as only output
 #define MAX_XPAR 10
@@ -21,11 +21,11 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define MULTIDIM 0 
 #define STORAGE 2  // RTree(0), QTree(1), BTree
-#define DATASET 0  // OSM(0), GEOLIFE(1), BMOD02(2)
+#define DATASET 3  // OSM(0), GEOLIFE(1), BMOD02(2), ycsb (3)
 #define MACHINE 0 // 0 (BIGDATA), 1(DBSERVER)
 #define LINUX 3 // 0 (SE 0, SE-NUMA 1, SN, NUMA 2, OURS, 3)
 // -------------------------------------------------------------------------------------
-#define WKLOAD 0
+#define WKLOAD 30
 #define CONFIG 500001
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------

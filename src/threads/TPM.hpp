@@ -198,8 +198,7 @@ class TPManager{
     TPManager();
     TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID> sys_sweeper_cpuids, std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
     void initWorkerThreads();
-    void initRouterThreads();
-    void initRouterThreadsNew();
+    void initRouterThreads(double min_x, double max_x, double min_y, double max_y);
     void initMegaMindThreads();
     void initSysSweeperThreads();
     void initNCoreSweeperThreads();

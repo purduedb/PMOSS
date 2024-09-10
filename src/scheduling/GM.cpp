@@ -15,7 +15,7 @@ GridManager::GridManager(int xPar, int yPar, double minXSpace, double maxXSpace,
 	this->maxYSpace = maxYSpace;
 #if MULTIDIM == 1
 	this->nGridCells = this->xPar * this->yPar;
-#else MULTIDIM == 0
+#else 
 	this->nGridCells = this->xPar;
 #endif 
 	this->idx = nullptr;
@@ -149,25 +149,9 @@ void GridManager::register_grid_cells(string configFile){
 		#if STORAGE == 0
 			MigrateNodes(this->idx, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
 		#elif STORAGE == 1
-			// cout << sizeof(erebus::storage::qtree::QuadTree) << endl;
-			// cout << sizeof(erebus::storage::rtree::TreeNode) << endl;
 			MigrateNodesQuad(this->idx_quadtree, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
-			// erebus::storage::qtree::NUMAstat ns;
-			// this->idx_quadtree->NUMAStatus(ns);
-			// for (int i =0; i < 8; i++){
-			//     cout << ns.cntIndexNodes[i] << ' ';
-			// }
-			// cout << endl;
-			#elif STORAGE == 2
-				// this->idx_btree->migrate(xList[i], )
-				// INVOKE THE MIGRATE FUNCTION HERE
-				// The current implementation finds the first key then 
-				// =====================================
-				// =====================================
-				// =====================================
-				// =====================================
-				// =====================================
-				// =====================================
+		#elif STORAGE == 2
+			uint64_t leaf_count = this->idx_btree->migrate(xList[i], xList[i]+delX, 1000000, numaConfig[trk_cid]);
 		#endif
 	#endif
 			// -------------------------------------------------------------------------------------
@@ -182,10 +166,6 @@ void GridManager::register_grid_cells(string configFile){
 void GridManager::register_index(erebus::storage::rtree::RTree * idx)
 {
     this->idx = idx;
-
-
-    // TODO: go over the grid index and based on the config issue range scans 
-
 }
 void GridManager::register_index(erebus::storage::qtree::QuadTree * idx_quadtree)
 {

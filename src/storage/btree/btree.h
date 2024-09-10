@@ -3,10 +3,14 @@
 #include <cassert>
 #include <cstring>
 #include <atomic>
+#include <iostream>
 // -------------------------------------------------------------------------------------
 #include <immintrin.h>
 #include <sched.h>
+#include <numa.h> 
+#include <numaif.h>
 // -------------------------------------------------------------------------------------
+using namespace std;
 
 namespace erebus
 {
@@ -430,7 +434,7 @@ struct BTree {
 
     while (node->type==PageType::BTreeInner) {
       auto inner = static_cast<BTreeInner<Key>*>(node);
-
+      
       if (parent) {
 	parent->readUnlockOrRestart(versionParent, needRestart);
 	if (needRestart) goto restart;
@@ -466,7 +470,7 @@ struct BTree {
   }
 
 
-  uint64_t migratoryScan(Key k, int range, Value* output, int destNUMA) {
+  uint64_t migratoryScan(Key k1, Key k2, int range, Value* output, int destNUMA) {
     int restartCount = 0;
   restart:
     if (restartCount++)
@@ -484,6 +488,15 @@ struct BTree {
     while (node->type==PageType::BTreeInner) {
       auto inner = static_cast<BTreeInner<Key>*>(node);
 
+      // -------------------------------------------------------------------------------------
+      // Move the node to a destination socket
+      void *ptr_to_check = inner;
+      int status[1];
+      const int destNodes[1] = {destNUMA};
+      int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+      // printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
+      // -------------------------------------------------------------------------------------
+
       if (parent) {
 	parent->readUnlockOrRestart(versionParent, needRestart);
 	if (needRestart) goto restart;
@@ -492,7 +505,7 @@ struct BTree {
       parent = inner;
       versionParent = versionNode;
 
-      node = inner->children[inner->lowerBound(k)];
+      node = inner->children[inner->lowerBound(k1)];
       inner->checkOrRestart(versionNode, needRestart);
       if (needRestart) goto restart;
       versionNode = node->readLockOrRestart(needRestart);
@@ -500,12 +513,96 @@ struct BTree {
     }
 
     BTreeLeaf<Key,Value>* leaf = static_cast<BTreeLeaf<Key,Value>*>(node);
-    unsigned pos = leaf->lowerBound(k);
+    // -------------------------------------------------------------------------------------
+    // Move the node to a destination socket
+    void *ptr_to_check = leaf;
+    int status[1];
+    const int destNodes[1] = {destNUMA};
+    int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+    // printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
+    // -------------------------------------------------------------------------------------
+
+    unsigned pos = leaf->lowerBound(k1);
     int count = 0;
     for (unsigned i=pos; i<leaf->count; i++) {
-      if (count==range)
-	break;
-      output[count++] = leaf->payloads[i];
+      if (leaf->keys[i] < k2){
+        output[count] = leaf->keys[i];  
+        count += 1;
+      }
+      else
+	      break;
+      
+    }
+
+    if (parent) {
+      parent->readUnlockOrRestart(versionParent, needRestart);
+      if (needRestart) goto restart;
+    }
+    node->readUnlockOrRestart(versionNode, needRestart);
+    if (needRestart) goto restart;
+
+    return count;
+  }
+
+  uint64_t full_scan(Key k1, Key k2, Value* output, Value* numa_nodes, bool is_first) {
+    int restartCount = 0;
+  restart:
+    if (restartCount++)
+      yield(restartCount);
+    bool needRestart = false;
+
+    NodeBase* node = root;
+    uint64_t versionNode = node->readLockOrRestart(needRestart);
+    if (needRestart || (node!=root)) goto restart;
+
+    // Parent of current node
+    BTreeInner<Key>* parent = nullptr;
+    uint64_t versionParent;
+
+    while (node->type==PageType::BTreeInner) {
+      auto inner = static_cast<BTreeInner<Key>*>(node);
+      if (is_first){
+        // -------------------------------------------------------------------------------------
+        void *ptr_to_check = inner;
+        int tstatus[1];
+        int tret_code = move_pages(0, 1, &ptr_to_check, NULL, tstatus, 0);
+        numa_nodes[tstatus[0]] += 1;
+      // -------------------------------------------------------------------------------------
+      }
+      
+      if (parent) {
+	parent->readUnlockOrRestart(versionParent, needRestart);
+	if (needRestart) goto restart;
+      }
+
+      parent = inner;
+      versionParent = versionNode;
+
+      node = inner->children[inner->lowerBound(k1)];
+      inner->checkOrRestart(versionNode, needRestart);
+      if (needRestart) goto restart;
+      versionNode = node->readLockOrRestart(needRestart);
+      if (needRestart) goto restart;
+    }
+
+    BTreeLeaf<Key,Value>* leaf = static_cast<BTreeLeaf<Key,Value>*>(node);
+    // -------------------------------------------------------------------------------------
+    void *ptr_to_check = leaf;
+    int tstatus[1];
+    int tret_code = move_pages(0, 1, &ptr_to_check, NULL, tstatus, 0);
+    numa_nodes[tstatus[0]] += 1;
+    // -------------------------------------------------------------------------------------
+
+    unsigned pos = leaf->lowerBound(k1);
+    int count = 0;
+    for (unsigned i=pos; i<leaf->count; i++) {
+      if (leaf->keys[i] < k2){
+        output[count] = leaf->keys[i];  
+        count += 1;
+      }
+      else
+	      break;
+      
     }
 
     if (parent) {

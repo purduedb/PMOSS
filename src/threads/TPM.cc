@@ -497,7 +497,7 @@ void TPManager::dumpNCoreSweeperThreads(){
         ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
         for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
             int tReel = i;
-            memChannelView << CONFIG << " ";
+            memChannelView << this->gm->config << " ";
             memChannelView << tReel << " ";
             /**
              * TODO: Have a global config header file that saves the value of 
@@ -531,7 +531,7 @@ void TPManager::dumpNCoreSweeperThreads(){
             int tReel = i;
             DataDistSnap dd = glb_ncore_sweeper_thrds[key].dataDistReel[i];
 
-            dataView << CONFIG << " ";
+            dataView << this->gm->config  << " ";
             dataView << tReel << " ";
 
             // Load the SIMD values in a memory address
@@ -558,7 +558,7 @@ void TPManager::dumpNCoreSweeperThreads(){
         ofstream queryView(dirName + "/query_view.txt", std::ifstream::app);
         for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].queryViewReel.size(); i++){
             int tReel = i;
-            queryView << CONFIG << " ";
+            queryView << this->gm->config  << " ";
             queryView << tReel << " ";
             for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
                 for(auto aSize2 = 0; aSize2 < MAX_GRID_CELL; aSize2++){
@@ -572,7 +572,7 @@ void TPManager::dumpNCoreSweeperThreads(){
         ofstream queryExecView(dirName + "/query-exec_view.txt", std::ifstream::app);
         for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].queryExecReel.size(); i++){
             int tReel = i;
-            queryExecView << CONFIG << " ";
+            queryExecView << this->gm->config  << " ";
             queryExecView << tReel << " ";
             for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
                 queryExecView << glb_ncore_sweeper_thrds[key].queryExecReel[i].qExecutedMice[aSize1] << " ";

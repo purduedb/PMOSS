@@ -460,7 +460,9 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 
 int main()
 {	
+	int cfgIdx = 111;
 	double min_x, max_x, min_y, max_y;
+
 #if DATASET == 0  // US-NORTHEAST
 	min_x = -83.478714; max_x = -65.87531; min_y = 38.78981; max_y = 47.491634;
 #elif DATASET == 1  // GEOLIFE
@@ -472,9 +474,9 @@ int main()
 #endif
 
 #if MULTIDIM == 1
-	erebus::dm::GridManager glb_gm(10, 10, min_x, max_x, min_y, max_y);
+	erebus::dm::GridManager glb_gm(cfgIdx, 10, 10, min_x, max_x, min_y, max_y);
 #else 
-	erebus::dm::GridManager glb_gm(100, 1, min_x, max_x, min_y, max_y);
+	erebus::dm::GridManager glb_gm(cfgIdx, 100, 1, min_x, max_x, min_y, max_y);
 #endif
 
 	// -------------------------------------------------------------------------------------
@@ -548,8 +550,6 @@ int main()
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
-
-	int cfgIdx = 500001;
 	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
 #if STORAGE == 2
 	db.idx_btree->count_numa_division(min_x, max_x, 100000);

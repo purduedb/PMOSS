@@ -26,7 +26,6 @@ using std::ofstream;
 #define LINUX 3 // 0 (SE 0, SE-NUMA 1, SN, NUMA 2, OURS, 3)
 // -------------------------------------------------------------------------------------
 #define WKLOAD 30
-#define CONFIG 500001
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 
@@ -37,12 +36,13 @@ namespace dm
 class GridManager
 {
   public:
-    int xPar;  // #lines in x-dim
-    int yPar;  // #lines in y-dim
-    double minXSpace;  // min-space of the index in x-dim
-    double minYSpace;  // min-space of the index in y-dim
-    double maxXSpace;  // min-space of the index in x-dim
-    double maxYSpace;  // min-space of the index in y-dim
+    int config;         // hw config of the grid manager
+    int xPar;           // #lines in x-dim
+    int yPar;           // #lines in y-dim
+    double minXSpace;   // min-space of the index in x-dim
+    double minYSpace;   // min-space of the index in y-dim
+    double maxXSpace;   // min-space of the index in x-dim
+    double maxYSpace;   // min-space of the index in y-dim
     int nGridCells;
     int nGridCellsPerThread;
     // -------------------------------------------------------------------------------------
@@ -87,7 +87,7 @@ class GridManager
     // int DataDist[MAX_GRID_CELL] = {0};
     vector<int> DataDist;
     
-    GridManager(int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace);
+    GridManager(int config, int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace);
     void register_grid_cells();
     void register_grid_cells(vector<CPUID> availCPUs);
     void register_grid_cells(string configFile);

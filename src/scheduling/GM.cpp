@@ -6,8 +6,9 @@ namespace erebus
 {
 namespace dm
 {
-GridManager::GridManager(int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace){
-	this->xPar = xPar;
+GridManager::GridManager(int config, int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace){
+	this->config = config;
+    this->xPar = xPar;
 	this->yPar = yPar;
 	this->minXSpace = minXSpace;
 	this->maxXSpace = maxXSpace;

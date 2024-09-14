@@ -1,3 +1,5 @@
+#ifndef PMOSS_INDEX_H_
+#define PMOSS_INDEX_H_
 // -------------------------------------------------------------------------------------
 #pragma once
 #include <iostream>
@@ -24,6 +26,7 @@ class Index
  public:
   // Used for migrating nodes to certain numa nodes
   virtual uint64_t migrate(KeyType key1, KeyType key2, int range, int destNUMA) = 0;
+  
   // Prints the location of each index node page
   virtual uint64_t count_numa_division(KeyType key1, KeyType key2, int range) = 0;
 
@@ -118,8 +121,9 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
     for(int i=0; i<8; i++)
       cout << numa_nodes[i] << ' ';
     cout << endl;
+    // for(int i=0; i<100; i++)
+    //   cout << results[i] << endl;
     return 1;
-
 
   }
   
@@ -139,9 +143,12 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
 
     while (count < range) {
       KeyType nextKey = *reinterpret_cast<KeyType*>(results[count-1]);
-      cout << nextKey << ' ';
+      // ISSUE: issue a range scan for the 3rd largest key and range_size = 100
+      //  what will happen is count = 3, enter the while loop, nextkey will get you to an invalid value
+      //  that does not exist
+      //  One solution: the range size have to be less than what you can get
       incKey(nextKey); // hack: this only works for fixed-size keys
-
+      
       uint64_t nextCount = idx.scan(nextKey, range - count, results + count);
       if (nextCount==0)
         break; // no more entries
@@ -151,29 +158,47 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
   }
 
   uint64_t migrate(KeyType key1, KeyType key2, int range, int destNUMA) {
-    uint64_t leaf_count = 1;
     uint64_t results[range];
-    uint64_t count = idx.migratoryScan(key1, key2, range, results, destNUMA);
-
+    uint64_t count = idx.migratory_scan(key1, key2, range, results, destNUMA);
     if (count==0)
        return 0;
 
     while (count < range) {
-      KeyType nextKey = results[count-1];
+      KeyType nextKey = *reinterpret_cast<KeyType*>(results[count-1]);
       incKey(nextKey); // hack: this only works for fixed-size keys
       if (nextKey > key2)
         break;
       
-      // uint64_t nextCount = idx.migratoryScan(nextKey, key2, range - count, results + count, destNUMA);
-      // We do not need the keys here at all, so we can override the keys of the previous result
-      uint64_t nextCount = idx.migratoryScan(nextKey, key2, range, results, destNUMA);
-      
+      uint64_t nextCount = idx.migratory_scan(nextKey, key2, range - count, results+count, destNUMA);
       if (nextCount==0)
         break; // no more entries
-      count = nextCount;
-      leaf_count += 1;
+      count += nextCount;
     }
-    return leaf_count;
+    return count;
+
+    // uint64_t leaf_count = 1;
+    // uint64_t results[range];
+    // uint64_t count = idx.migratoryScan(key1, key2, range, results, destNUMA);
+
+    // if (count==0)
+    //    return 0;
+
+    // while (count < range) {
+    //   KeyType nextKey = results[count-1];
+    //   incKey(nextKey); // hack: this only works for fixed-size keys
+    //   if (nextKey > key2)
+    //     break;
+      
+    //   // uint64_t nextCount = idx.migratoryScan(nextKey, key2, range - count, results + count, destNUMA);
+    //   // We do not need the keys here at all, so we can override the keys of the previous result
+    //   uint64_t nextCount = idx.migratoryScan(nextKey, key2, range, results, destNUMA);
+      
+    //   if (nextCount==0)
+    //     break; // no more entries
+    //   count = nextCount;
+    //   leaf_count += 1;
+    // }
+    // return leaf_count;
   }
 
 
@@ -194,4 +219,4 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
 }
 
 
-
+#endif 

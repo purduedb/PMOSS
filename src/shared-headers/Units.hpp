@@ -1,3 +1,5 @@
+#ifndef PMOSS_UNITS_H_
+#define PMOSS_UNITS_H_
 /*
 * Taken from Leanstore
 */
@@ -94,7 +96,32 @@ enum {
   EMAIL_KEY,
 };
 // -------------------------------------------------------------------------------------
-enum{
-  UNI_RS,
-  ZIPF_RS,
+// Different workloads 
+//  MD = MULTI-DIMENSIONAL, SD = SINGLE-DIMENSIONAL
+//  
+enum {
+  MD_RS_UNIFORM, 
+  MD_RS_NORMAL, 
+  MD_LK_UNIFORM, 
+  MD_RS_ZIPF, 
+  MD_RS_HOT3, 
+  MD_RS_HOT5, 
+  MD_RS_HOT7, 
+  MD_LK_RS_25_75, 
+  MD_LK_RS_50_50, 
+  MD_LK_RS_75_25, 
+  MD_RS_LOGNORMAL, 
+  SD_YCSB_WKLOADA,
+  SD_YCSB_WKLOADC,
+  SD_YCSB_WKLOADE,
 };
+
+enum {
+  OSM_USNE,
+  GEOLITE,
+  BERLINMOD02,
+  YCSB,
+};
+
+
+#endif

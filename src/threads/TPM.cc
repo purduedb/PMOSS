@@ -18,99 +18,96 @@ TPManager::TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID>
     this->ncore_sweeper_cpuids = ncore_sweeper_cpuids;
 }
 
-void TPManager::initWorkerThreads(){
-    // -------------------------------------------------------------------------------------
-    // initialize worker_threads
-	for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
-		glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this]{
-			erebus::utils::PinThisThread(worker_cpuids[i]);
-			glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
-			
-			PerfEvent e;
-			static int cnt = 0;
+void TPManager::init_worker_threads(){
+    for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
+        glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this]{
+            erebus::utils::PinThisThread(worker_cpuids[i]);
+            glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
+            
+            PerfEvent e;
+            static int cnt = 0;
 
-			while (1) {  
-				if(!glb_worker_thrds[worker_cpuids[i]].running) {
-					// glb_worker_thrds[worker_cpuids[i]].th.detach();
-					break;
-				}
-					
-					
-			Rectangle rec_pop;
-			int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
-					
-			if (size_jobqueue != 0){
-				glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
-				// if (cnt % PERF_STAT_COLLECTION_INTERVAL == 0) {
-				//     e.startCounters();
-				// }
-				e.startCounters();
-					
-					// -------------------------------------------------------------------------------------
-			#if STORAGE == 0
-				int result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
-			#elif STORAGE == 1
-				erebus::storage::qtree::Rect qBox = erebus::storage::qtree::Rect ( rec_pop.left_,
+            while (1) {  
+                if(!glb_worker_thrds[worker_cpuids[i]].running) {
+                    break;
+                }
+                    
+                    
+            Rectangle rec_pop;
+            int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
+                    
+            if (size_jobqueue != 0){
+                glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
+                // if (cnt % PERF_STAT_COLLECTION_INTERVAL == 0) {
+                //     e.startCounters();
+                // }
+                e.startCounters();
+                    
+                    // -------------------------------------------------------------------------------------
+            #if STORAGE == 0
+                int result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
+            #elif STORAGE == 1
+                erebus::storage::qtree::Rect qBox = erebus::storage::qtree::Rect ( rec_pop.left_,
                         rec_pop.bottom_,
                         rec_pop.right_ - rec_pop.left_,
                         rec_pop.top_ - rec_pop.bottom_ 
                 );
-				int result = this->gm->idx_quadtree->getObjectsInBound(qBox);
-			#elif STORAGE == 2  
-				int result = this->gm->idx_btree->scan(static_cast<int>(rec_pop.left_), static_cast<int>(rec_pop.right_));
-			#endif
-					
-				// cnt +=1;
-				// if (cnt % PERF_STAT_COLLECTION_INTERVAL == (PERF_STAT_COLLECTION_INTERVAL-1)){
-				e.stopCounters();
-					
-				PerfCounter perf_counter;
-				for(auto j=0; j < e.events.size(); j++){
-					if (isnan(e.events[j].readCounter())) perf_counter.raw_counter_values[j] = 0;
-					else perf_counter.raw_counter_values[j] = e.events[j].readCounter();
-				}
-							
-				perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
-				perf_counter.rscan_query = rec_pop;
-				perf_counter.result = result;
-				perf_counter.gIdx = rec_pop.aGrid;
-							
-				// You push this info to all the grids this incomoig query intersect
-				// for(auto qlog = 0; qlog < rec_pop.validGridIds.size(); qlog++){
-				//     int gridId = rec_pop.validGridIds[qlog];
-				//     glb_worker_thrds[worker_cpuids[i]].shadowDataDist[gridId].perf_stats.push_back(perf_counter);
-				// }
-						
-						
-				// glb_worker_thrds[worker_cpuids[i]].shadowDataDist[rec_pop.aGrid].perf_stats.push_back(perf_counter);
-				glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
-				// cnt = 0;
-				
+                int result = this->gm->idx_quadtree->getObjectsInBound(qBox);
+            #elif STORAGE == 2  
+                int result = this->gm->idx_btree->scan(static_cast<uint64_t>(rec_pop.left_), static_cast<int>(rec_pop.right_));
+            #endif
+                // int result = 1;
+                // cnt +=1;
+                // if (cnt % PERF_STAT_COLLECTION_INTERVAL == (PERF_STAT_COLLECTION_INTERVAL-1)){
+                e.stopCounters();
+                    
+                PerfCounter perf_counter;
+                for(auto j=0; j < e.events.size(); j++){
+                    if (isnan(e.events[j].readCounter())) perf_counter.raw_counter_values[j] = 0;
+                    else perf_counter.raw_counter_values[j] = e.events[j].readCounter();
+                }
+                            
+                perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
+                perf_counter.rscan_query = rec_pop;
+                perf_counter.result = result;
+                perf_counter.gIdx = rec_pop.aGrid;
+                            
+                // You push this info to all the grids this incomoig query intersect
+                // for(auto qlog = 0; qlog < rec_pop.validGridIds.size(); qlog++){
+                //     int gridId = rec_pop.validGridIds[qlog];
+                //     glb_worker_thrds[worker_cpuids[i]].shadowDataDist[gridId].perf_stats.push_back(perf_counter);
+                // }
+                        
+                        
+                // glb_worker_thrds[worker_cpuids[i]].shadowDataDist[rec_pop.aGrid].perf_stats.push_back(perf_counter);
+                glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
+                // cnt = 0;
+                
 
-					
-				/**
-				 * TODO: You should be updating the outstanding queries 
-				*/
-				gm->freqQueryDistCompleted[rec_pop.aGrid] += 1;
-				
-				auto itQExecMice = glb_worker_thrds[worker_cpuids[i]].qExecutedMice.find(rec_pop.aGrid);
-				if(itQExecMice != glb_worker_thrds[worker_cpuids[i]].qExecutedMice.end()) 
-						itQExecMice->second += 1;
-				else 
-						glb_worker_thrds[worker_cpuids[i]].qExecutedMice.insert({rec_pop.aGrid, 1});
+                    
+                /**
+                 * TODO: You should be updating the outstanding queries 
+                */
+                gm->freqQueryDistCompleted[rec_pop.aGrid] += 1;
+                
+                auto itQExecMice = glb_worker_thrds[worker_cpuids[i]].qExecutedMice.find(rec_pop.aGrid);
+                if(itQExecMice != glb_worker_thrds[worker_cpuids[i]].qExecutedMice.end()) 
+                  itQExecMice->second += 1;
+                else 
+                  glb_worker_thrds[worker_cpuids[i]].qExecutedMice.insert({rec_pop.aGrid, 1});
 
-				// cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
-				// std::this_thread::sleep_for(std::chrono::milliseconds(50));
-			}
-				
-		}
-				
-				// glb_worker_thrds[worker_cpuids[i]].th.detach();
-		});
-	}
+                // cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
+                // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            }
+                
+        }
+                
+                // glb_worker_thrds[worker_cpuids[i]].th.detach();
+        });
+    }
 }
 
-void TPManager::initMegaMindThreads(){
+void TPManager::init_megamind_threads(){
     // -------------------------------------------------------------------------------------
     for (unsigned i = 0; i < CURR_MEGAMIND_THREADS; ++i) {
         glb_megamind_thrds[megamind_cpuids[i]].th = std::thread([i, this] {
@@ -146,7 +143,7 @@ void TPManager::initMegaMindThreads(){
 }
 
 
-void TPManager::initSysSweeperThreads(){
+void TPManager::init_syssweeper_threads(){
     // -------------------------------------------------------------------------------------
     for (unsigned i = 0; i < CURR_SYS_SWEEPER_THREADS; ++i) {
         glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].th = std::thread([i, this] {
@@ -280,160 +277,149 @@ void TPManager::initSysSweeperThreads(){
 }
 
 
-void TPManager::initNCoreSweeperThreads(){
-    for (unsigned i = 0; i < CURR_NCORE_SWEEPER_THREADS; ++i) {
-        glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].th = std::thread([i, this] {
-            erebus::utils::PinThisThread(ncore_sweeper_cpuids[i]);
-            glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].cpuid=ncore_sweeper_cpuids[i];
-            int numaID = numa_node_of_cpu(ncore_sweeper_cpuids[i]);
-            while (1) 
-            {
-                if(!glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].running) 
+void TPManager::init_ncoresweeper_threads(){
+  for (unsigned i = 0; i < CURR_NCORE_SWEEPER_THREADS; ++i) {
+    glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].th = std::thread([i, this] {
+      erebus::utils::PinThisThread(ncore_sweeper_cpuids[i]);
+      glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].cpuid=ncore_sweeper_cpuids[i];
+      int numaID = numa_node_of_cpu(ncore_sweeper_cpuids[i]);
+      while (1) 
+      {
+        if(!glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].running) 
+            break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(80000));
+        
+        // First, push the token to the worker cpus to get the DataView
+        PerfCounter perf_counter;
+        perf_counter.qType = SYNC_TOKEN;
+        for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
+        {
+          int wkCPUID = itr->second;
+          // cout << itr->first<< '\t' << itr->second << '\n';
+          glb_worker_thrds[wkCPUID].perf_stats.push(perf_counter);
+        }
+        
+        // Then, push the token to the system_sweeper cpu to get the System View (MemChannel)
+        if (i == 0){
+          IntelPCMCounter iPCMCnt;
+          iPCMCnt.qType = SYNC_TOKEN;
+          glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.push(iPCMCnt);
+        }
+        
+        // Take a snapshot of the DataView from the  threads
+        const int nQCounterCline = PERF_EVENT_CNT/8 + 1;
+        /**
+         * It has to be a complete snap.
+         * Unless for all the cores you have got the token
+         * do not insert
+        */
+        DataDistSnap ddSnap;  // Snapshot for the current NUMA node
+        for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
+        {
+          int wkCPUID = itr->second;
+          bool token_found = false;                    
+          while(!token_found){
+            size_t size_stats = glb_worker_thrds[wkCPUID].perf_stats.unsafe_size();
+            PerfCounter pc;
+            if (size_stats != 0){
+                glb_worker_thrds[wkCPUID].perf_stats.try_pop(pc);
+                if (pc.qType == SYNC_TOKEN){
                     break;
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(80000));
-                // -------------------------------------------------------------------------------------
-                // First push the token to the worker cpus to get the DataView
-                PerfCounter perf_counter;
-                perf_counter.qType = SYNC_TOKEN;
-                for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
-                {
-                    int wkCPUID = itr->second;
-                    // cout << itr->first<< '\t' << itr->second << '\n';
-                    glb_worker_thrds[wkCPUID].perf_stats.push(perf_counter);
-                }
-
-                // -------------------------------------------------------------------------------------
-                // Push the token to the system_sweeper cpu to get the System View (MemChannel)
-                if (i == 0){
-                    IntelPCMCounter iPCMCnt;
-                    iPCMCnt.qType = SYNC_TOKEN;
-                    glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.push(iPCMCnt);
                 }
                 
-                // -------------------------------------------------------------------------------------
-                // Take a snapshot of the DataView from the  threads
-
-                const int nQCounterCline = PERF_EVENT_CNT/8 + 1;
-                
-                
-                /**
-                 * It has to be a complete snap.
-                 * Unless for all the cores you have got the token
-                 * do not insert
-                */
-                DataDistSnap ddSnap;  // Snapshot for the current NUMA node
-                
-                for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
-                {
-                    int wkCPUID = itr->second;
-                    bool token_found = false;                    
-                    while(!token_found){
-                        size_t size_stats = glb_worker_thrds[wkCPUID].perf_stats.unsafe_size();
-                        PerfCounter pc;
-                        if (size_stats != 0){
-                            
-                            glb_worker_thrds[wkCPUID].perf_stats.try_pop(pc);
-                            if (pc.qType == SYNC_TOKEN){
-                                break;
-                            }
-                    
-                            // Use SIMD to compute the DataView
-                            ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
-                            __m512d rawQCounter[nQCounterCline];
-                            __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
-                            for (auto vCline = 0; vCline < nQCounterCline; vCline++){
-                                rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
-                                rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
-                                rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
-                                if (vCline == 0){
-                                    rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
-                                }
-                                ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
-                            }      
-                            
-   
-                        }
-                        else
-                            break;
-                    }
-                    
-                }
-                glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].dataDistReel.push_back(ddSnap);
-                
-                // -------------------------------------------------------------------------------------
-                // Take a snapshot of the QueryExecuted from the worker threads
-                struct QueryExecSnap qExecSnap;
-                
-                for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
-                {
-                    int wkCPUID = itr->second;   
-                    for (auto itQExec : glb_worker_thrds[wkCPUID].qExecutedMice){
-                        qExecSnap.qExecutedMice[itQExec.first] += itQExec.second;   
-                    }
-                }
-                glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].queryExecReel.push_back(qExecSnap);
-
-                // -------------------------------------------------------------------------------------
-                // -------------------------------------------------------------------------------------
-                
-                // Calculate the Average
-                /**
-                 * TODO: This does not tell you the full story: there can be a huge outlier
-                 * which can mess up the whole average
-                 * Hence the stat function to use here is just absurd I think since
-                 * we are doing the dirty work with the data anyway:
-                 * Need std_deviation, or just a probabilistic view
-                 * */ 
-                
-                
-                // -------------------------------------------------------------------------------------
-                // Take a snapshot of the QueryFreq and QueryFreqView and Correlation Matrix from the router threads
-                // For now let's assume we have only one router threads/NUMA node
-                for (auto[itr, rangeEnd] = this->gm->NUMAToRoutingCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
-                {
-                    struct QueryViewSnap qViewSnap;
-                    int rtCPUID = itr->second;
-                    // memcpy(glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
-                    memcpy(qViewSnap.corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
-                    memset(glb_router_thrds[rtCPUID].qCorrMatrix, 0, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
-                    glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].queryViewReel.push_back(qViewSnap);
-                }
-                
-                // -------------------------------------------------------------------------------------
-                // Take a snapshot of the System View (Memory Channel View)
-                if (i == 0){
-                    bool token_found = false;                    
-                    memdata_t DRAMResUsageSnap;
-                    while(!token_found){
-                        size_t size_stats = glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.unsafe_size();
-                        IntelPCMCounter iPCMCnt;
-                        if (size_stats != 0){
-                            glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.try_pop(iPCMCnt);
-                            if (iPCMCnt.qType == SYNC_TOKEN){
-                                break;
-                            }
-                    
-                            // Use SIMD to compute the Memory Channel View
-                            DRAMResUsageSnap = iPCMCnt.sysParams;
-                        }
-                        else
-                            break;
-                    }
-                    glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].DRAMResUsageReel.push_back(DRAMResUsageSnap);
-                }
+                // Use SIMD to compute the DataView
+                ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
+                __m512d rawQCounter[nQCounterCline];
+                __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
+                for (auto vCline = 0; vCline < nQCounterCline; vCline++){
+                  rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
+                  rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
+                  rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
+                  if (vCline == 0){
+                    rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
+                  }
+                  ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
+                }      
                 
 
-
-                
-                
             }
-            // glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].th.detach();
-        });
-    }
+            else break;
+          }   
+        }
+        
+        glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].dataDistReel.push_back(ddSnap);
+        
+        // -------------------------------------------------------------------------------------
+        // Take a snapshot of the QueryExecuted from the worker threads
+        struct QueryExecSnap qExecSnap;
+        
+        for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
+        {
+            int wkCPUID = itr->second;   
+            for (auto itQExec : glb_worker_thrds[wkCPUID].qExecutedMice){
+                qExecSnap.qExecutedMice[itQExec.first] += itQExec.second;   
+            }
+            // new addition to only count last round
+            // glb_worker_thrds[wkCPUID].qExecutedMice.clear();
+        }
+        glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].queryExecReel.push_back(qExecSnap);
+
+        // -------------------------------------------------------------------------------------
+        // -------------------------------------------------------------------------------------
+        
+        // Calculate the Average
+        /**
+         * TODO: This does not tell you the full story: there can be a huge outlier
+         * which can mess up the whole average
+         * Hence the stat function to use here is just absurd I think since
+         * we are doing the dirty work with the data anyway:
+         * Need std_deviation, or just a probabilistic view
+         * */ 
+        
+        
+        // -------------------------------------------------------------------------------------
+        // Take a snapshot of the QueryFreq and QueryFreqView and Correlation Matrix from the router threads
+        // For now let's assume we have only one router threads/NUMA node
+        for (auto[itr, rangeEnd] = this->gm->NUMAToRoutingCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
+        {
+            struct QueryViewSnap qViewSnap;
+            int rtCPUID = itr->second;
+            // memcpy(glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
+            memcpy(qViewSnap.corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
+            memset(glb_router_thrds[rtCPUID].qCorrMatrix, 0, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
+            glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].queryViewReel.push_back(qViewSnap);
+        }
+        
+        // -------------------------------------------------------------------------------------
+        // Take a snapshot of the System View (Memory Channel View)
+        if (i == 0){
+            bool token_found = false;                    
+            memdata_t DRAMResUsageSnap;
+            while(!token_found){
+                size_t size_stats = glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.unsafe_size();
+                IntelPCMCounter iPCMCnt;
+                if (size_stats != 0){
+                    glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.try_pop(iPCMCnt);
+                    if (iPCMCnt.qType == SYNC_TOKEN){
+                        break;
+                    }
+            
+                    // Use SIMD to compute the Memory Channel View
+                    DRAMResUsageSnap = iPCMCnt.sysParams;
+                }
+                else
+                    break;
+            }
+            glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].DRAMResUsageReel.push_back(DRAMResUsageSnap);
+        }
+        
+      }
+      // glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].th.detach();
+    });
+  }
 }
 
-void TPManager::dumpNCoreSweeperThreads(){
+void TPManager::dump_ncoresweeper_threads(){
     cout << "==========================DUMPING Core Sweeper Threads=======================" << endl;
     for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
 #if MACHINE == 0
@@ -522,7 +508,6 @@ void TPManager::dumpNCoreSweeperThreads(){
         // -------------------------------------------------------------------------------------
         ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
         const int nQCounterCline = PERF_EVENT_CNT/8 + 1;
-        // const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline + MAX_GRID_CELL;
         const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
         
         alignas(64) double dataViewScalarDump[scalarDumpSize] = {};
@@ -655,14 +640,14 @@ void TPManager::dumpGridWorkerThreadCounters(int tID){
 }
 
 
-void TPManager::terminateWorkerThreads(){
+void TPManager::terminate_worker_threads(){
     for (const auto & [ key, value ] : glb_worker_thrds) {
         glb_worker_thrds[key].running = false;
         // glb_worker_thrds[key].th.detach();
     }
 }
 
-void TPManager::terminateNCoreSweeperThreads(){
+void TPManager::terminate_ncoresweeper_threads(){
     for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
         glb_ncore_sweeper_thrds[key].running = false;
         // glb_ncore_sweeper_thrds[key].th.detach();
@@ -670,7 +655,7 @@ void TPManager::terminateNCoreSweeperThreads(){
 }
 
 
-void TPManager::terminateRouterThreads(){
+void TPManager::terminate_router_threads(){
     for (const auto & [ key, value ] : glb_router_thrds) {
         glb_router_thrds[key].running = false;
         // glb_router_thrds[key].th.detach();
@@ -678,14 +663,14 @@ void TPManager::terminateRouterThreads(){
 }
 
 
-void TPManager::terminateMegaMindThreads(){
+void TPManager::terminate_megamind_threads(){
     for (const auto & [ key, value ] : glb_megamind_thrds) {
         glb_megamind_thrds[key].running = false;
         // glb_megamind_thrds[key].th.detach();
     }
 }
 
-void TPManager::terminateSysSweeperThreads(){
+void TPManager::terminate_syssweeper_threads(){
     for (const auto & [ key, value ] : glb_sys_sweeper_thrds) {
         glb_sys_sweeper_thrds[key].running = false;
         // glb_sys_sweeper_thrds[key].th.detach();
@@ -797,18 +782,18 @@ void TPManager::testInterferenceInitWorkerThreads(vector<CPUID> test_worker_cpui
 
                 // std::uniform_real_distribution<> dlx(min_x, max_x);
                 // std::uniform_real_distribution<> dly(min_y, max_y);
-                // double lx = dlx(gen);
-                // double ly = dly(gen);
+                // lx = dlx(gen);
+                // ly = dly(gen);
 
                 // std::uniform_real_distribution<> dLength(0, max_length);
                 // std::uniform_real_distribution<> dWidth(0, max_width);
-                // double length = dLength(gen);
-                // double width = dWidth(gen);
+                // length = dLength(gen);
+                // width = dWidth(gen);
                 
-                // double hx = lx + length;
-                // double hy = ly + width;
+                // hx = lx + length;
+                // hy = ly + width;
 
-                // Rectangle query(lx, hx, ly, hy);
+                // query = Rectangle(lx, hx, ly, hy);
                 
                 // -------------------------------------------------------------------------------------
                 PerfEvent e;
@@ -936,368 +921,244 @@ TPManager::~TPManager(){
     }
 }
 
-void TPManager::initRouterThreads(double min_x, double max_x, double min_y, double max_y){
+void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y,
+    std::vector<keytype> &init_keys){
   for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {
-    glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, min_x, max_x, min_y, max_y] {
+    glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys] {
     erebus::utils::PinThisThread(router_cpuids[i]);
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
-              
+    
+    
+    double pseudo_min_x = 1;
+    double pseudo_max_x = 1 + (max_x - min_x);
     // -------------------------------------------------------------------------------------
     std::random_device rd;      
     std::mt19937 genTem(rd());
     std::mt19937 gen(rd());     
+    std::uniform_real_distribution<> dlx_ureal;
+    std::uniform_real_distribution<> dly_ureal;
+    std::uniform_real_distribution<> dLength_ureal;
+    std::uniform_real_distribution<> dWidth_ureal;
+    std::normal_distribution<double> dlx_norm;
+    std::normal_distribution<double> dly_norm;
+    std::uniform_int_distribution<> dob_uint;
+    std::default_random_engine generator;
+    erebus::utils::zipfian_int_distribution<int> dlx_zipint;
+    erebus::utils::zipfian_int_distribution<int> dly_zipint;
+    using normal_dist   = std::normal_distribution<>;
+    using discrete_dist = std::discrete_distribution<std::size_t>;
+    std::array<normal_dist, 10> GX;
+    std::array<normal_dist, 10> GY;
+    discrete_dist w;
+    std::lognormal_distribution<double> dlx_lnorm;
+    std::lognormal_distribution<double> dly_lnorm;
+    // b tree experiments
+    std::uniform_int_distribution<uint64_t> dx_uint64;  
+    std::uniform_int_distribution<uint64_t> dLength_uint64;  
+
+    erebus::generators::Generator<uint64_t> *key_chooser_; // transaction key gen
+    erebus::generators::Generator<uint64_t> *scan_len_chooser_;
     // -------------------------------------------------------------------------------------
     
     double max_length, max_width;
 
-#if DATASET == 0  // US-NORTHEAST
-  max_length = 6;  // Previously: 6
-  max_width = 6;
-#elif DATASET == 1  // GEOLITE
-  max_length = 30;  // Previously: 6
-  max_width = 30;
-# elif DATASET == 2 // BMOD02
-  max_length = 3000;  // Previously: 6
-  max_width = 3000;
-#elif DATASET == 3  // YCSB
-  max_length = 6; // represents the number of keys we want 
-  max_width = -1; 
-# endif
+    if (ds == OSM_USNE){
+      max_length = 6; max_width = 6;
+    }
+    else if (ds == GEOLITE){
+      max_length = 30; max_width = 30;
+    }
+    else if(ds == BERLINMOD02){
+      max_length = 3000; max_width = 3000;
+    } 
+    else if (ds == YCSB){
+      // Represents the number of keys we want 
+      max_length = 6; 
+      max_width = -1; 
+    }
 
-# if WKLOAD == 0
-  std::uniform_real_distribution<> dlx(min_x, max_x);
-  std::uniform_real_distribution<> dly(min_y, max_y);
-  
-  // 0 means it will be a point query, however the point may not exist in the dataset
-  std::uniform_real_distribution<> dLength(1, max_length);
-  std::uniform_real_distribution<> dWidth(1, max_width);
 
-# elif WKLOAD == 1  // Normal workload, where the peak is at the average
-# if DATASET == 0
-  double avg_x = (max_x + min_x) / 2;
-  double avg_y = (max_y + min_y) / 2;
-  double dev_x = (max_x - min_x) / 6;
-  double dev_y = (max_y - min_y) / 6;
-# elif DATASET == 1
-  double avg_x = 130;
-  double avg_y = 30;
-  double dev_x = 7;
-  double dev_y = 7;
-  // -------------------------------------------------------------------------------------
-#endif
-  std::normal_distribution<double> dlx(avg_x, dev_x);
-  std::normal_distribution<double> dly(avg_y, dev_y);
+    if (wl == MD_RS_UNIFORM){
+      dlx_ureal = std::uniform_real_distribution<>(min_x, max_x);
+      dly_ureal = std::uniform_real_distribution<>(min_y, max_y);
+      dLength_ureal = std::uniform_real_distribution<> (1, max_length);
+      dWidth_ureal = std::uniform_real_distribution<> (1, max_width);
+    }
+    else if (wl == MD_RS_NORMAL){
+      double avg_x, avg_y, dev_x, dev_y;
+      if (ds == OSM_USNE){
+        avg_x = (max_x + min_x) / 2;
+        avg_y = (max_y + min_y) / 2;
+        dev_x = (max_x - min_x) / 6;
+        dev_y = (max_y - min_y) / 6;
+      }
+      else if (ds == GEOLITE){
+        avg_x = 130;
+        avg_y = 30;
+        dev_x = 7;
+        dev_y = 7;
+      }
+      dlx_norm = std::normal_distribution<double> (avg_x, dev_x);
+      dly_norm = std::normal_distribution<double> (avg_y, dev_y);
+      dLength_ureal = std::uniform_real_distribution<> (1, max_length);
+      dWidth_ureal = std::uniform_real_distribution<> (1, max_width);	
+    }
+    else if (wl == MD_LK_UNIFORM){
+      int max_objects = this->gm->idx->objects_.size();
+      dob_uint = std::uniform_int_distribution<>(0, max_objects-1);
+    }  
+    else if (wl == MD_RS_ZIPF){
+      dlx_zipint = erebus::utils::zipfian_int_distribution<int>(min_x, max_x, 0.4);
+      dly_zipint = erebus::utils::zipfian_int_distribution<int>(min_y, max_y, 0.4);
+      max_length = 6;
+      max_width = 6;
+      dLength_ureal = std::uniform_real_distribution<> (1, max_length);
+      dWidth_ureal = std::uniform_real_distribution<> (1, max_width);	
+    }
+    else if (wl == MD_RS_HOT3){
+      const int nHotSpots =3;
+      std::vector <std::tuple<double, double>> nPoints;
+      std::tuple<double, double> stdDevs;
+      if (ds == OSM_USNE){
+          // -------------------------------US-NORTHEAST---------------------------------------
+          nPoints = {{-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396}};
+          stdDevs = {0.880170200000002, 0.4350911999999987};
+      }
+      for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
+          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
+          GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
+      }
+      w = discrete_dist{0.25, 0.25, 0.25, 0.25};
+      dlx_ureal = std::uniform_real_distribution<> (min_x, max_x);
+      dly_ureal = std::uniform_real_distribution<> (min_y, max_y);
+      dLength_ureal = std::uniform_real_distribution<> (1, 3);
+      dWidth_ureal = std::uniform_real_distribution<> (1, 3);	
 
-  std::uniform_real_distribution<> dLength(1, max_length);
-  std::uniform_real_distribution<> dWidth(1, max_width);
-                
-    
-# elif WKLOAD == 2  // Multi-modal with 4 peaks
-  /**
-   * https://stackoverflow.com/questions/37320025/mixture-of-gaussian-distribution-in-c
-  */
+    }
+    else if (wl == MD_RS_HOT5){
+      std::vector <std::tuple<double, double>> nPoints;
+      std::tuple<double, double> stdDevs;
 
-  using normal_dist   = std::normal_distribution<>;
-  using discrete_dist = std::discrete_distribution<std::size_t>;
+      const int nHotSpots = 5;
+      if (ds == OSM_USNE){
+          // -------------------------------US-NORTHEAST---------------------------------------
+          nPoints = {
+              {-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396},
+              {-72.9166716, 44.0109044}, {-69.3959908, 45.7512692}
+              };
+          stdDevs = {0.880170200000002, 0.4350911999999987};
+      }
+      for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
+          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
+          GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
+      }
+      w = discrete_dist{0.15, 0.15, 0.15, 0.15, 0.15, 0.25};
+      dlx_ureal = std::uniform_real_distribution<> (min_x, max_x);
+      dly_ureal = std::uniform_real_distribution<> (min_y, max_y);
+      dLength_ureal = std::uniform_real_distribution<> (1, 3);
+      dWidth_ureal = std::uniform_real_distribution<> (1, 3);	
+    }        
+    else if (wl == MD_RS_HOT7){
+      std::vector <std::tuple<double, double>> nPoints;
+      std::tuple<double, double> stdDevs;
+      const int nHotSpots = 7;
+      if (ds == OSM_USNE){
+          // -------------------------------US-NORTHEAST---------------------------------------
+          nPoints = {
+              {-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396},
+              {-72.9166716, 44.0109044}, {-69.3959908, 45.7512692},
+              {-78.1976928, 43.140722}, {-76.4373524, 40.5301748}
+              };
+          stdDevs = {0.880170200000002, 0.4350911999999987};
+      }
+      
+      for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
+          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
+          GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
+      }
+      w = discrete_dist{0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.09};
+      dlx_ureal = std::uniform_real_distribution<> (min_x, max_x);
+      dly_ureal = std::uniform_real_distribution<> (min_y, max_y);
+      dLength_ureal = std::uniform_real_distribution<> (1, 3);
+      dWidth_ureal = std::uniform_real_distribution<> (1, 3);	
+    }    
+    else if (wl == MD_LK_RS_25_75){
+      w = discrete_dist{0.25, 0.75};
 
-  # if DATASET == 0
-      // -------------------------------US-NORTHEAST---------------------------------------
-      // For now change it to sth interesting: random
-      double avg_x1 = (-79.95 -78.19) / 2;
-      double avg_y1 = (45.75 + 46.62)/ 2;
-      double dev_x1 = 3;
-      double dev_y1 = 3;
-
-      double avg_x2 = (-79.95 - 76.44) / 2;
-      double avg_y2 = (41.00 + 43.14)/ 2;
-      double dev_x2 = 3;
-      double dev_y2 = 3;
-
-      double avg_x3 = (-72.92 -71.15) / 2;
-      double avg_y3 = (43.14 + 44.84)/ 2;
-      double dev_x3 = 3;
-      double dev_y3 = 3;
-
-      double avg_x4 = -69.35;
-      double avg_y4 = (39.65 + 40.53)/ 2;
-      double dev_x4 = 3;
-      double dev_y4 = 3;
-
-  # elif DATASET == 1
-      // -------------------------------GEOLITE---------------------------------------
-      double avg_x1 = 120;
-      double avg_y1 = 20;
-      double dev_x1 = 3;
-      double dev_y1 = 3;
-
-      double avg_x2 = 140;
-      double avg_y2 = 20;
-      double dev_x2 = 3;
-      double dev_y2 = 3;
-
-      double avg_x3 = 140;
-      double avg_y3 = 60;
-      double dev_x3 = 3;
-      double dev_y3 = 3;
-
-      double avg_x4 = -160;
-      double avg_y4 = 20;
-      double dev_x4 = 3;
-      double dev_y4 = 3;
-  # else 
-      double dummy_x;
-  # endif 
-
-  auto GX = std::array<normal_dist, 4>{
-      normal_dist{avg_x1, dev_x1}, // mean, stddev of G[0]
-      normal_dist{avg_x2, dev_x2}, // mean, stddev of G[1]
-      normal_dist{avg_x3, dev_x3},  // mean, stddev of G[2]
-      normal_dist{avg_x4, dev_x4}  // mean, stddev of G[3]
-  };
-  auto GY = std::array<normal_dist, 4>{
-      normal_dist{avg_y1, dev_y1}, // mean, stddev of G[0]
-      normal_dist{avg_y2, dev_y2}, // mean, stddev of G[1]
-      normal_dist{avg_y3, dev_y3},  // mean, stddev of G[2]
-      normal_dist{avg_y4, dev_y4}  // mean, stddev of G[3]
-  };
-
-  auto w = discrete_dist{
-      0.25, // weight of G[0]
-      0.25, // weight of G[1]
-      0.25,  // weight of G[2]
-      0.25  // weight of G[3]
-  };
-
-  // For now change it to sth interesting: random
-  std::uniform_real_distribution<> dLength(1, max_length);
-  std::uniform_real_distribution<> dWidth(1, max_width);
-
-    
-# elif WKLOAD == 3 // Multi-modal with 3 peaks
-  /**
-   * https://stackoverflow.com/questions/37320025/mixture-of-gaussian-distribution-in-c
-  */
-
-  using normal_dist   = std::normal_distribution<>;
-  using discrete_dist = std::discrete_distribution<std::size_t>;
-  # if DATASET == 0
-      // -------------------------------US-NORTHEAST---------------------------------------
-      double avg_x1 = (-75.65 -69.79) / 2;
-      double avg_y1 = (41.69 + 38.79)/ 2;
-      double dev_x1 = 2;
-      double dev_y1 = 2;
-
-      double avg_x2 = (-71.74 - 65.68) / 2;
-      double avg_y2 = (45.56 + 47.49)/ 2;
-      double dev_x2 = 2;
-      double dev_y2 = 2;
-
-      double avg_x3 = (-83.478714 -65.87531) / 2;
-      double avg_y3 = (38.78981 + 47.491634) / 2;
-      double dev_x3 = 2;
-      double dev_y3 = 2;
-  # elif DATASET == 1
-      // -------------------------------GEOLITE---------------------------------------
-      // double avg_x1 = 120;
-      // double avg_y1 = 20;
-      // double dev_x1 = 3;
-      // double dev_y1 = 3;
-
-      // double avg_x3 = 140;
-      // double avg_y3 = 60;
-      // double dev_x3 = 3;
-      // double dev_y3 = 3;
-
-      // double avg_x2 = -160;
-      // double avg_y2 = 20;
-      // double dev_x2 = 3;
-      // double dev_y2 = 3;
-  # endif
-
-  auto GX = std::array<normal_dist, 3>{
-      normal_dist{avg_x1, dev_x1}, // mean, stddev of G[0]
-      normal_dist{avg_x2, dev_x2}, // mean, stddev of G[1]
-      normal_dist{avg_x3, dev_x3} // mean, stddev of G[2]
-  };
-  auto GY = std::array<normal_dist, 3>{
-      normal_dist{avg_y1, dev_y1}, // mean, stddev of G[0]
-      normal_dist{avg_y2, dev_y2}, // mean, stddev of G[1]
-      normal_dist{avg_y3, dev_y3} // mean, stddev of G[1]
-  };
-
-  auto w = discrete_dist{
-      0.33, // weight of G[0]
-      0.33, // weight of G[1]
-      0.34  // weight of G[2]
-  };
-
-  std::uniform_real_distribution<> dLength(1, max_length);
-  std::uniform_real_distribution<> dWidth(1, max_width);
-    
-# elif WKLOAD == 4  // Lookup
-  int max_objects = this->gm->idx->objects_.size();
-  std::uniform_int_distribution<> dob(0, max_objects-1);
-#elif WKLOAD == 5  // Zipfian
-  std::default_random_engine generator;
-  erebus::utils::zipfian_int_distribution<int> distX(min_x, max_x, 0.4);
-  erebus::utils::zipfian_int_distribution<int> distY(min_y, max_y, 0.4);
-  max_length = 6;
-  max_width = 6;
-  std::uniform_real_distribution<> dLength(1, max_length);
-  std::uniform_real_distribution<> dWidth(1, max_width);
-#elif WKLOAD == 6
-  using normal_dist   = std::normal_distribution<>;
-  using discrete_dist = std::discrete_distribution<std::size_t>;
-  const int nHotSpots =3;
-  # if DATASET == 0
-      // -------------------------------US-NORTHEAST---------------------------------------
-      std::vector <std::tuple<double, double>> nPoints = {{-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396}};
-      std::tuple<double, double> stdDevs = {0.880170200000002, 0.4350911999999987};
-  #endif 
-  std::array<normal_dist, nHotSpots> GX;
-  std::array<normal_dist, nHotSpots> GY;
-  for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
-      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
-      GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
-  }
-  auto w = discrete_dist{0.25, 0.25, 0.25, 0.25};
-  std::uniform_real_distribution<> dlx(min_x, max_x);
-  std::uniform_real_distribution<> dly(min_y, max_y);
-  
-  std::uniform_real_distribution<> dLength(1, 3);
-  std::uniform_real_distribution<> dWidth(1, 3);
-#elif WKLOAD == 7
-  using normal_dist   = std::normal_distribution<>;
-  using discrete_dist = std::discrete_distribution<std::size_t>;
-  const int nHotSpots = 5;
-  # if DATASET == 0
-      // -------------------------------US-NORTHEAST---------------------------------------
       std::vector <std::tuple<double, double>> nPoints = {
-          {-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396},
-          {-72.9166716, 44.0109044}, {-69.3959908, 45.7512692}
-          };
-      std::tuple<double, double> stdDevs = {0.880170200000002, 0.4350911999999987};
-  #endif 
-  std::array<normal_dist, nHotSpots> GX;
-  std::array<normal_dist, nHotSpots> GY;
-  for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
-      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
-      GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
-  }
-  auto w = discrete_dist{0.15, 0.15, 0.15, 0.15, 0.15, 0.25};
-  std::uniform_real_distribution<> dlx(min_x, max_x);
-  std::uniform_real_distribution<> dly(min_y, max_y);
-  
-  std::uniform_real_distribution<> dLength(1, 3);
-  std::uniform_real_distribution<> dWidth(1, 3);        
-#elif WKLOAD == 8
-  using normal_dist   = std::normal_distribution<>;
-  using discrete_dist = std::discrete_distribution<std::size_t>;
-  const int nHotSpots = 7;
-  # if DATASET == 0
-      // -------------------------------US-NORTHEAST---------------------------------------
+              {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
+              };
+        std::vector <std::tuple<double, double>> stdDevs = {
+              {11.0, 1.3}, {11.0, 4.0}
+              };
+      
+      for (int spIdx = 0; spIdx < 2; spIdx++){
+          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+          GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+      }
+    }
+    else if(wl == MD_LK_RS_50_50){
+      w = discrete_dist{0.50, 0.50};
+
       std::vector <std::tuple<double, double>> nPoints = {
-          {-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396},
-          {-72.9166716, 44.0109044}, {-69.3959908, 45.7512692},
-          {-78.1976928, 43.140722}, {-76.4373524, 40.5301748}
-          };
-      std::tuple<double, double> stdDevs = {0.880170200000002, 0.4350911999999987};
-  #endif 
-  std::array<normal_dist, nHotSpots> GX;
-  std::array<normal_dist, nHotSpots> GY;
-  for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
-      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
-      GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
-  }
-  auto w = discrete_dist{0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.09};
-  std::uniform_real_distribution<> dlx(min_x, max_x);
-  std::uniform_real_distribution<> dly(min_y, max_y);
-  
-  std::uniform_real_distribution<> dLength(1, 3);
-  std::uniform_real_distribution<> dWidth(1, 3);      
-#elif WKLOAD == 9
-  using normal_dist   = std::normal_distribution<>;
-  using discrete_dist = std::discrete_distribution<std::size_t>;
-  auto w = discrete_dist{0.25, 0.75};
+              {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
+              };
+        std::vector <std::tuple<double, double>> stdDevs = {
+              {11.0, 1.3}, {11.0, 4.0}
+              };
+      
+      for (int spIdx = 0; spIdx < 2; spIdx++){
+          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+          GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+      }
+    }
+    else if (wl == MD_LK_RS_75_25){
+      w = discrete_dist{0.75, 0.25};
 
-  std::vector <std::tuple<double, double>> nPoints = {
-          {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
-          };
-    std::vector <std::tuple<double, double>> stdDevs = {
-          {11.0, 1.3}, {11.0, 4.0}
-          };
-  
-  std::array<normal_dist, 2> GX;
-  std::array<normal_dist, 2> GY;
-  for (int spIdx = 0; spIdx < 2; spIdx++){
-      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-      GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-  }
-#elif WKLOAD == 20
-  using normal_dist   = std::normal_distribution<>;
-  using discrete_dist = std::discrete_distribution<std::size_t>;
-  auto w = discrete_dist{0.50, 0.50};
+      std::vector <std::tuple<double, double>> nPoints = {
+              {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
+              };
+      std::vector <std::tuple<double, double>> stdDevs = {
+            {11.0, 1.3}, {11.0, 4.0}
+            };
+      
+      for (int spIdx = 0; spIdx < 2; spIdx++){
+          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+          GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
+      }
+    }
+    else if (wl == MD_RS_LOGNORMAL){
+      double avg_x, avg_y, dev_x, dev_y;
+      if (ds == OSM_USNE){
+        
+        avg_x = (log(pseudo_max_x) + log(pseudo_min_x)) / 2;
+        avg_y = (log(max_y) + log(min_y)) / 2;
 
-  std::vector <std::tuple<double, double>> nPoints = {
-          {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
-          };
-    std::vector <std::tuple<double, double>> stdDevs = {
-          {11.0, 1.3}, {11.0, 4.0}
-          };
-  
-  std::array<normal_dist, 2> GX;
-  std::array<normal_dist, 2> GY;
-  for (int spIdx = 0; spIdx < 2; spIdx++){
-      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-      GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-  }
-#elif WKLOAD == 21
-  using normal_dist   = std::normal_distribution<>;
-  using discrete_dist = std::discrete_distribution<std::size_t>;
-  auto w = discrete_dist{0.75, 0.25};
+        dev_x = (log(pseudo_max_x) - log(pseudo_min_x)) / 6;
+        dev_y = (log(max_y) - log(min_y)) / 6;
+      }
+      else if (ds == GEOLITE){
+        // double avg_x = 130;
+        // double avg_y = 30;
+        
+        // double dev_x = 10;
+        // double dev_y = 10;
+      }
+      dlx_lnorm = std::lognormal_distribution<double> (avg_x, dev_x);
+      dly_lnorm = std::lognormal_distribution<double> (avg_y, dev_y);
+      dLength_ureal  = std::uniform_real_distribution<> (1, max_length);
+      dWidth_ureal = std::uniform_real_distribution<> (1, max_width);
+    }
+    else if (wl == SD_YCSB_WKLOADE){
+      // std::default_random_engine generator;
+      // erebus::utils::zipfian_int_distribution<int> distX(min_x, max_x, 0.4);
+      dx_uint64 = std::uniform_int_distribution<uint64_t>(0, BTREE_INIT_LIMIT - 1000000);
+      max_length = 900000 ;
+      dLength_uint64 = std::uniform_int_distribution<uint64_t>(1, max_length);
 
-  std::vector <std::tuple<double, double>> nPoints = {
-          {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
-          };
-  std::vector <std::tuple<double, double>> stdDevs = {
-        {11.0, 1.3}, {11.0, 4.0}
-        };
-  
-  std::array<normal_dist, 2> GX;
-  std::array<normal_dist, 2> GY;
-  for (int spIdx = 0; spIdx < 2; spIdx++){
-      GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-      GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-  }
-#elif WKLOAD == 22 // Log Normal 
-  # if DATASET == 0
-    double pseudo_min_x = 1;
-    double pseudo_max_x = 1 + (max_x - min_x);
-    double avg_x = (log(pseudo_max_x) + log(pseudo_min_x)) / 2;
-    double avg_y = (log(max_y) + log(min_y)) / 2;
-
-    double dev_x = (log(pseudo_max_x) - log(pseudo_min_x)) / 6;
-    double dev_y = (log(max_y) - log(min_y)) / 6;
-  # elif DATASET == 1
-    // double avg_x = 130;
-    // double avg_y = 30;
-    
-    // double dev_x = 10;
-    // double dev_y = 10;
-  # endif
-
-  std::lognormal_distribution<double> dlx(avg_x, dev_x);
-  std::lognormal_distribution<double> dly(avg_y, dev_y);
-
-  std::uniform_real_distribution<> dLength(1, max_length);
-  std::uniform_real_distribution<> dWidth(1, max_width);
-#elif WKLOAD == 30 // ycsb workload, range scans, 
-  // std::default_random_engine generator;
-  // erebus::utils::zipfian_int_distribution<int> distX(min_x, max_x, 0.4);
-  std::uniform_int_distribution<uint64_t> distX(min_x, max_x);
-  max_length = 1000000;
-  std::uniform_int_distribution<uint64_t> dLength(1, max_length);
-# endif
+      key_chooser_ = new erebus::generators::UniformGenerator(0, BTREE_INIT_LIMIT - 1000000);
+      scan_len_chooser_ = new erebus::generators::UniformGenerator(1, max_length);
+    }
 
     // -------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------
@@ -1307,228 +1168,207 @@ void TPManager::initRouterThreads(double min_x, double max_x, double min_y, doub
           break;
       }
                 
-    
-#if WKLOAD == 0 // Uniform workload
-  double lx = dlx(gen);
-  double ly = dly(gen);
-  double length = dLength(gen);
-  double width = dWidth(gen);
-  double hx = lx + length;
-  double hy = ly + width;
-  Rectangle query(lx, hx, ly, hy);
+      // Query parameters 
+      double lx, ly, hx, hy, length, width;
+      Rectangle query;
 
-#elif WKLOAD == 1  // Normal workload, where the peak is at the average
-  double lx = dlx(gen);
-  double ly = dly(gen);
-  double length = dLength(gen);
-  double width = dWidth(gen);
-  double hx = lx + length;
-  double hy = ly + width;
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 2  // Multi-modal with 4 peaks
-  auto indexX = w(genTem);
-  double lx = GX[indexX](genTem);
-  auto indexY = w(genTem);
-  double ly = GY[indexY](genTem);
-  double length = dLength(gen);
-  double width = dWidth(gen);
-  double hx = lx + length;
-  double hy = ly + width;
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 3  // Multi-modal with 3 peaks
-  auto indexX = w(genTem);
-  double lx = GX[indexX](genTem);
-  auto indexY = w(genTem);
-  double ly = GY[indexY](genTem);
-  double length = dLength(gen);
-  double width = dWidth(gen);
-  double hx = lx + length;
-  double hy = ly + width;
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 4
-  int idx_to_search = dob(gen);
-  double lx = this->gm->idx->objects_[idx_to_search]->left_;
-  double ly = this->gm->idx->objects_[idx_to_search]->bottom_;
-  double hx = lx;
-  double hy = ly;
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 5  
-  double lx = distX(generator);
-  double ly = distY(generator);
-  double length = dLength(gen);
-  double width = dWidth(gen);
-  double hx = lx + length;
-  double hy = ly + width;
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 6
-  auto index = w(genTem); // which hotspot to choose?
-  double lx, ly;
-  if (index == nHotSpots) {
-      lx = dlx(gen);
-      ly = dly(gen);
-  }
-  else{
-      lx = GX[index](genTem) + 0.880170200000002;
-      ly = GY[index](genTem) - 0.4350911999999987;
-  }  
-  double length = dLength(gen);
-  double width = dWidth(gen);
-  double hx = lx + length;
-  double hy = ly + width;
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 7
-  auto index = w(genTem); // which hotspot to choose?
-  double lx, ly;
-  if (index == nHotSpots) {
-      lx = dlx(gen);
-      ly = dly(gen);
-  }
-  else{
-      lx = GX[index](genTem) + 0.880170200000002;
-      ly = GY[index](genTem) - 0.4350911999999987;
-  }
-  double length = dLength(gen);
-  double width = dWidth(gen);
-  double hx = lx + length;
-  double hy = ly + width;
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 8
-  auto index = w(genTem); // which hotspot to choose?
-  double lx, ly;
-  if (index == nHotSpots) {
-      lx = dlx(gen);
-      ly = dly(gen);
-  }
-  else{
-      lx = GX[index](genTem) + 0.880170200000002;
-      ly = GY[index](genTem) - 0.4350911999999987;
-  }
-  double length = dLength(gen);
-  double width = dWidth(gen);
-  double hx = lx + length;
-  double hy = ly + width;
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 9
-  auto index = w(genTem); // which hotspot to choose?
-  double lx, ly, hx, hy;
-  if (index == 0) { // this is a point search
-      lx = GX[index](genTem);
-      ly = GY[index](genTem);
-      hx = lx + 0;
-      hy = ly + 0;
-  }
-  else{
-      lx = GX[index](genTem);
-      ly = GY[index](genTem);
-      hx = lx + 4;
-      hy = ly + 2;
-  }
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 20
-  auto index = w(genTem); // which hotspot to choose?
-  double lx, ly, hx, hy;
-  if (index == 0) { // this is a point search
-      lx = GX[index](genTem);
-      ly = GY[index](genTem);
-      hx = lx + 0;
-      hy = ly + 0;
-  }
-  else{
-      lx = GX[index](genTem);
-      ly = GY[index](genTem);
-      hx = lx + 4;
-      hy = ly + 2;
-  }
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 21
-  auto index = w(genTem); // which hotspot to choose?
-  double lx, ly, hx, hy;
-  if (index == 0) { // this is a point search
-      lx = GX[index](genTem);
-      ly = GY[index](genTem);
-      hx = lx + 0;
-      hy = ly + 0;
-  }
-  else{
-      lx = GX[index](genTem);
-      ly = GY[index](genTem);
-      hx = lx + 4;
-      hy = ly + 2;
-  }
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 22  // Log Normal 
-  double lx = dlx(gen);
-  double ly = dly(gen);
-  while(lx > pseudo_max_x || lx < pseudo_min_x)
-      lx = dlx(gen);
-  while(ly > max_y || ly < min_y)
-      ly = dly(gen);  
-  lx = lx - (1 - min_x);
-  double length = dLength(gen);
-  double width = dWidth(gen);
-  double hx = lx + length;
-  double hy = ly + width;
-  Rectangle query(lx, hx, ly, hy);
-
-#elif WKLOAD == 30
-  double lx = distX(gen);
-  double length = dLength(gen);
-  Rectangle query(lx, length, -1, -1);
-#endif
+    if(wl == MD_RS_UNIFORM){
+      lx = dlx_ureal(gen);
+      ly = dly_ureal(gen);
+      length = dLength_ureal(gen);
+      width = dLength_ureal(gen);
+      hx = lx + length;
+      hy = ly + width;
+      query = Rectangle(lx, hx, ly, hy);
+    }
+    else if (wl == MD_RS_NORMAL){  
+      lx = dlx_norm(gen);
+      ly = dly_norm(gen);
+      length = dLength_ureal(gen);
+      width = dLength_ureal(gen);
+      hx = lx + length;
+      hy = ly + width;
+      query = Rectangle(lx, hx, ly, hy);
+    }
+    else if (wl == MD_LK_UNIFORM){
+      int idx_to_search = dob_uint(gen);
+      lx = this->gm->idx->objects_[idx_to_search]->left_;
+      ly = this->gm->idx->objects_[idx_to_search]->bottom_;
+      hx = lx;
+      hy = ly;
+      query = Rectangle(lx, hx, ly, hy);
+    }
+    else if (wl == MD_RS_ZIPF){
+      lx = dlx_zipint(generator);
+      ly = dly_zipint(generator);
+      length = dLength_ureal(gen);
+      width = dLength_ureal(gen);
+      hx = lx + length;
+      hy = ly + width;
+      query = Rectangle(lx, hx, ly, hy);
+    }
+    else if (wl == MD_RS_HOT3){
+      const int nHotSpots = 3;
+      auto index = w(genTem); // which hotspot to choose?
+      if (index == nHotSpots) {
+          lx = dlx_ureal(gen);
+          ly = dly_ureal(gen);
+      }
+      else{
+          lx = GX[index](genTem) + 0.880170200000002;
+          ly = GY[index](genTem) - 0.4350911999999987;
+      }  
+      length = dLength_ureal(gen);
+      width = dLength_ureal(gen);
+      hx = lx + length;
+      hy = ly + width;
+      query = Rectangle(lx, hx, ly, hy);
+    }
+    else if (wl == MD_RS_HOT5){
+      const int nHotSpots = 5;
+      auto index = w(genTem); // which hotspot to choose?
+      if (index == nHotSpots) {
+          lx = dlx_ureal(gen);
+          ly = dly_ureal(gen);
+      }
+      else{
+          lx = GX[index](genTem) + 0.880170200000002;
+          ly = GY[index](genTem) - 0.4350911999999987;
+      }
+      length = dLength_ureal(gen);
+      width = dLength_ureal(gen);
+      hx = lx + length;
+      hy = ly + width;
+      query = Rectangle(lx, hx, ly, hy);
+    }
+    else if (wl == MD_RS_HOT7){
+      const int nHotSpots = 7;
+      auto index = w(genTem); // which hotspot to choose?
+      if (index == nHotSpots) {
+          lx = dlx_ureal(gen);
+          ly = dly_ureal(gen);
+      }
+      else{
+          lx = GX[index](genTem) + 0.880170200000002;
+          ly = GY[index](genTem) - 0.4350911999999987;
+      }
+      length = dLength_ureal(gen);
+      width = dLength_ureal(gen);
+      hx = lx + length;
+      hy = ly + width;
+      query = Rectangle(lx, hx, ly, hy);
+    }
+    else if (wl == MD_LK_RS_25_75){
+      auto index = w(genTem); // which hotspot to choose?
+      if (index == 0) { // this is a point search
+          lx = GX[index](genTem);
+          ly = GY[index](genTem);
+          hx = lx + 0;
+          hy = ly + 0;
+      }
+      else{
+          lx = GX[index](genTem);
+          ly = GY[index](genTem);
+          hx = lx + 4;
+          hy = ly + 2;
+      }
+      query = Rectangle(lx, hx, ly, hy);
+    }
+    else if (wl == MD_LK_RS_50_50){
+      auto index = w(genTem); // which hotspot to choose?
+      if (index == 0) { // this is a point search
+          lx = GX[index](genTem);
+          ly = GY[index](genTem);
+          hx = lx + 0;
+          hy = ly + 0;
+      }
+      else{
+          lx = GX[index](genTem);
+          ly = GY[index](genTem);
+          hx = lx + 4;
+          hy = ly + 2;
+      }
+      query = Rectangle(lx, hx, ly, hy);
+    }
+    else if (wl == MD_LK_RS_75_25){
+      auto index = w(genTem); // which hotspot to choose?
+      if (index == 0) { // this is a point search
+          lx = GX[index](genTem);
+          ly = GY[index](genTem);
+          hx = lx + 0;
+          hy = ly + 0;
+      }
+      else{
+          lx = GX[index](genTem);
+          ly = GY[index](genTem);
+          hx = lx + 4;
+          hy = ly + 2;
+      }
+      query = Rectangle(lx, hx, ly, hy);
+    }
+    else if (wl == MD_RS_LOGNORMAL){
+      lx = dlx_lnorm(gen);
+      ly = dly_lnorm(gen);
+      
+      while(lx > pseudo_max_x || lx < pseudo_min_x)
+          lx = dlx_lnorm(gen);
+      while(ly > max_y || ly < min_y)
+          ly = dly_lnorm(gen);  
+      lx = lx - (1 - min_x);
+      length = dLength_ureal(gen);
+      width = dWidth_ureal(gen);
+      hx = lx + length;
+      hy = ly + width;
+      query = Rectangle(lx, hx, ly, hy);
+    }
+    else if (wl == SD_YCSB_WKLOADE){
+      lx = init_keys[dx_uint64(gen)];
+      length = dLength_uint64(gen);
+      query = Rectangle(lx, length, -1, -1);
+    }
 
       // -------------------------------------------------------------------------------------
       // Check which grid the query belongs to 
       std::vector<int> valid_gcells;
-#if LINUX == 3
-      for (auto gc = 0; gc < gm->nGridCells; gc++){
-      
-        double glx = gm->glbGridCell[gc].lx;
-        double gly = gm->glbGridCell[gc].ly;
-        double ghx = gm->glbGridCell[gc].hx;
-        double ghy = gm->glbGridCell[gc].hy;
-#if MULTIDIM == 1
-        if (hx < glx || lx > ghx || hy < gly || ly > ghy)
-            continue;
-        else {
-            /**
-             * 1. Store IDs of the Grids that the query intersects
-             * 2. Update the query frequency
-             * 3. Update the query's valid grid cells so that it can maintain a local view of the data distribution
-            */
+      #if LINUX == 3
+        for (auto gc = 0; gc < gm->nGridCells; gc++){
+        
+          double glx = gm->glbGridCell[gc].lx;
+          double gly = gm->glbGridCell[gc].ly;
+          double ghx = gm->glbGridCell[gc].hx;
+          double ghy = gm->glbGridCell[gc].hy;
+      #if MULTIDIM == 1
+          if (hx < glx || lx > ghx || hy < gly || ly > ghy)
+              continue;
+          else {
+              /**
+               * 1. Store IDs of the Grids that the query intersects
+               * 2. Update the query frequency
+               * 3. Update the query's valid grid cells so that it can maintain a local view of the data distribution
+              */
+              valid_gcells.push_back(gc);  
+              // gm->freqQueryDistPushed[gc]++;  // I am currently only keeping where it goes, don't care about  the intersections
+              query.validGridIds.push_back(gc);
+          }
+      #else
+          if (lx <= ghx && lx >= glx){
             valid_gcells.push_back(gc);  
-            // gm->freqQueryDistPushed[gc]++;  // I am currently only keeping where it goes, don't care about  the intersections
             query.validGridIds.push_back(gc);
+          }
+          else continue;
+      #endif 
+            
         }
-#else
-        if (lx <= ghx && lx >= glx){
-          valid_gcells.push_back(gc);  
-          query.validGridIds.push_back(gc);
-        }
-        else continue;
-#endif 
+      #else
+        for (auto gc = 0; gc < gm->nGridCells; gc++){
+            valid_gcells.push_back(gc); 
+            query.validGridIds.push_back(gc); // May not be necessary
+        }                
+      #endif 
       
-      }
-#else
-      for (auto gc = 0; gc < gm->nGridCells; gc++){
-          valid_gcells.push_back(gc); 
-          query.validGridIds.push_back(gc); // May not be necessary
-      }
-                    
-#endif 
-                
-      if (valid_gcells.size() == 0) continue;  // Check the sanity of the query
-      // -------------------------------------------------------------------------------------
+      // Check the sanity of the query       
+      if (valid_gcells.size() == 0) continue;  
+      
       // Update the Query Correlation Matrix
       for(size_t qc1 = 0; qc1 < valid_gcells.size()-1; qc1++){
           int pCell = valid_gcells[qc1];
@@ -1625,23 +1465,24 @@ void TPManager::initRouterThreads(double min_x, double max_x, double min_y, doub
       int glbGridCellInsert = valid_gcells[insert_tid];
                 
       // Stamping the query with something: You need to do the inverse of log_2
-#if USE_MODEL
-    double predictIns = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][0] + 
-                        query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][1]+ 
-                        query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][2]+ 
-                        query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][3];
-    double predictAcc = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][0] + 
-                        query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][1]+ 
-                        query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][2]+ 
-                        query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][3];
-    if (predictIns < QUERY_THRESHOLD_INS && predictAcc < QUERY_THRESHOLD_ACC) 
-        query.qStamp = QUERY_MICE;
-    else if (predictIns >= QUERY_THRESHOLD_INS && predictAcc >= QUERY_THRESHOLD_ACC)
-        query.qStamp = QUERY_MAMMOTH;
-    else 
-        query.qStamp = QUERY_ELEPHANT;
-#endif
-
+    /*
+    #if USE_MODEL
+        double predictIns = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][0] + 
+                            query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][1]+ 
+                            query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][2]+ 
+                            query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][3];
+        double predictAcc = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][0] + 
+                            query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][1]+ 
+                            query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][2]+ 
+                            query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][3];
+        if (predictIns < QUERY_THRESHOLD_INS && predictAcc < QUERY_THRESHOLD_ACC) 
+            query.qStamp = QUERY_MICE;
+        else if (predictIns >= QUERY_THRESHOLD_INS && predictAcc >= QUERY_THRESHOLD_ACC)
+            query.qStamp = QUERY_MAMMOTH;
+        else 
+            query.qStamp = QUERY_ELEPHANT;
+    #endif
+    */
         // -------------------------------------------------------------------------------------
         query.aGrid = glbGridCellInsert;
         // -------------------------------------------------------------------------------------

@@ -1,3 +1,6 @@
+#ifndef PMOSS_EXCEPTION_H_
+#define PMOSS_EXCEPTION_H_
+
 #pragma once
 #include <signal.h>
 
@@ -105,3 +108,5 @@ inline void DO_NOT_OPTIMIZE(T const& value)
       perror(#expr);      \
       raise(SIGTRAP);      \
    }
+
+#endif 

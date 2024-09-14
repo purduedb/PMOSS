@@ -1,16 +1,20 @@
+#ifndef PMOSS_GRIDMANAGER_H_
+#define PMOSS_GRIDMANAGER_H_
+
 #pragma once
 #include <iostream>
 #include <fstream>
 // -------------------------------------------------------------------------------------
 #include "utils/Misc.hpp"
 #include "storage/index.h"  
+#include "storage/btree/btree.h"  
 #include "storage/rtree/rtree.h"
 #include "storage/qtree/qtree.h"  
 // -------------------------------------------------------------------------------------
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
-#define INIT_LIMIT 5000000   // this is for btree index building
+#define BTREE_INIT_LIMIT 50000000   // this is for btree index building
 #define LIMIT 1000  // this is for btree workload
 #define MAX_GRID_CELL 100
 #define STAMP_LR_PARAM 4  // For now think of the query MBR as only output
@@ -25,7 +29,7 @@ using std::ofstream;
 #define MACHINE 0 // 0 (BIGDATA), 1(DBSERVER)
 #define LINUX 3 // 0 (SE 0, SE-NUMA 1, SN, NUMA 2, OURS, 3)
 // -------------------------------------------------------------------------------------
-#define WKLOAD 30
+#define WKLOAD SD_YCSB_WKLOADE
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 
@@ -115,3 +119,6 @@ class GridManager
 
 }  // namespace dm
 }  // namespace erebus
+
+
+#endif // PMOSS_GRIDMANAGER_H_

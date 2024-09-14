@@ -114,7 +114,7 @@ void GridManager::register_grid_cells(string configFile){
 		numaConfig.push_back(nID);
 		// cout << nID << " ";
 	}
-  // cout << endl;
+  
   for (int i = 0; i < nGridCells; i++) {
 		CPUID cpuID;
 		ifs >> cpuID;

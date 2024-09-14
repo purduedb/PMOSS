@@ -1,3 +1,6 @@
+#ifndef PMOSS_QUADTREE_H_
+#define PMOSS_QUADTREE_H_
+
 // -------------------------------------------------------------------------------------
 #pragma once
 #include <any>
@@ -94,3 +97,5 @@ extern "C"{
 }
 }
 }
+
+#endif 

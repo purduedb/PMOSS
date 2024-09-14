@@ -1,3 +1,6 @@
+#ifndef PMOSS_THREADMANAGER_H_
+#define PMOSS_THREADMANAGER_H_
+
 #pragma once
 
 #include <thread>
@@ -21,6 +24,7 @@
 #include "profiling/PerfCounters.hpp"
 #include "utils/ScrambledZipfGenerator.hpp"
 #include "utils/ZipfDist.hpp"
+#include "generators/UniformGenerator.hpp"
 
 
 using namespace erebus::storage::rtree;
@@ -197,25 +201,25 @@ class TPManager{
     // -------------------------------------------------------------------------------------
     TPManager();
     TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID> sys_sweeper_cpuids, std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
-    void initWorkerThreads();
-    void initRouterThreads(double min_x, double max_x, double min_y, double max_y);
-    void initMegaMindThreads();
-    void initSysSweeperThreads();
-    void initNCoreSweeperThreads();
+    void init_worker_threads();
+    void init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y, std::vector<keytype> &init_keys);
+    void init_megamind_threads();
+    void init_syssweeper_threads();
+    void init_ncoresweeper_threads();
 
     void dumpGridHWCounters(int tID);
 
-    void terminateWorkerThreads();
-    void terminateNCoreSweeperThreads();
-    void terminateRouterThreads();
-    void terminateMegaMindThreads();
-    void terminateSysSweeperThreads();
+    void terminate_worker_threads();
+    void terminate_ncoresweeper_threads();
+    void terminate_router_threads();
+    void terminate_megamind_threads();
+    void terminate_syssweeper_threads();
     
     void detachAllThreads();
 
     void terminateTestWorkerThreads();
 
-    void dumpNCoreSweeperThreads();
+    void dump_ncoresweeper_threads();
 
 
     void dumpTestGridHWCounters(vector<CPUID> cpuIds);
@@ -230,3 +234,4 @@ class TPManager{
 }  // namespace tp 
 }  // namespace erebus
 
+#endif 

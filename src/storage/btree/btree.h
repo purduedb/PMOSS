@@ -1,3 +1,6 @@
+#ifndef PMOSS_BTREE_H_
+#define PMOSS_BTREE_H_
+
 // -------------------------------------------------------------------------------------
 #pragma once
 #include <cassert>
@@ -470,7 +473,7 @@ struct BTree {
   }
 
 
-  uint64_t migratoryScan(Key k1, Key k2, int range, Value* output, int destNUMA) {
+  uint64_t migratory_scan(Key k1, Key k2, int range, Value* output, int destNUMA) {
     int restartCount = 0;
   restart:
     if (restartCount++)
@@ -494,6 +497,7 @@ struct BTree {
       int status[1];
       const int destNodes[1] = {destNUMA};
       int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+      // cout << ret_code << endl;
       // printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
       // -------------------------------------------------------------------------------------
 
@@ -519,6 +523,7 @@ struct BTree {
     int status[1];
     const int destNodes[1] = {destNUMA};
     int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+    // cout << ret_code << endl;
     // printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
     // -------------------------------------------------------------------------------------
 
@@ -526,12 +531,12 @@ struct BTree {
     int count = 0;
     for (unsigned i=pos; i<leaf->count; i++) {
       if (leaf->keys[i] < k2){
-        output[count] = leaf->keys[i];  
-        count += 1;
+        output[count++] = leaf->payloads[i];
+        Key arbitrary = *reinterpret_cast<Key*>(leaf->payloads[i]);
       }
-      else
-	      break;
-      
+      else {
+        break;
+      }
     }
 
     if (parent) {
@@ -563,7 +568,7 @@ struct BTree {
       auto inner = static_cast<BTreeInner<Key>*>(node);
       if (is_first){
         // -------------------------------------------------------------------------------------
-        void *ptr_to_check = inner;
+        void *ptr_to_check = (void*) inner;
         int tstatus[1];
         int tret_code = move_pages(0, 1, &ptr_to_check, NULL, tstatus, 0);
         numa_nodes[tstatus[0]] += 1;
@@ -587,7 +592,7 @@ struct BTree {
 
     BTreeLeaf<Key,Value>* leaf = static_cast<BTreeLeaf<Key,Value>*>(node);
     // -------------------------------------------------------------------------------------
-    void *ptr_to_check = leaf;
+    void *ptr_to_check = (void*) leaf;
     int tstatus[1];
     int tret_code = move_pages(0, 1, &ptr_to_check, NULL, tstatus, 0);
     numa_nodes[tstatus[0]] += 1;
@@ -620,3 +625,6 @@ struct BTree {
 } // btree
 } // storage
 } // erebus
+
+
+#endif

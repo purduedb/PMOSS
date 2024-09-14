@@ -1,3 +1,6 @@
+#ifndef PMOSS_PERFEVENT_H_
+#define PMOSS_PERFEVENT_H_
+
 /*
 
 Copyright (c) 2018 Viktor Leis
@@ -349,4 +352,6 @@ struct PerfEventBlock {
    PerfEventBlock(uint64_t = 1, BenchmarkParameters = {}, bool = true) {};
    PerfEventBlock(PerfEvent e, uint64_t = 1, BenchmarkParameters = {}, bool = true) {};
 };
+#endif
+
 #endif

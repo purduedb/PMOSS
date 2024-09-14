@@ -24,7 +24,7 @@
 #include "profiling/PerfCounters.hpp"
 #include "utils/ScrambledZipfGenerator.hpp"
 #include "utils/ZipfDist.hpp"
-#include "generators/UniformGenerator.hpp"
+#include "ycsbc/uniform_generator.h"
 
 
 using namespace erebus::storage::rtree;

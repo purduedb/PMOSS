@@ -14,13 +14,11 @@
 #include <cstdint>
 #include <mutex>
 // -------------------------------------------------------------------------------------
-#include "Generator.hpp"
-#include "utils/YCSBUtils.hpp"
+#include "generator.h"
+#include "utils.h"
 // -------------------------------------------------------------------------------------
 
-namespace erebus 
-{
-namespace generators
+namespace ycsbc 
 {
 
 class ZipfianGenerator : public Generator<uint64_t> {
@@ -103,7 +101,7 @@ inline uint64_t ZipfianGenerator::Next(uint64_t num) {
     }
   }
 
-  double u = erebus::ycsbutils::ThreadLocalRandomDouble();
+  double u = ycsbc::utils::ThreadLocalRandomDouble();
   double uz = u * zeta_n_;
 
   if (uz < 1.0) {
@@ -121,7 +119,6 @@ inline uint64_t ZipfianGenerator::Last() {
   return last_value_;
 }
 
-} // generators
-} // erebus
+} // ycsbc
 
 #endif // YCSB_C_ZIPFIAN_GENERATOR_H_

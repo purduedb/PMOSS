@@ -956,8 +956,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     std::uniform_int_distribution<uint64_t> dx_uint64;  
     std::uniform_int_distribution<uint64_t> dLength_uint64;  
 
-    erebus::generators::Generator<uint64_t> *key_chooser_; // transaction key gen
-    erebus::generators::Generator<uint64_t> *scan_len_chooser_;
+    ycsbc::Generator<uint64_t> *key_chooser_; // transaction key gen
+    ycsbc::Generator<uint64_t> *scan_len_chooser_;
     // -------------------------------------------------------------------------------------
     
     double max_length, max_width;
@@ -1156,8 +1156,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       max_length = 900000 ;
       dLength_uint64 = std::uniform_int_distribution<uint64_t>(1, max_length);
 
-      key_chooser_ = new erebus::generators::UniformGenerator(0, BTREE_INIT_LIMIT - 1000000);
-      scan_len_chooser_ = new erebus::generators::UniformGenerator(1, max_length);
+      key_chooser_ = new ycsbc::UniformGenerator(0, BTREE_INIT_LIMIT - 1000000);
+      scan_len_chooser_ = new ycsbc::UniformGenerator(1, max_length);
     }
 
     // -------------------------------------------------------------------------------------

@@ -26,9 +26,9 @@
 #define MAYBE_UNUSED __attribute__ ((unused))
 #endif
 
-namespace erebus {
+namespace ycsbc {
 
-namespace ycsbutils {
+namespace utils {
 
 const uint64_t kFNVOffsetBasis64 = 0xCBF29CE484222325ull;
 const uint64_t kFNVPrime64 = 1099511628211ull;
@@ -95,8 +95,8 @@ inline std::string Trim(const std::string &str) {
       [](int c){ return std::isspace(c); }).base());
 }
 
-} // ycsbutils
+} // utils
 
-} // erebus
+} // ycsbc
 
 #endif // YCSB_C_UTILS_H_

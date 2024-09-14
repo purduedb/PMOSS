@@ -12,11 +12,9 @@
 #include <atomic>
 #include <random>
 // -------------------------------------------------------------------------------------
-#include "Generator.hpp"
+#include "generator.h"
 
-namespace erebus
-{
-namespace generators 
+namespace ycsbc
 {
 
 class UniformGenerator : public Generator<uint64_t> {
@@ -41,7 +39,7 @@ inline uint64_t UniformGenerator::Last() {
   return last_int_;
 }
 
-} // utils
-} // erebus
+} // ycsbc
+
 
 #endif // YCSB_C_UNIFORM_GENERATOR_H_

@@ -481,7 +481,7 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 
 int main()
 {	
-	int cfgIdx = 43;
+	int cfgIdx = 46;
 	int ds = YCSB;
 	int wl = SD_YCSB_WKLOADE;
 

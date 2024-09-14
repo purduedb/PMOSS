@@ -61,7 +61,9 @@ set(SOURCE_FILES
     src/utils/RandomGenerator.cpp
     src/utils/ScrambledZipfGenerator.cpp
     src/utils/FNVHash.cpp
-    src/generators/Generator.cpp
+    src/ycsbc/generator.cpp
+    src/ycsbc/core_workload.cpp
+    src/ycsbc/acknowledged_counter_generator.cc
     # src/config/config.cpp
 )
 

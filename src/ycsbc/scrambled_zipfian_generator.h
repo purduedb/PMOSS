@@ -11,14 +11,12 @@
 
 #include <cstdint>
 
-#include "Generator.hpp"
-#include "ZipfianGenerator.hpp"
-#include "utils/YCSBUtils.hpp"
+#include "generator.h"
+#include "zipfian_generator.h"
+#include "utils.h"
 
-namespace erebus
+namespace ycsbc
 {
-namespace generators
-{  
 
 
 class ScrambledZipfianGenerator : public Generator<uint64_t> {
@@ -50,7 +48,7 @@ class ScrambledZipfianGenerator : public Generator<uint64_t> {
 };
 
 inline uint64_t ScrambledZipfianGenerator::Scramble(uint64_t value) const {
-  return base_ + erebus::ycsbutils::FNVHash64(value) % num_items_;
+  return base_ + ycsbc::utils::FNVHash64(value) % num_items_;
 }
 
 inline uint64_t ScrambledZipfianGenerator::Next() {
@@ -61,7 +59,7 @@ inline uint64_t ScrambledZipfianGenerator::Last() {
   return Scramble(generator_.Last());
 }
 
-} // generators
-} // erebus 
+
+} // ycsbc
 
 #endif // YCSB_C_SCRAMBLED_ZIPFIAN_GENERATOR_H_

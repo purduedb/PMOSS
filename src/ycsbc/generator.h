@@ -10,9 +10,7 @@
 #define YCSB_C_GENERATOR_H_
 
 #include <cstdint>
-namespace erebus
-{
-namespace generators
+namespace ycsbc
 {
 
 template <typename Value>
@@ -24,7 +22,6 @@ class Generator {
 };
 
 
-}  // generators
-}  // erebus
+}  // ycsbc
 
 #endif // YCSB_C_GENERATOR_H_

@@ -1,3 +1,5 @@
+#ifndef PMOSS_RTREE_H_
+#define PMOSS_RTREE_H_
 /**
  * @file rtree.h
  * @author Kaiyu (2020/7/25)
@@ -420,3 +422,5 @@ extern "C"{
 }  // namespace rtree
 }  // namespace storage
 }  // namespace erebus
+
+#endif

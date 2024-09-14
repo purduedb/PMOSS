@@ -1,3 +1,5 @@
+#ifndef PMOSS_RESOURCEMANAGER_H_
+#define PMOSS_RESOURCEMANAGER_H_
 
 #pragma once
 // -------------------------------------------------------------------------------------
@@ -31,3 +33,5 @@ class ResourceManager
 
 }  // namespace scheduler
 }  // namespace erebus
+
+#endif

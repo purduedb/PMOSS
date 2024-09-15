@@ -358,4 +358,60 @@ DB::Status CoreWorkload::TransactionInsert(DB &db) {
   return s;
 }
 
+void CoreWorkload::DoTransaction(uint64_t* tx_params) {
+  
+  switch (op_chooser_.Next()) {
+    case READ:
+      TransactionRead(tx_params);
+      tx_params[2] = READ;
+      break;
+    case UPDATE:
+      TransactionUpdate(tx_params);
+      tx_params[2] = UPDATE;
+      break;
+    case INSERT:
+      TransactionInsert(tx_params);
+      tx_params[2] = INSERT;
+      break;
+    case SCAN:
+      TransactionScan(tx_params);
+      tx_params[2] = SCAN;
+      break;
+    case READMODIFYWRITE:
+      TransactionReadModifyWrite(tx_params);
+      tx_params[2] = READMODIFYWRITE;
+      break;
+    default:
+      throw utils::Exception("Operation request is not recognized!");
+  }
+  return;
+}
+
+void CoreWorkload::TransactionRead(uint64_t* tx_params) {
+  tx_params[0] = NextTransactionKeyNum();
+  return;
+}
+
+void CoreWorkload::TransactionReadModifyWrite(uint64_t* tx_params) {
+  tx_params[0] = NextTransactionKeyNum();
+  return;
+}
+
+void CoreWorkload::TransactionScan(uint64_t* tx_params) {
+  tx_params[0] = NextTransactionKeyNum();
+  tx_params[1] = scan_len_chooser_->Next();
+  return;
+}
+
+void CoreWorkload::TransactionUpdate(uint64_t* tx_params) {
+  tx_params[0] = NextTransactionKeyNum();
+  return;
+}
+
+void CoreWorkload::TransactionInsert(uint64_t* tx_params) {
+  // TODO: How to pass the value (pointer)?
+  tx_params[0] = transaction_insert_key_sequence_->Next();
+  return;
+}
+
 } // ycsbc

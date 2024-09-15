@@ -1,7 +1,6 @@
 #ifndef PMOSS_THREADMANAGER_H_
 #define PMOSS_THREADMANAGER_H_
 
-#pragma once
 
 #include <thread>
 #include <vector>
@@ -25,7 +24,7 @@
 #include "utils/ScrambledZipfGenerator.hpp"
 #include "utils/ZipfDist.hpp"
 #include "ycsbc/uniform_generator.h"
-
+#include "ycsbc/core_workload.h"
 
 using namespace erebus::storage::rtree;
 namespace erebus
@@ -202,7 +201,7 @@ class TPManager{
     TPManager();
     TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID> sys_sweeper_cpuids, std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
     void init_worker_threads();
-    void init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y, std::vector<keytype> &init_keys);
+    void init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y, std::vector<keytype> &init_keys, std::vector<uint64_t> &values);
     void init_megamind_threads();
     void init_syssweeper_threads();
     void init_ncoresweeper_threads();

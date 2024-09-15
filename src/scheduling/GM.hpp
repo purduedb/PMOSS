@@ -1,7 +1,6 @@
 #ifndef PMOSS_GRIDMANAGER_H_
 #define PMOSS_GRIDMANAGER_H_
 
-#pragma once
 #include <iostream>
 #include <fstream>
 // -------------------------------------------------------------------------------------
@@ -14,10 +13,11 @@
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
-#define BTREE_INIT_LIMIT 50000000   // this is for btree index building
-#define LIMIT 1000  // this is for btree workload
+#define SINGLE_DIMENSION_KEY_LIMIT 50000000       
+#define BTREE_INIT_LIMIT 5000000    
+#define LIMIT 1000                  // test btree workload
 #define MAX_GRID_CELL 100
-#define STAMP_LR_PARAM 4  // For now think of the query MBR as only output
+#define STAMP_LR_PARAM 4            // For now think of the query MBR as only output
 #define MAX_XPAR 10
 #define MAX_YPAR 10
 // -------------------------------------------------------------------------------------
@@ -49,6 +49,7 @@ class GridManager
     double maxYSpace;   // min-space of the index in y-dim
     int nGridCells;
     int nGridCellsPerThread;
+    std::atomic <int> btree_key_count;
     // -------------------------------------------------------------------------------------
     erebus::storage::rtree::RTree *idx;
     erebus::storage::qtree::QuadTree *idx_quadtree;

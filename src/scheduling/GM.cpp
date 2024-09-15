@@ -14,6 +14,7 @@ GridManager::GridManager(int config, int xPar, int yPar, double minXSpace, doubl
 	this->maxXSpace = maxXSpace;
 	this->minYSpace = minYSpace;
 	this->maxYSpace = maxYSpace;
+    this->btree_key_count.store(BTREE_INIT_LIMIT);
 #if MULTIDIM == 1
 	this->nGridCells = this->xPar * this->yPar;
 #else 

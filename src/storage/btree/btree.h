@@ -2,7 +2,6 @@
 #define PMOSS_BTREE_H_
 
 // -------------------------------------------------------------------------------------
-#pragma once
 #include <cassert>
 #include <cstring>
 #include <atomic>

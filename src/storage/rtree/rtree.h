@@ -6,7 +6,6 @@
  * @brief 
  */
 // -------------------------------------------------------------------------------------
-#pragma once
 #include<list>
 #include<vector>
 #include<algorithm>
@@ -21,7 +20,7 @@
 #include <numa.h> 
 #include <numaif.h>
 // -------------------------------------------------------------------------------------
-
+#include "ycsbc/core_workload.h"
 // -------------------------------------------------------------------------------------
 using std::list;
 using std::vector;
@@ -75,16 +74,16 @@ struct Point{
 
 
 class Rectangle{
-    public:
-        double left_;
-        double right_;
-        double bottom_;
-        double top_;
-
-        unsigned int id_;
+	public:
+		double left_;
+		double right_;
+		double bottom_;
+		double top_;
+		unsigned int id_;
 		int qStamp;
 		vector<int> validGridIds;
 		int aGrid;
+		uint64_t op; //ycsb operation
 
     public:
         Rectangle();

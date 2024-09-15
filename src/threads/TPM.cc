@@ -9,271 +9,277 @@ namespace tp
 
 TPManager::TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID> sys_sweeper_cpuids, std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm)
 {
-    this->gm = gm;
-    this->rm = rm;
-    this->router_cpuids = router_cpuids;
-    this->worker_cpuids = worker_cpuids;
-    this->megamind_cpuids = megamind_cpuids;
-    this->sys_sweeper_cpuids = sys_sweeper_cpuids;
-    this->ncore_sweeper_cpuids = ncore_sweeper_cpuids;
+  this->gm = gm;
+  this->rm = rm;
+  this->router_cpuids = router_cpuids;
+  this->worker_cpuids = worker_cpuids;
+  this->megamind_cpuids = megamind_cpuids;
+  this->sys_sweeper_cpuids = sys_sweeper_cpuids;
+  this->ncore_sweeper_cpuids = ncore_sweeper_cpuids;
 }
 
 void TPManager::init_worker_threads(){
-    for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
-        glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this]{
-            erebus::utils::PinThisThread(worker_cpuids[i]);
-            glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
+  for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
+    glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this]{
+      erebus::utils::PinThisThread(worker_cpuids[i]);
+      glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
             
-            PerfEvent e;
-            static int cnt = 0;
+      PerfEvent e;
+      static int cnt = 0;
 
-            while (1) {  
-                if(!glb_worker_thrds[worker_cpuids[i]].running) {
-                    break;
-                }
-                    
-                    
-            Rectangle rec_pop;
-            int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
-                    
-            if (size_jobqueue != 0){
-                glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
-                // if (cnt % PERF_STAT_COLLECTION_INTERVAL == 0) {
-                //     e.startCounters();
-                // }
-                e.startCounters();
-                    
-                    // -------------------------------------------------------------------------------------
-            #if STORAGE == 0
-                int result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
-            #elif STORAGE == 1
-                erebus::storage::qtree::Rect qBox = erebus::storage::qtree::Rect ( rec_pop.left_,
-                        rec_pop.bottom_,
-                        rec_pop.right_ - rec_pop.left_,
-                        rec_pop.top_ - rec_pop.bottom_ 
-                );
-                int result = this->gm->idx_quadtree->getObjectsInBound(qBox);
-            #elif STORAGE == 2  
-                int result = this->gm->idx_btree->scan(static_cast<uint64_t>(rec_pop.left_), static_cast<int>(rec_pop.right_));
-            #endif
-                // int result = 1;
-                // cnt +=1;
-                // if (cnt % PERF_STAT_COLLECTION_INTERVAL == (PERF_STAT_COLLECTION_INTERVAL-1)){
-                e.stopCounters();
-                    
-                PerfCounter perf_counter;
-                for(auto j=0; j < e.events.size(); j++){
-                    if (isnan(e.events[j].readCounter())) perf_counter.raw_counter_values[j] = 0;
-                    else perf_counter.raw_counter_values[j] = e.events[j].readCounter();
-                }
-                            
-                perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
-                perf_counter.rscan_query = rec_pop;
-                perf_counter.result = result;
-                perf_counter.gIdx = rec_pop.aGrid;
-                            
-                // You push this info to all the grids this incomoig query intersect
-                // for(auto qlog = 0; qlog < rec_pop.validGridIds.size(); qlog++){
-                //     int gridId = rec_pop.validGridIds[qlog];
-                //     glb_worker_thrds[worker_cpuids[i]].shadowDataDist[gridId].perf_stats.push_back(perf_counter);
-                // }
-                        
-                        
-                // glb_worker_thrds[worker_cpuids[i]].shadowDataDist[rec_pop.aGrid].perf_stats.push_back(perf_counter);
-                glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
-                // cnt = 0;
-                
-
-                    
-                /**
-                 * TODO: You should be updating the outstanding queries 
-                */
-                gm->freqQueryDistCompleted[rec_pop.aGrid] += 1;
-                
-                auto itQExecMice = glb_worker_thrds[worker_cpuids[i]].qExecutedMice.find(rec_pop.aGrid);
-                if(itQExecMice != glb_worker_thrds[worker_cpuids[i]].qExecutedMice.end()) 
-                  itQExecMice->second += 1;
-                else 
-                  glb_worker_thrds[worker_cpuids[i]].qExecutedMice.insert({rec_pop.aGrid, 1});
-
-                // cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
-                // std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            }
-                
+      while (1) {  
+        if(!glb_worker_thrds[worker_cpuids[i]].running) {
+            break;
         }
+                    
+        int result = 0;        
+        Rectangle rec_pop;
+        int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
+        
+        // ycsb workload: holds lookup result
+        std::vector<uint64_t> v; 
+        v.reserve(10);
+                    
+        if (size_jobqueue != 0){
+          glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
+          // if (cnt % PERF_STAT_COLLECTION_INTERVAL == 0) {
+          //     e.startCounters();
+          // }
+          e.startCounters();
+                    
+          // -------------------------------------------------------------------------------------
+          #if STORAGE == 0
+            result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
+          #elif STORAGE == 1
+            erebus::storage::qtree::Rect qBox = erebus::storage::qtree::Rect ( rec_pop.left_,
+              rec_pop.bottom_,
+              rec_pop.right_ - rec_pop.left_,
+              rec_pop.top_ - rec_pop.bottom_ 
+            );
+            result = this->gm->idx_quadtree->getObjectsInBound(qBox);
+          #elif STORAGE == 2  
+            if(rec_pop.op == ycsbc::Operation::INSERT){
+              result = this->gm->idx_btree->insert(static_cast<uint64_t>(rec_pop.left_), static_cast<int>(rec_pop.bottom_));
+            }
+            else if(rec_pop.op == ycsbc::Operation::SCAN){
+              result = this->gm->idx_btree->scan(static_cast<uint64_t>(rec_pop.left_), static_cast<int>(rec_pop.right_));
+            }
+            else if(rec_pop.op == ycsbc::Operation::READ){
+              v.clear();
+              result = this->gm->idx_btree->find(static_cast<uint64_t>(rec_pop.left_), &v);
+            }
+            else{
+              cout << "here" << endl;
+            }
+          #endif
+          
+          // cnt +=1;
+          // if (cnt % PERF_STAT_COLLECTION_INTERVAL == (PERF_STAT_COLLECTION_INTERVAL-1)){
+          e.stopCounters();
+                    
+          PerfCounter perf_counter;
+          for(auto j=0; j < e.events.size(); j++){
+            if (isnan(e.events[j].readCounter())) perf_counter.raw_counter_values[j] = 0;
+            else perf_counter.raw_counter_values[j] = e.events[j].readCounter();
+          }
+                            
+          perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
+          perf_counter.rscan_query = rec_pop;
+          perf_counter.result = result;
+          perf_counter.gIdx = rec_pop.aGrid;
+                            
+          // You push this info to all the grids this incomoig query intersect
+          // for(auto qlog = 0; qlog < rec_pop.validGridIds.size(); qlog++){
+          //     int gridId = rec_pop.validGridIds[qlog];
+          //     glb_worker_thrds[worker_cpuids[i]].shadowDataDist[gridId].perf_stats.push_back(perf_counter);
+          // }
+                  
+                  
+          // glb_worker_thrds[worker_cpuids[i]].shadowDataDist[rec_pop.aGrid].perf_stats.push_back(perf_counter);
+          glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
+          // cnt = 0;
+                
+
+                    
+          /**
+           * TODO: You should be updating the outstanding queries 
+          */
+          gm->freqQueryDistCompleted[rec_pop.aGrid] += 1;
+          
+          auto itQExecMice = glb_worker_thrds[worker_cpuids[i]].qExecutedMice.find(rec_pop.aGrid);
+          if(itQExecMice != glb_worker_thrds[worker_cpuids[i]].qExecutedMice.end()) 
+            itQExecMice->second += 1;
+          else 
+            glb_worker_thrds[worker_cpuids[i]].qExecutedMice.insert({rec_pop.aGrid, 1});
+
+          // cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
+          // std::this_thread::sleep_for(std::chrono::milliseconds(50));
+      }
+                
+    }
                 
                 // glb_worker_thrds[worker_cpuids[i]].th.detach();
-        });
-    }
+    });
+  }
 }
 
 void TPManager::init_megamind_threads(){
-    // -------------------------------------------------------------------------------------
-    for (unsigned i = 0; i < CURR_MEGAMIND_THREADS; ++i) {
-        glb_megamind_thrds[megamind_cpuids[i]].th = std::thread([i, this] {
-            erebus::utils::PinThisThread(megamind_cpuids[i]);
-            glb_megamind_thrds[megamind_cpuids[i]].cpuid=megamind_cpuids[i];
-            int numaID = numa_node_of_cpu(megamind_cpuids[i]);
-            while (1) 
-            {
-                if(!glb_megamind_thrds[megamind_cpuids[i]].running) {
-                    // glb_megamind_thrds[megamind_cpuids[i]].th.detach();
-                    break;
-                }
-                
-                // std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-                // PerfCounter perf_counter;
-                // perf_counter.qType = SYNC_TOKEN;
-                // for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
-                // {
-                //     int wkCPUID = itr->second;
-                //     // cout << itr->first<< '\t' << itr->second << '\n';
-                //     glb_worker_thrds[wkCPUID].perf_stats.push(perf_counter);
-                // }
-
-                // IntelPCMCounter iPCMCnt;
-                // iPCMCnt.qType = SYNC_TOKEN;
-                // glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.push(iPCMCnt);
-                
-
-            }
+  // -------------------------------------------------------------------------------------
+  for (unsigned i = 0; i < CURR_MEGAMIND_THREADS; ++i) {
+    glb_megamind_thrds[megamind_cpuids[i]].th = std::thread([i, this] {
+      erebus::utils::PinThisThread(megamind_cpuids[i]);
+      glb_megamind_thrds[megamind_cpuids[i]].cpuid=megamind_cpuids[i];
+      int numaID = numa_node_of_cpu(megamind_cpuids[i]);
+      while (1) {
+        if(!glb_megamind_thrds[megamind_cpuids[i]].running) {
             // glb_megamind_thrds[megamind_cpuids[i]].th.detach();
-        });
-    }
+            break;
+        }
+          
+        // std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        // PerfCounter perf_counter;
+        // perf_counter.qType = SYNC_TOKEN;
+        // for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
+        // {
+        //     int wkCPUID = itr->second;
+        //     // cout << itr->first<< '\t' << itr->second << '\n';
+        //     glb_worker_thrds[wkCPUID].perf_stats.push(perf_counter);
+        // }
+
+        // IntelPCMCounter iPCMCnt;
+        // iPCMCnt.qType = SYNC_TOKEN;
+        // glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.push(iPCMCnt);
+      }
+      // glb_megamind_thrds[megamind_cpuids[i]].th.detach();
+    });
+  }
 }
 
-
 void TPManager::init_syssweeper_threads(){
-    // -------------------------------------------------------------------------------------
-    for (unsigned i = 0; i < CURR_SYS_SWEEPER_THREADS; ++i) {
-        glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].th = std::thread([i, this] {
-            erebus::utils::PinThisThread(sys_sweeper_cpuids[i]);
-            glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].cpuid=sys_sweeper_cpuids[i];
+  // -------------------------------------------------------------------------------------
+  for (unsigned i = 0; i < CURR_SYS_SWEEPER_THREADS; ++i) {
+    glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].th = std::thread([i, this] {
+      erebus::utils::PinThisThread(sys_sweeper_cpuids[i]);
+      glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].cpuid=sys_sweeper_cpuids[i];
             
-            // -------------------------------------------------------------------------------------
-            // Params for DRAM Throughput
-            double delay = 30000;
-            bool csv = false, csvheader = false, show_channel_output = true, print_update = false;
-            uint32 no_columns = DEFAULT_DISPLAY_COLUMNS; // Default number of columns is 2
-            ServerUncoreMemoryMetrics metrics = PartialWrites;
+        // -------------------------------------------------------------------------------------
+        // Params for DRAM Throughput
+        double delay = 30000;
+        bool csv = false, csvheader = false, show_channel_output = true, print_update = false;
+        uint32 no_columns = DEFAULT_DISPLAY_COLUMNS; // Default number of columns is 2
+        ServerUncoreMemoryMetrics metrics = PartialWrites;
             
-            int rankA = -1, rankB = -1;
-            // -------------------------------------------------------------------------------------
-            // Params for UPI links
-            // std::vector<CoreCounterState> cstates1, cstates2;
-            std::vector<SocketCounterState> sktstate1, sktstate2;
-            SystemCounterState sstate1, sstate2;
-            // -------------------------------------------------------------------------------------
+        int rankA = -1, rankB = -1;
+        // -------------------------------------------------------------------------------------
+        // Params for UPI links
+        // std::vector<CoreCounterState> cstates1, cstates2;
+        std::vector<SocketCounterState> sktstate1, sktstate2;
+        SystemCounterState sstate1, sstate2;
+        // -------------------------------------------------------------------------------------
             
             
-            PCM * m = PCM::getInstance();
+        PCM * m = PCM::getInstance();
             
-            // const PCM::ErrorCode status1 = m->program();
-            // m->checkError(status1);
-            // Maybe not the default event, only the qpi events
-            // const uint32 qpiLinks = (uint32)m->getQPILinksPerSocket();
+        // const PCM::ErrorCode status1 = m->program();
+        // m->checkError(status1);
+        // Maybe not the default event, only the qpi events
+        // const uint32 qpiLinks = (uint32)m->getQPILinksPerSocket();
 
-            PCM::ErrorCode status2 = m->programServerUncoreMemoryMetrics(metrics, rankA, rankB);
-            m->checkError(status2);
+        PCM::ErrorCode status2 = m->programServerUncoreMemoryMetrics(metrics, rankA, rankB);
+        m->checkError(status2);
             
-            // PCM::ErrorCode returnResult = m->program();
-            // if (returnResult != pcm::PCM::Success){
-            //     	std::cerr << "Intel's PCM couldn't start" << std::endl;
-            //     	std::cerr << "Error code: " << returnResult << std::endl;
-            //     	exit(1);
-            // }
+        // PCM::ErrorCode returnResult = m->program();
+        // if (returnResult != pcm::PCM::Success){
+        //     	std::cerr << "Intel's PCM couldn't start" << std::endl;
+        //     	std::cerr << "Error code: " << returnResult << std::endl;
+        //     	exit(1);
+        // }
 
-            uint32 imc_channels = (pcm::uint32)m->getMCChannelsPerSocket();
-            uint32 numSockets = m->getNumSockets();
-            
-
-            // -------------------------------------------------------------------------------------
-            // Params for DRAM Throughput
-            
-            uint64 SPR_CHA_CXL_Event_Count = 0;
-            rankA = 0;
-            rankB = 1;
-            std::vector<ServerUncoreCounterState> BeforeState(m->getNumSockets());
-            std::vector<ServerUncoreCounterState> AfterState(m->getNumSockets());
-            // -------------------------------------------------------------------------------------
-
+        uint32 imc_channels = (pcm::uint32)m->getMCChannelsPerSocket();
+        uint32 numSockets = m->getNumSockets();
             
 
-            memdata_t mDataCh;
-            uint64 BeforeTime = 0, AfterTime = 0;
+        // -------------------------------------------------------------------------------------
+        // Params for DRAM Throughput
             
-            
-            
-            while (1) 
-            {
-                if(!glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].running) {
-                    break;
-                }
-                
-                IntelPCMCounter iPCMCnt;
+        uint64 SPR_CHA_CXL_Event_Count = 0;
+        rankA = 0;
+        rankB = 1;
+        std::vector<ServerUncoreCounterState> BeforeState(m->getNumSockets());
+        std::vector<ServerUncoreCounterState> AfterState(m->getNumSockets());
+        // -------------------------------------------------------------------------------------
 
-                readState(BeforeState);
-                // m->getAllCounterStates(sstate1, sktstate1, cstates1);
-                // m->getUncoreCounterStates(sstate2, sktstate2);
-                
-                BeforeTime = m->getTickCount();
-                
-
-                MySleepMs(delay);
-                
-                AfterTime = m->getTickCount();
-                readState(AfterState);
-                mDataCh = calculate_bandwidth(m,BeforeState,AfterState,AfterTime-BeforeTime,csv,csvheader, no_columns, metrics,
-                        show_channel_output, print_update, SPR_CHA_CXL_Event_Count);
-
-                // m->getAllCounterStates(sstate2, sktstate2, cstates2);
-                // m->getUncoreCounterStates(sstate2, sktstate2);
-                
-                // TODO: Need to process these values
-                // for (uint32 skt = 0; skt < m->getNumSockets(); ++skt)
-                // {
-                //     cout << " SKT   " << setw(2) << i << "     ";
-                //     for (uint32 l = 0; l < qpiLinks; ++l)
-                //         cout << unit_format(getIncomingQPILinkBytes(i, l, sstate1, sstate2)) << "   ";
-                //     if (m->qpiUtilizationMetricsAvailable())
-                //     {
-                //         cout << "|  ";
-                //         for (uint32 l = 0; l < qpiLinks; ++l){
-                //             iPCMCnt.UPIUtilize[skt][l]   = int(100. * getIncomingQPILinkUtilization(skt, l, sstate1, sstate2));
-                //             cout << setw(3) << std::dec << int(100. * getIncomingQPILinkUtilization(i, l, sstate1, sstate2)) << "%   ";
-                //         }
-                            
-                //     }
-                //     cout << "\n";
-                // }
-                    
-                
-                // TODO: For now skipping the ranks stuff
-                // calculate_bandwidth_rank(m, BeforeState, AfterState, AfterTime - BeforeTime, csv, csvheader, 
-                //     no_columns, rankA, rankB);
-
-                // TODO: This should be inserted once you make a cycle of collectiing all the rank values
-                
-                iPCMCnt.sysParams = mDataCh;
-                glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].pcmCounters.push(iPCMCnt);
-                 
-    
-                
-                swap(BeforeTime, AfterTime);
-                swap(BeforeState, AfterState);
-                // std::swap(sstate1, sstate2);
-                // std::swap(sktstate1, sktstate2);
-                // std::swap(cstates1, cstates2);
-
-                if(rankA == 6) rankA = 0;
-                else rankA += 2;
-                
-                if(rankB == 7) rankB = 1;
-                else rankB += 2;      
-
+        memdata_t mDataCh;
+        uint64 BeforeTime = 0, AfterTime = 0;            
+        while (1) {
+            if(!glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].running) {
+                break;
             }
+            
+            IntelPCMCounter iPCMCnt;
+
+            readState(BeforeState);
+            // m->getAllCounterStates(sstate1, sktstate1, cstates1);
+            // m->getUncoreCounterStates(sstate2, sktstate2);
+            
+            BeforeTime = m->getTickCount();
+            
+
+            MySleepMs(delay);
+            
+            AfterTime = m->getTickCount();
+            readState(AfterState);
+            mDataCh = calculate_bandwidth(m,BeforeState,AfterState,AfterTime-BeforeTime,csv,csvheader, no_columns, metrics,
+                    show_channel_output, print_update, SPR_CHA_CXL_Event_Count);
+
+            // m->getAllCounterStates(sstate2, sktstate2, cstates2);
+            // m->getUncoreCounterStates(sstate2, sktstate2);
+            
+            // TODO: Need to process these values
+            // for (uint32 skt = 0; skt < m->getNumSockets(); ++skt)
+            // {
+            //     cout << " SKT   " << setw(2) << i << "     ";
+            //     for (uint32 l = 0; l < qpiLinks; ++l)
+            //         cout << unit_format(getIncomingQPILinkBytes(i, l, sstate1, sstate2)) << "   ";
+            //     if (m->qpiUtilizationMetricsAvailable())
+            //     {
+            //         cout << "|  ";
+            //         for (uint32 l = 0; l < qpiLinks; ++l){
+            //             iPCMCnt.UPIUtilize[skt][l]   = int(100. * getIncomingQPILinkUtilization(skt, l, sstate1, sstate2));
+            //             cout << setw(3) << std::dec << int(100. * getIncomingQPILinkUtilization(i, l, sstate1, sstate2)) << "%   ";
+            //         }
+                        
+            //     }
+            //     cout << "\n";
+            // }
+                
+            
+            // TODO: For now skipping the ranks stuff
+            // calculate_bandwidth_rank(m, BeforeState, AfterState, AfterTime - BeforeTime, csv, csvheader, 
+            //     no_columns, rankA, rankB);
+
+            // TODO: This should be inserted once you make a cycle of collectiing all the rank values
+            
+            iPCMCnt.sysParams = mDataCh;
+            glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].pcmCounters.push(iPCMCnt);
+              
+
+            
+            swap(BeforeTime, AfterTime);
+            swap(BeforeState, AfterState);
+            // std::swap(sstate1, sstate2);
+            // std::swap(sktstate1, sktstate2);
+            // std::swap(cstates1, cstates2);
+
+            if(rankA == 6) rankA = 0;
+            else rankA += 2;
+            
+            if(rankB == 7) rankB = 1;
+            else rankB += 2;      
+
+        }
         });
-    }
+  }
 }
 
 
@@ -420,8 +426,8 @@ void TPManager::init_ncoresweeper_threads(){
 }
 
 void TPManager::dump_ncoresweeper_threads(){
-    cout << "==========================DUMPING Core Sweeper Threads=======================" << endl;
-    for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
+  cout << "==========================DUMPING Core Sweeper Threads=======================" << endl;
+  for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
 #if MACHINE == 0
   #if STORAGE == 0
       string dirName = "/homes/yrayhan/works/erebus/kb/" + std::to_string(key);
@@ -480,97 +486,97 @@ void TPManager::dump_ncoresweeper_threads(){
   #endif
 #endif
         // -------------------------------------------------------------------------------------
-        ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
-        for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
-            int tReel = i;
-            memChannelView << this->gm->config << " ";
-            memChannelView << tReel << " ";
-            /**
-             * TODO: Have a global config header file that saves the value of 
-             * global hw params
-             * 6 definitely needs to be replaced with such param
-             * It should not be numa_num_configured nodes
-            */
-            // Dump Read Socket Channel
-            for (auto sc = 0; sc < 4; sc++){
-                for(auto ch = 0; ch < 6; ch++){
-                    memChannelView <<  glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].iMC_Rd_socket_chan[sc][ch] << " ";
-                }
+    ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
+    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
+        int tReel = i;
+        memChannelView << this->gm->config << " ";
+        memChannelView << tReel << " ";
+        /**
+         * TODO: Have a global config header file that saves the value of 
+         * global hw params
+         * 6 definitely needs to be replaced with such param
+         * It should not be numa_num_configured nodes
+        */
+        // Dump Read Socket Channel
+        for (auto sc = 0; sc < 4; sc++){
+            for(auto ch = 0; ch < 6; ch++){
+                memChannelView <<  glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].iMC_Rd_socket_chan[sc][ch] << " ";
             }
-            // Dump Write Socket Channel
-            for (auto sc = 0; sc < 4; sc++){
-                for(auto ch = 0; ch < 6; ch++){
-                    memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].iMC_Wr_socket_chan[sc][ch] << " ";
-                }
-            }
-            memChannelView << endl;
         }
-        // -------------------------------------------------------------------------------------
-        ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
-        const int nQCounterCline = PERF_EVENT_CNT/8 + 1;
-        const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
+        // Dump Write Socket Channel
+        for (auto sc = 0; sc < 4; sc++){
+            for(auto ch = 0; ch < 6; ch++){
+                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].iMC_Wr_socket_chan[sc][ch] << " ";
+            }
+        }
+        memChannelView << endl;
+    }
+    // -------------------------------------------------------------------------------------
+    ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
+    const int nQCounterCline = PERF_EVENT_CNT/8 + 1;
+    const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
+    
+    alignas(64) double dataViewScalarDump[scalarDumpSize] = {};
         
-        alignas(64) double dataViewScalarDump[scalarDumpSize] = {};
+    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].dataDistReel.size(); i++){
+        int tReel = i;
+        DataDistSnap dd = glb_ncore_sweeper_thrds[key].dataDistReel[i];
+
+        dataView << this->gm->config  << " ";
+        dataView << tReel << " ";
+
+        // Load the SIMD values in a memory address
+        for (auto g = 0; g < MAX_GRID_CELL; g++){
+            for (auto cLine = 0; cLine < nQCounterCline; cLine++){
+                _mm512_store_pd(dataViewScalarDump + (g*nQCounterCline*8)+(cLine*8), dd.rawQCounter[g][cLine]);
+            }     
+        }
         
-        for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].dataDistReel.size(); i++){
-            int tReel = i;
-            DataDistSnap dd = glb_ncore_sweeper_thrds[key].dataDistReel[i];
+        //Dump the perf counters
+        for (auto aSize = 0; aSize < scalarDumpSize; aSize++){
+            dataView << dataViewScalarDump[aSize] << " ";
+        }
 
-            dataView << this->gm->config  << " ";
-            dataView << tReel << " ";
+        //Dump the sample counts 
+        for (auto aSize = 0; aSize < MAX_GRID_CELL; aSize++){
+            dataView << dd.rawCntSamples[aSize] << " ";
+        }
+        
+        dataView << endl;
+    }
 
-            // Load the SIMD values in a memory address
-            for (auto g = 0; g < MAX_GRID_CELL; g++){
-                for (auto cLine = 0; cLine < nQCounterCline; cLine++){
-                    _mm512_store_pd(dataViewScalarDump + (g*nQCounterCline*8)+(cLine*8), dd.rawQCounter[g][cLine]);
-                }     
+    // -------------------------------------------------------------------------------------
+    ofstream queryView(dirName + "/query_view.txt", std::ifstream::app);
+    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].queryViewReel.size(); i++){
+        int tReel = i;
+        queryView << this->gm->config  << " ";
+        queryView << tReel << " ";
+        for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
+            for(auto aSize2 = 0; aSize2 < MAX_GRID_CELL; aSize2++){
+                queryView << glb_ncore_sweeper_thrds[key].queryViewReel[i].corrQueryReel[aSize1][aSize2] << " ";
             }
+        }
+        queryView << endl;
+    }
+
+    // -------------------------------------------------------------------------------------
+    ofstream queryExecView(dirName + "/query-exec_view.txt", std::ifstream::app);
+    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].queryExecReel.size(); i++){
+        int tReel = i;
+        queryExecView << this->gm->config  << " ";
+        queryExecView << tReel << " ";
+        for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
+            queryExecView << glb_ncore_sweeper_thrds[key].queryExecReel[i].qExecutedMice[aSize1] << " ";
             
-            //Dump the perf counters
-            for (auto aSize = 0; aSize < scalarDumpSize; aSize++){
-                dataView << dataViewScalarDump[aSize] << " ";
-            }
-
-            //Dump the sample counts 
-            for (auto aSize = 0; aSize < MAX_GRID_CELL; aSize++){
-                dataView << dd.rawCntSamples[aSize] << " ";
-            }
-            
-            dataView << endl;
         }
+        queryExecView << endl;
+    }
 
-        // -------------------------------------------------------------------------------------
-        ofstream queryView(dirName + "/query_view.txt", std::ifstream::app);
-        for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].queryViewReel.size(); i++){
-            int tReel = i;
-            queryView << this->gm->config  << " ";
-            queryView << tReel << " ";
-            for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
-                for(auto aSize2 = 0; aSize2 < MAX_GRID_CELL; aSize2++){
-                    queryView << glb_ncore_sweeper_thrds[key].queryViewReel[i].corrQueryReel[aSize1][aSize2] << " ";
-                }
-            }
-            queryView << endl;
-        }
+    // -------------------------------------------------------------------------------------
 
-        // -------------------------------------------------------------------------------------
-        ofstream queryExecView(dirName + "/query-exec_view.txt", std::ifstream::app);
-        for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].queryExecReel.size(); i++){
-            int tReel = i;
-            queryExecView << this->gm->config  << " ";
-            queryExecView << tReel << " ";
-            for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
-                queryExecView << glb_ncore_sweeper_thrds[key].queryExecReel[i].qExecutedMice[aSize1] << " ";
-                
-            }
-            queryExecView << endl;
-        }
-
-        // -------------------------------------------------------------------------------------
-
-        cout << "==========================Finished dumping NCore Sweeper Thread =====> " << key <<  endl;
-        cout << "-------------------------------------------------------------------------------------"  << endl;
-    }    
+    cout << "==========================Finished dumping NCore Sweeper Thread =====> " << key <<  endl;
+    cout << "-------------------------------------------------------------------------------------"  << endl;
+}    
     cout << "==================================================================" << endl;
 
 }
@@ -922,9 +928,9 @@ TPManager::~TPManager(){
 }
 
 void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y,
-    std::vector<keytype> &init_keys){
+    std::vector<keytype> &init_keys, std::vector<uint64_t> &values){
   for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {
-    glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys] {
+    glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys, &values] {
     erebus::utils::PinThisThread(router_cpuids[i]);
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
     
@@ -956,8 +962,10 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     std::uniform_int_distribution<uint64_t> dx_uint64;  
     std::uniform_int_distribution<uint64_t> dLength_uint64;  
 
-    ycsbc::Generator<uint64_t> *key_chooser_; // transaction key gen
-    ycsbc::Generator<uint64_t> *scan_len_chooser_;
+
+    ycsbc::utils::Properties props;
+    ycsbc::CoreWorkload ycsb_wl;
+    
     // -------------------------------------------------------------------------------------
     
     double max_length, max_width;
@@ -971,11 +979,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     else if(ds == BERLINMOD02){
       max_length = 3000; max_width = 3000;
     } 
-    else if (ds == YCSB){
-      // Represents the number of keys we want 
-      max_length = 6; 
-      max_width = -1; 
-    }
+    
 
 
     if (wl == MD_RS_UNIFORM){
@@ -1156,8 +1160,15 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       max_length = 900000 ;
       dLength_uint64 = std::uniform_int_distribution<uint64_t>(1, max_length);
 
-      key_chooser_ = new ycsbc::UniformGenerator(0, BTREE_INIT_LIMIT - 1000000);
-      scan_len_chooser_ = new ycsbc::UniformGenerator(1, max_length);
+      
+      std::ifstream input("/homes/yrayhan/works/erebus/src/workloads/workloade");
+      try {
+        props.Load(input);
+      } catch (const std::string &message) {
+        std::cerr << message << std::endl;
+      }
+      input.close();
+      ycsb_wl.Init(props);
     }
 
     // -------------------------------------------------------------------------------------
@@ -1171,6 +1182,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // Query parameters 
       double lx, ly, hx, hy, length, width;
       Rectangle query;
+      uint64_t tx_keys[3] = {0};
 
     if(wl == MD_RS_UNIFORM){
       lx = dlx_ureal(gen);
@@ -1322,9 +1334,23 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       query = Rectangle(lx, hx, ly, hy);
     }
     else if (wl == SD_YCSB_WKLOADE){
-      lx = init_keys[dx_uint64(gen)];
-      length = dLength_uint64(gen);
-      query = Rectangle(lx, length, -1, -1);
+      // lx = init_keys[dx_uint64(gen)];
+      // length = dLength_uint64(gen);
+      // query = Rectangle(lx, length, -1, -1);
+      
+      ycsb_wl.DoTransaction(tx_keys);  
+      // cout << tx_keys[0] << ' ' << tx_keys[1] << ' ' << tx_keys[2] << endl;
+      // while (tx_keys[0] > BTREE_INIT_LIMIT - 1000000){
+      //   ycsb_wl.DoTransaction(tx_keys);  
+      // }
+      // Set the record_count in the workload file
+      uint64_t value = -1;
+      
+      lx = init_keys[tx_keys[0]];
+      length = tx_keys[1];
+      if (tx_keys[2] == ycsbc::Operation::INSERT) value = values[tx_keys[0]];
+      query = Rectangle(lx, length, value, -1);
+      query.op = tx_keys[2];
     }
 
       // -------------------------------------------------------------------------------------

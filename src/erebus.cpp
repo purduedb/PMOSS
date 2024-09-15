@@ -277,8 +277,8 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	ranges.reserve(10000000);
 	ops.reserve(10000000);
 
-	memset(&init_keys[0], 0x00, BTREE_INIT_LIMIT * sizeof(keytype));
-	memset(&values[0], 0x00, BTREE_INIT_LIMIT * sizeof(uint64_t));
+	memset(&init_keys[0], 0x00, SINGLE_DIMENSION_KEY_LIMIT * sizeof(keytype));
+	memset(&values[0], 0x00, SINGLE_DIMENSION_KEY_LIMIT * sizeof(uint64_t));
 	memset(&keys[0], 0x00, 10000000 * sizeof(keytype));
 	memset(&ranges[0], 0x00, 10000000 * sizeof(int));
 	memset(&ops[0], 0x00, 10000000 * sizeof(int));
@@ -321,7 +321,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string scan("SCAN");
 
   int count = 0;
-  while ((count < BTREE_INIT_LIMIT)) {
+  while ((count < SINGLE_DIMENSION_KEY_LIMIT)) {
     infile_load >> op >> key;
     if (op.compare(insert) != 0) {
       std::cout << "READING LOAD FILE FAIL!\n";
@@ -347,14 +347,14 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   keytype *init_keys_data = init_keys.data();
 
   if (value_type == 0) {
-    while (count < BTREE_INIT_LIMIT) {
+    while (count < SINGLE_DIMENSION_KEY_LIMIT) {
       value = base + rand();
       values.push_back(value);
       count++;
     }
   }
   else {
-    while (count < BTREE_INIT_LIMIT) {
+    while (count < SINGLE_DIMENSION_KEY_LIMIT) {
       values.push_back(reinterpret_cast<uint64_t>(init_keys_data+count));
       count++;
     }
@@ -364,7 +364,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	cout << total_num_key << endl;
 	
 	auto start = std::chrono::high_resolution_clock::now();
-	for(size_t i = 0; i < total_num_key; i++) {
+	for(size_t i = 0; i < BTREE_INIT_LIMIT; i++) {
 		this->idx_btree->insert(init_keys[i], values[i]);
   }
 	auto finish = std::chrono::high_resolution_clock::now();
@@ -481,17 +481,17 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 
 int main()
 {	
-	int cfgIdx = 46;
+	int cfgIdx = 205;
 	int ds = YCSB;
 	int wl = SD_YCSB_WKLOADE;
 
 	// Keys in database 
 	std::vector<keytype> init_keys;
-	init_keys.reserve(BTREE_INIT_LIMIT);
+	init_keys.reserve(SINGLE_DIMENSION_KEY_LIMIT);
 	
 	// Pointers to the keys
 	std::vector<uint64_t> values;
-	values.reserve(BTREE_INIT_LIMIT);
+	values.reserve(SINGLE_DIMENSION_KEY_LIMIT);
 
 	
 	double min_x, max_x, min_y, max_y;
@@ -620,7 +620,7 @@ int main()
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 
 	glb_tpool.init_worker_threads();
-	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys);
+	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	glb_tpool.init_syssweeper_threads();
 	glb_tpool.init_megamind_threads();
 	glb_tpool.init_ncoresweeper_threads();

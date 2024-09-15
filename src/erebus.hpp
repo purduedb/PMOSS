@@ -1,4 +1,6 @@
-#pragma once
+#ifndef PMOSS_INIT_H_
+#define PMOSS_INIT_H_
+
 
 #include <numa.h>
 // -------------------------------------------------------------------------------------
@@ -35,3 +37,5 @@ class Erebus
 };
 
 }  // namespace erebus
+
+#endif 

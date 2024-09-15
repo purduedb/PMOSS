@@ -29,12 +29,11 @@ Rectangle::Rectangle(const Rectangle& rectangle) {
 	bottom_ = rectangle.Bottom();
 	top_ = rectangle.Top();
 	
-	// Yr
 	id_ = rectangle.id_;
 	qStamp = rectangle.qStamp;
-
 	validGridIds = rectangle.validGridIds;
 	aGrid = rectangle.aGrid;
+	op = rectangle.op;
 	
 }
 

@@ -176,6 +176,8 @@ class CoreWorkload {
 
   virtual bool DoInsert(DB &db);
   virtual bool DoTransaction(DB &db);
+  
+  virtual void DoTransaction(uint64_t* tx_params);
 
   bool read_all_fields() const { return read_all_fields_; }
   bool write_all_fields() const { return write_all_fields_; }
@@ -204,7 +206,13 @@ class CoreWorkload {
 
   uint64_t NextTransactionKeyNum();
   std::string NextFieldName();
-
+   
+  void TransactionRead(uint64_t* tx_params);
+  void TransactionReadModifyWrite(uint64_t* tx_params);
+  void TransactionScan(uint64_t* tx_params);
+  void TransactionUpdate(uint64_t* tx_params);
+  void TransactionInsert(uint64_t* tx_params);
+  
   DB::Status TransactionRead(DB &db);
   DB::Status TransactionReadModifyWrite(DB &db);
   DB::Status TransactionScan(DB &db);

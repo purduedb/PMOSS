@@ -59,7 +59,7 @@ void TPManager::init_worker_threads(){
             result = this->gm->idx_quadtree->getObjectsInBound(qBox);
           #elif STORAGE == 2  
             if(rec_pop.op == ycsbc::Operation::INSERT){
-              result = this->gm->idx_btree->insert(static_cast<uint64_t>(rec_pop.left_), static_cast<int>(rec_pop.bottom_));
+              result = this->gm->idx_btree->insert(static_cast<uint64_t>(rec_pop.left_), static_cast<uint64_t>(rec_pop.bottom_));
             }
             else if(rec_pop.op == ycsbc::Operation::SCAN){
               result = this->gm->idx_btree->scan(static_cast<uint64_t>(rec_pop.left_), static_cast<int>(rec_pop.right_));

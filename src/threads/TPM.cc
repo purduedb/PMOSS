@@ -183,11 +183,38 @@ void TPManager::init_syssweeper_threads(){
         // const PCM::ErrorCode status1 = m->program();
         // m->checkError(status1);
         // Maybe not the default event, only the qpi events
-        // const uint32 qpiLinks = (uint32)m->getQPILinksPerSocket();
+        const uint32 qpiLinks = (uint32)m->getQPILinksPerSocket();
 
         PCM::ErrorCode status2 = m->programServerUncoreMemoryMetrics(metrics, rankA, rankB);
         m->checkError(status2);
-            
+
+        // uint32 event[4];
+        // const auto cpu_model = m->getCPUModel();
+        // if (PCM::hasUPI(cpu_model))
+        // {
+        //   // monitor TxL0_POWER_CYCLES
+        //   event[0] = Q_P_PCI_PMON_CTL_EVENT(0x26);
+        //   // monitor RxL_FLITS.ALL_DATA on counter 1
+        //   event[1] = Q_P_PCI_PMON_CTL_EVENT(0x03) + Q_P_PCI_PMON_CTL_UMASK(0xF);
+        //   // monitor TxL_FLITS.NON_DATA+ALL_DATA on counter 2
+        //   event[2] = Q_P_PCI_PMON_CTL_EVENT(0x02) + Q_P_PCI_PMON_CTL_UMASK((0x97|0x0F));
+        //   // monitor UPI CLOCKTICKS
+        //   event[ServerUncoreCounterState::EventPosition::xPI_CLOCKTICKS] = Q_P_PCI_PMON_CTL_EVENT(0x01);
+        // }
+        // for (int upmu = 0; (upmu < (int)m->serverUncorePMUs.size()) && m->MSR.size(); ++upmu){
+        //     m->serverUncorePMUs[upmu]->programXPI(event);
+        // }
+        
+        // if (m->qpiUtilizationMetricsAvailable())
+        // {
+        //   cout << "| ";
+        //   for (uint32 i = 0; i < qpiLinks; ++i)
+        //       cout << " " << m->xPI() << i << "  ";
+        // }
+        // else{
+        //   cout << "CHECKPOINT: UPI DATA AVAILABILITY" << endl;
+        // }
+
         // PCM::ErrorCode returnResult = m->program();
         // if (returnResult != pcm::PCM::Success){
         //     	std::cerr << "Intel's PCM couldn't start" << std::endl;
@@ -212,70 +239,70 @@ void TPManager::init_syssweeper_threads(){
         memdata_t mDataCh;
         uint64 BeforeTime = 0, AfterTime = 0;            
         while (1) {
-            if(!glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].running) {
-                break;
-            }
+          if(!glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].running) {
+              break;
+          }
             
-            IntelPCMCounter iPCMCnt;
+          IntelPCMCounter iPCMCnt;
 
-            readState(BeforeState);
-            // m->getAllCounterStates(sstate1, sktstate1, cstates1);
-            // m->getUncoreCounterStates(sstate2, sktstate2);
+          readState(BeforeState);
+          // m->getAllCounterStates(sstate1, sktstate1, cstates1);
+          // m->getUncoreCounterStates(sstate2, sktstate2);
             
-            BeforeTime = m->getTickCount();
-            
+          BeforeTime = m->getTickCount();
+          
 
-            MySleepMs(delay);
+          MySleepMs(delay);
             
-            AfterTime = m->getTickCount();
-            readState(AfterState);
-            mDataCh = calculate_bandwidth(m,BeforeState,AfterState,AfterTime-BeforeTime,csv,csvheader, no_columns, metrics,
-                    show_channel_output, print_update, SPR_CHA_CXL_Event_Count);
+          AfterTime = m->getTickCount();
+          readState(AfterState);
+          mDataCh = calculate_bandwidth(m,BeforeState,AfterState,AfterTime-BeforeTime,csv,csvheader, no_columns, metrics,
+                  show_channel_output, print_update, SPR_CHA_CXL_Event_Count);
 
-            // m->getAllCounterStates(sstate2, sktstate2, cstates2);
-            // m->getUncoreCounterStates(sstate2, sktstate2);
-            
-            // TODO: Need to process these values
-            // for (uint32 skt = 0; skt < m->getNumSockets(); ++skt)
-            // {
-            //     cout << " SKT   " << setw(2) << i << "     ";
-            //     for (uint32 l = 0; l < qpiLinks; ++l)
-            //         cout << unit_format(getIncomingQPILinkBytes(i, l, sstate1, sstate2)) << "   ";
-            //     if (m->qpiUtilizationMetricsAvailable())
-            //     {
-            //         cout << "|  ";
-            //         for (uint32 l = 0; l < qpiLinks; ++l){
-            //             iPCMCnt.UPIUtilize[skt][l]   = int(100. * getIncomingQPILinkUtilization(skt, l, sstate1, sstate2));
-            //             cout << setw(3) << std::dec << int(100. * getIncomingQPILinkUtilization(i, l, sstate1, sstate2)) << "%   ";
-            //         }
-                        
-            //     }
-            //     cout << "\n";
-            // }
+          // m->getAllCounterStates(sstate2, sktstate2, cstates2);
+          // m->getUncoreCounterStates(sstate2, sktstate2);
+          
+          // TODO: Need to process these values
+          // for (uint32 skt = 0; skt < m->getNumSockets(); ++skt)
+          // {
+          //   cout << " SKT   " << setw(2) << i << "     ";
+          //   for (uint32 l = 0; l < qpiLinks; ++l)
+          //       cout << unit_format(getIncomingQPILinkBytes(i, l, sstate1, sstate2)) << "   ";
+          //   if (m->qpiUtilizationMetricsAvailable())
+          //   {
+          //       cout << "|  ";
+          //       for (uint32 l = 0; l < qpiLinks; ++l){
+          //           iPCMCnt.UPIUtilize[skt][l]   = int(100. * getIncomingQPILinkUtilization(skt, l, sstate1, sstate2));
+          //           cout << setw(3) << std::dec << int(100. * getIncomingQPILinkUtilization(i, l, sstate1, sstate2)) << "%   ";
+          //       }
+                    
+          //   }
+          //   cout << "\n";
+          // }
                 
             
-            // TODO: For now skipping the ranks stuff
-            // calculate_bandwidth_rank(m, BeforeState, AfterState, AfterTime - BeforeTime, csv, csvheader, 
-            //     no_columns, rankA, rankB);
+          // TODO: For now skipping the ranks stuff
+          // calculate_bandwidth_rank(m, BeforeState, AfterState, AfterTime - BeforeTime, csv, csvheader, 
+          //     no_columns, rankA, rankB);
 
-            // TODO: This should be inserted once you make a cycle of collectiing all the rank values
+          // TODO: This should be inserted once you make a cycle of collectiing all the rank values
             
-            iPCMCnt.sysParams = mDataCh;
-            glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].pcmCounters.push(iPCMCnt);
+          iPCMCnt.sysParams = mDataCh;
+          glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].pcmCounters.push(iPCMCnt);
               
 
             
-            swap(BeforeTime, AfterTime);
-            swap(BeforeState, AfterState);
-            // std::swap(sstate1, sstate2);
-            // std::swap(sktstate1, sktstate2);
-            // std::swap(cstates1, cstates2);
+          swap(BeforeTime, AfterTime);
+          swap(BeforeState, AfterState);
+          // std::swap(sstate1, sstate2);
+          // std::swap(sktstate1, sktstate2);
+          // std::swap(cstates1, cstates2);
 
-            if(rankA == 6) rankA = 0;
-            else rankA += 2;
-            
-            if(rankB == 7) rankB = 1;
-            else rankB += 2;      
+          if(rankA == 6) rankA = 0;
+          else rankA += 2;
+          
+          if(rankB == 7) rankB = 1;
+          else rankB += 2;      
 
         }
         });
@@ -491,6 +518,8 @@ void TPManager::dump_ncoresweeper_threads(){
         int tReel = i;
         memChannelView << this->gm->config << " ";
         memChannelView << tReel << " ";
+        memChannelView << this->gm->wkload << " ";
+        memChannelView << this->gm->iam << " ";
         /**
          * TODO: Have a global config header file that saves the value of 
          * global hw params
@@ -524,6 +553,8 @@ void TPManager::dump_ncoresweeper_threads(){
 
         dataView << this->gm->config  << " ";
         dataView << tReel << " ";
+        dataView << this->gm->wkload << " ";
+        dataView << this->gm->iam << " ";
 
         // Load the SIMD values in a memory address
         for (auto g = 0; g < MAX_GRID_CELL; g++){
@@ -551,6 +582,8 @@ void TPManager::dump_ncoresweeper_threads(){
         int tReel = i;
         queryView << this->gm->config  << " ";
         queryView << tReel << " ";
+        queryView << this->gm->wkload << " ";
+        queryView << this->gm->iam << " ";
         for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
             for(auto aSize2 = 0; aSize2 < MAX_GRID_CELL; aSize2++){
                 queryView << glb_ncore_sweeper_thrds[key].queryViewReel[i].corrQueryReel[aSize1][aSize2] << " ";
@@ -565,6 +598,8 @@ void TPManager::dump_ncoresweeper_threads(){
         int tReel = i;
         queryExecView << this->gm->config  << " ";
         queryExecView << tReel << " ";
+        queryExecView << this->gm->wkload  << " ";
+        queryExecView << this->gm->iam  << " ";
         for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
             queryExecView << glb_ncore_sweeper_thrds[key].queryExecReel[i].qExecutedMice[aSize1] << " ";
             
@@ -647,40 +682,40 @@ void TPManager::dumpGridWorkerThreadCounters(int tID){
 
 
 void TPManager::terminate_worker_threads(){
-    for (const auto & [ key, value ] : glb_worker_thrds) {
-        glb_worker_thrds[key].running = false;
-        // glb_worker_thrds[key].th.detach();
-    }
+  for (const auto & [ key, value ] : glb_worker_thrds) {
+    glb_worker_thrds[key].running = false;
+    // glb_worker_thrds[key].th.detach();
+  }
 }
 
 void TPManager::terminate_ncoresweeper_threads(){
-    for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
-        glb_ncore_sweeper_thrds[key].running = false;
-        // glb_ncore_sweeper_thrds[key].th.detach();
-    }
+  for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
+    glb_ncore_sweeper_thrds[key].running = false;
+    // glb_ncore_sweeper_thrds[key].th.detach();
+  }
 }
 
 
 void TPManager::terminate_router_threads(){
-    for (const auto & [ key, value ] : glb_router_thrds) {
-        glb_router_thrds[key].running = false;
-        // glb_router_thrds[key].th.detach();
-    }
+  for (const auto & [ key, value ] : glb_router_thrds) {
+    glb_router_thrds[key].running = false;
+    // glb_router_thrds[key].th.detach();
+  }
 }
 
 
 void TPManager::terminate_megamind_threads(){
-    for (const auto & [ key, value ] : glb_megamind_thrds) {
-        glb_megamind_thrds[key].running = false;
-        // glb_megamind_thrds[key].th.detach();
-    }
+  for (const auto & [ key, value ] : glb_megamind_thrds) {
+    glb_megamind_thrds[key].running = false;
+    // glb_megamind_thrds[key].th.detach();
+  }
 }
 
 void TPManager::terminate_syssweeper_threads(){
-    for (const auto & [ key, value ] : glb_sys_sweeper_thrds) {
-        glb_sys_sweeper_thrds[key].running = false;
-        // glb_sys_sweeper_thrds[key].th.detach();
-    }
+  for (const auto & [ key, value ] : glb_sys_sweeper_thrds) {
+    glb_sys_sweeper_thrds[key].running = false;
+    // glb_sys_sweeper_thrds[key].th.detach();
+  }
 }
 
 void TPManager::detachAllThreads(){
@@ -1153,21 +1188,34 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       dLength_ureal  = std::uniform_real_distribution<> (1, max_length);
       dWidth_ureal = std::uniform_real_distribution<> (1, max_width);
     }
-    else if (wl == SD_YCSB_WKLOADE){
+    else if (wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE){
       // std::default_random_engine generator;
       // erebus::utils::zipfian_int_distribution<int> distX(min_x, max_x, 0.4);
       dx_uint64 = std::uniform_int_distribution<uint64_t>(0, BTREE_INIT_LIMIT - 1000000);
       max_length = 900000 ;
       dLength_uint64 = std::uniform_int_distribution<uint64_t>(1, max_length);
 
+      std::ifstream input;
+      if (wl == SD_YCSB_WKLOADA){
+        input.open("/homes/yrayhan/works/erebus/src/workloads/workloada");
+      }
+      else if (wl == SD_YCSB_WKLOADC){
+        input.open("/homes/yrayhan/works/erebus/src/workloads/workloadc");
+      }
+      else if (wl == SD_YCSB_WKLOADE){
+        input.open("/homes/yrayhan/works/erebus/src/workloads/workloade");
+      }
+      else{
+        
+      }
       
-      std::ifstream input("/homes/yrayhan/works/erebus/src/workloads/workloade");
       try {
         props.Load(input);
       } catch (const std::string &message) {
         std::cerr << message << std::endl;
       }
       input.close();
+
       ycsb_wl.Init(props);
     }
 
@@ -1333,7 +1381,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       hy = ly + width;
       query = Rectangle(lx, hx, ly, hy);
     }
-    else if (wl == SD_YCSB_WKLOADE){
+    else if (wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE){
       // lx = init_keys[dx_uint64(gen)];
       // length = dLength_uint64(gen);
       // query = Rectangle(lx, length, -1, -1);
@@ -1357,38 +1405,37 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // Check which grid the query belongs to 
       std::vector<int> valid_gcells;
       #if LINUX == 3
-        for (auto gc = 0; gc < gm->nGridCells; gc++){
-        
+        for (auto gc = 0; gc < gm->nGridCells; gc++){  
           double glx = gm->glbGridCell[gc].lx;
           double gly = gm->glbGridCell[gc].ly;
           double ghx = gm->glbGridCell[gc].hx;
           double ghy = gm->glbGridCell[gc].hy;
-      #if MULTIDIM == 1
-          if (hx < glx || lx > ghx || hy < gly || ly > ghy)
-              continue;
-          else {
-              /**
-               * 1. Store IDs of the Grids that the query intersects
-               * 2. Update the query frequency
-               * 3. Update the query's valid grid cells so that it can maintain a local view of the data distribution
-              */
+          #if MULTIDIM == 1
+            if (hx < glx || lx > ghx || hy < gly || ly > ghy)
+                continue;
+            else {
+                /**
+                 * 1. Store IDs of the Grids that the query intersects
+                 * 2. Update the query frequency
+                 * 3. Update the query's valid grid cells so that it can maintain a local view of the data distribution
+                */
+                valid_gcells.push_back(gc);  
+                // gm->freqQueryDistPushed[gc]++;  // I am currently only keeping where it goes, don't care about  the intersections
+                query.validGridIds.push_back(gc);
+            }
+          #else
+            if (lx <= ghx && lx >= glx){
               valid_gcells.push_back(gc);  
-              // gm->freqQueryDistPushed[gc]++;  // I am currently only keeping where it goes, don't care about  the intersections
               query.validGridIds.push_back(gc);
-          }
-      #else
-          if (lx <= ghx && lx >= glx){
-            valid_gcells.push_back(gc);  
-            query.validGridIds.push_back(gc);
-          }
-          else continue;
-      #endif 
-            
+            }
+            else continue;
+          #endif 
+              
         }
       #else
         for (auto gc = 0; gc < gm->nGridCells; gc++){
-            valid_gcells.push_back(gc); 
-            query.validGridIds.push_back(gc); // May not be necessary
+          valid_gcells.push_back(gc); 
+          query.validGridIds.push_back(gc); // May not be necessary
         }                
       #endif 
       
@@ -1483,12 +1530,12 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       */
       // -------------------------------------------------------------------------------------
       
-      // Push the query to the correct worker thread's job queue
-      std::mt19937 genInt(rd());
-      std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
-      int insert_tid = dq(genInt);
+    // Push the query to the correct worker thread's job queue
+    std::mt19937 genInt(rd());
+    std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
+    int insert_tid = dq(genInt);
 
-      int glbGridCellInsert = valid_gcells[insert_tid];
+    int glbGridCellInsert = valid_gcells[insert_tid];
                 
       // Stamping the query with something: You need to do the inverse of log_2
     /*

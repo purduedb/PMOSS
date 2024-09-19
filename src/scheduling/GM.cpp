@@ -6,8 +6,10 @@ namespace erebus
 {
 namespace dm
 {
-GridManager::GridManager(int config, int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace){
+GridManager::GridManager(int config, int wkload, int iam, int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace){
 	this->config = config;
+    this->wkload = wkload;
+    this->iam = iam;
     this->xPar = xPar;
 	this->yPar = yPar;
 	this->minXSpace = minXSpace;
@@ -132,7 +134,8 @@ void GridManager::register_grid_cells(string configFile){
 	
 	int trk_cid = 0;
   
-	
+	auto start = std::chrono::high_resolution_clock::now();
+
 	for(auto i = 0; i < this->xPar; i++){
 		for (auto j = 0; j < this->yPar; j++){
 			this->glbGridCell[trk_cid].cid = trk_cid;
@@ -161,9 +164,12 @@ void GridManager::register_grid_cells(string configFile){
 			trk_cid++; 
 		}
 	}
+
+  auto finish = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = finish - start;
+  cout << "Checkpoint: INDEX_MIGRATION_COMPLETED: " << elapsed.count() << endl;
 	
 }
-
 
 void GridManager::register_index(erebus::storage::rtree::RTree * idx)
 {

@@ -14,7 +14,7 @@ using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define SINGLE_DIMENSION_KEY_LIMIT 50000000       
-#define BTREE_INIT_LIMIT 5000000    
+#define BTREE_INIT_LIMIT 50000000    
 #define LIMIT 1000                  // test btree workload
 #define MAX_GRID_CELL 100
 #define STAMP_LR_PARAM 4            // For now think of the query MBR as only output
@@ -27,7 +27,7 @@ using std::ofstream;
 #define STORAGE 2  // RTree(0), QTree(1), BTree
 #define DATASET 3  // OSM(0), GEOLIFE(1), BMOD02(2), ycsb (3)
 #define MACHINE 0 // 0 (BIGDATA), 1(DBSERVER)
-#define LINUX 3 // 0 (SE 0, SE-NUMA 1, SN, NUMA 2, OURS, 3)
+#define LINUX 3 // 0 (SE 0, SE-NUMA 1, SN-NUMA 2, OURS, 3)
 // -------------------------------------------------------------------------------------
 #define WKLOAD SD_YCSB_WKLOADE
 // -------------------------------------------------------------------------------------
@@ -41,6 +41,8 @@ class GridManager
 {
   public:
     int config;         // hw config of the grid manager
+    int wkload;         // workload
+    int iam;
     int xPar;           // #lines in x-dim
     int yPar;           // #lines in y-dim
     double minXSpace;   // min-space of the index in x-dim
@@ -92,10 +94,11 @@ class GridManager
     // int DataDist[MAX_GRID_CELL] = {0};
     vector<int> DataDist;
     
-    GridManager(int config, int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace);
+    GridManager(int config, int wkload, int iam, int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace);
     void register_grid_cells();
     void register_grid_cells(vector<CPUID> availCPUs);
     void register_grid_cells(string configFile);
+    void register_grid_cells_parallel(string configFile);
     void register_index(erebus::storage::rtree::RTree *idx);
     void register_index(erebus::storage::qtree::QuadTree *idx_quadtree);
     void register_index(erebus::storage::BTreeOLCIndex<keytype, keycomp> *idx_btree);

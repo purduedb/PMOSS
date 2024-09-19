@@ -479,11 +479,17 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 }   // namespace erebus
 
 
-int main()
+int main(int argc, char* argv[])
 {	
-	int cfgIdx = 35;
+	int cfgIdx = 38;
+	
+	if (argc > 1)
+		cfgIdx = std::atoi(argv[1]);
+	
+	cout << cfgIdx << endl;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADE;
+	int wl = SD_YCSB_WKLOADC;
+	int iam = BTREE;
 
 	// Keys in database 
 	std::vector<keytype> init_keys;
@@ -506,15 +512,12 @@ int main()
 	}	
 	else if (ds == YCSB){
 		min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
-		// max= 9223371933865469581  min= 36296660289 50000000
-		// min_x = 55488592825689361; max_x = 9105318085603802964; min_y = -1; max_y = -1; 
-		// min_x = 330885895843; max_x = 9223370062054235050; min_y = -1; max_y = -1; 
 	}
 	
 #if MULTIDIM == 1
-	erebus::dm::GridManager glb_gm(cfgIdx, 10, 10, min_x, max_x, min_y, max_y);
+	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, 10, 10, min_x, max_x, min_y, max_y);
 #else 
-	erebus::dm::GridManager glb_gm(cfgIdx, 100, 1, min_x, max_x, min_y, max_y);
+	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, 100, 1, min_x, max_x, min_y, max_y);
 #endif
 
 	// -------------------------------------------------------------------------------------
@@ -524,15 +527,15 @@ int main()
 	std::vector<CPUID> ss_cpuids;			// memory channel sweeper cores
 	std::vector<CPUID> ncore_cpuids;	// ncore sweeper cores
 	
-	int nNUMANodes = numa_num_configured_nodes();
-	int nCPUCores = numa_num_possible_cpus();
+	int num_NUMA_nodes = numa_num_configured_nodes();
+	int num_CPU_Cores = numa_num_possible_cpus();
 	
-	vector<CPUID> cPool[nNUMANodes];
+	vector<CPUID> cPool[num_NUMA_nodes];
 
-	for(auto n=0; n < nNUMANodes; n++){
+	for(auto n=0; n < num_NUMA_nodes; n++){
 		struct bitmask *bmp = numa_allocate_cpumask();
 		numa_node_to_cpus(n, bmp);
-		for(auto j = 0; j < nCPUCores; j++){
+		for(auto j = 0; j < num_CPU_Cores; j++){
 			if (numa_bitmask_isbitset(bmp, j)) cPool[n].push_back(j);
 		}
 	}
@@ -554,7 +557,7 @@ int main()
 	#endif
 	
 	ss_cpuids.push_back(99);
-	for(auto n=0; n < nNUMANodes; n++){
+	for(auto n=0; n < num_NUMA_nodes; n++){
 		mm_cpuids.push_back(cPool[n][0]);
 		
 		rt_cpuids.push_back(cPool[n][1]);
@@ -625,10 +628,12 @@ int main()
 	glb_tpool.init_megamind_threads();
 	glb_tpool.init_ncoresweeper_threads();
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(500000));  // 1000000 previously
+	std::this_thread::sleep_for(std::chrono::milliseconds(490000));  // 1000000 previously
 	glb_tpool.terminate_ncoresweeper_threads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	glb_tpool.dump_ncoresweeper_threads();
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	exit(0);
 	
 	// glb_tpool.terminateRouterThreads();
 	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));

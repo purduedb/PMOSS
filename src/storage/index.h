@@ -174,30 +174,6 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
       count += nextCount;
     }
     return count;
-
-    // uint64_t leaf_count = 1;
-    // uint64_t results[range];
-    // uint64_t count = idx.migratoryScan(key1, key2, range, results, destNUMA);
-
-    // if (count==0)
-    //    return 0;
-
-    // while (count < range) {
-    //   KeyType nextKey = results[count-1];
-    //   incKey(nextKey); // hack: this only works for fixed-size keys
-    //   if (nextKey > key2)
-    //     break;
-      
-    //   // uint64_t nextCount = idx.migratoryScan(nextKey, key2, range - count, results + count, destNUMA);
-    //   // We do not need the keys here at all, so we can override the keys of the previous result
-    //   uint64_t nextCount = idx.migratoryScan(nextKey, key2, range, results, destNUMA);
-      
-    //   if (nextCount==0)
-    //     break; // no more entries
-    //   count = nextCount;
-    //   leaf_count += 1;
-    // }
-    // return leaf_count;
   }
 
 

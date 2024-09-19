@@ -123,5 +123,9 @@ enum {
   YCSB,
 };
 
-
+enum {
+  BTREE,
+  RTREE,
+  QUADTREE
+};
 #endif

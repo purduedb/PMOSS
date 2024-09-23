@@ -65,7 +65,9 @@ enum WKLOAD_DIST{
 struct IntelPCMCounter
 {
     memdata_t sysParams;
-    int UPIUtilize[max_sockets][max_qpi];
+    double upi_incoming[max_sockets][max_qpi];
+    double upi_outgoing[max_sockets][max_qpi];
+    double upi_system[4]; // sustem-wide info
     int qType;
 
     // You will need to write copy constructor for

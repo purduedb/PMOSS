@@ -108,8 +108,10 @@ class TPManager{
       // 
       vector <DataDistSnap> dataDistReel;
       vector<QueryViewSnap> queryViewReel;
-      vector<memdata_t> DRAMResUsageReel;
+      vector<IntelPCMCounter> DRAMResUsageReel;
+      // vector<memdata_t> DRAMResUsageReel;
       vector<QueryExecSnap> queryExecReel; 
+      
       // int corrQueryReel[MAX_GRID_CELL][MAX_GRID_CELL] = {0};
       
       
@@ -135,21 +137,12 @@ class TPManager{
       u64 cpuid;
       
       oneapi::tbb::concurrent_priority_queue<Rectangle, Rectangle::compare_f> jobs;
-      
-      // This is a local view of the data distribution 
-      // TODO: the size should be equal to the max number of grids
-      // These are not needed, there because have them used in a different function
-      HWCounterStats shadowDataDist[1000];
-      HWCounterStats stats_;
-
       oneapi::tbb::concurrent_queue<PerfCounter> perf_stats;  // This is what we are currently using
+
       std::unordered_map<CPUID, u64> qExecutedMice;  // Grid Id to Mice Count
       std::unordered_map<CPUID, u64> qExecutedElephant;
       std::unordered_map<u64, u64> qExecutedMammoth;
-      // int qExecutedMice[MAX_GRID_CELL] = {0};
-      // int qExecutedElephant[MAX_GRID_CELL] = {0};
-      // int qExecutedMammoth[MAX_GRID_CELL] = {0};
-    
+      
       bool running = true;
       bool job_set = false;   // Has job
       bool job_done = false;  // Job done
@@ -185,18 +178,6 @@ class TPManager{
     std::unordered_map<CPUID, StandbyThread> glb_standby_thrds; 
 
     std::unordered_map<CPUID, WorkerThread> testWkload_glb_worker_thrds; 
-
-    // std::unordered_map<CPUID, std::thread> glb_worker_thrds; 
-    // std::unordered_map<CPUID, std::thread> glb_megamind_thrds; 
-    // std::unordered_map<CPUID, std::thread> glb_router_thrds; 
-    
-    // std::vector<std::thread> glb_worker_thrds; 
-    // std::vector<std::thread> glb_megamind_thrds;
-    // std::vector<std::thread> glb_router_thrds; 
-    // -------------------------------------------------------------------------------------
-    // MegaMindThread megamind_threads_meta[MAX_MEGAMIND_THREADS];
-    // WorkerThread worker_threads_meta[MAX_WORKER_THREADS];
-    // RouterThread router_threads_meta[MAX_ROUTER_THREADS];
     // -------------------------------------------------------------------------------------
     TPManager();
     TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID> sys_sweeper_cpuids, std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
@@ -222,7 +203,6 @@ class TPManager{
 
 
     void dumpTestGridHWCounters(vector<CPUID> cpuIds);
-    void dumpGridWorkerThreadCounters(int tID);
 
     void testInterferenceInitWorkerThreads(vector<CPUID> worker_cpuids, int nWThreads);
     ~TPManager();

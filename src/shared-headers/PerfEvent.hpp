@@ -44,7 +44,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#define PERF_EVENT_CNT 10  // 23, Previously
+#define PERF_EVENT_CNT 16  // Previously
 
 struct PerfEvent {
    
@@ -75,17 +75,9 @@ struct PerfEvent {
    std::chrono::time_point<std::chrono::steady_clock> stopTime;
 
    PerfEvent() {
-      // registerCounter("cycles", PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES);
-      // registerCounter("kcycles", PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES, KERNEL);
-      // registerCounter("instructions", PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
-      // registerCounter("L1-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
-      // registerCounter("LLC-misses", PERF_TYPE_HARDWARE, PERF_COUNT_HW_CACHE_MISSES);
-      // registerCounter("branch-misses", PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_MISSES);
-      // registerCounter("task-clock", PERF_TYPE_SOFTWARE, PERF_COUNT_SW_TASK_CLOCK);
+      // counters for skylake-x for counting 
       registerCounter("cycles", PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES);
       registerCounter("instructions", PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
-      
-      // Cache Misses: Read
       registerCounter("L1D-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       registerCounter("L1I-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1I|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       registerCounter("LLC-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_LL|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
@@ -94,49 +86,44 @@ struct PerfEvent {
       // registerCounter("ITLB-Miss", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_ITLB|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       registerCounter("DTLB-Miss", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_DTLB|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       // registerCounter("LLC-misses (H/W)", PERF_TYPE_HARDWARE, PERF_COUNT_HW_CACHE_MISSES);
-      
-      // Cache Accesses: Read
       // registerCounter("L1D-accesses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_ACCESS<<16));
       // registerCounter("LLC-accesses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_LL|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_ACCESS<<16));
-      // registerCounter("memory-accesses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_NODE|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_ACCESS<<16));
+      registerCounter("memory-accesses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_NODE|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_ACCESS<<16));
       // registerCounter("DTLB-Access", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_DTLB|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_ACCESS<<16));
-      
       // For dbsever, it seems the instruction accesses donot work
       // registerCounter("L1I-accesses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1I|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_ACCESS<<16));
       // registerCounter("ITLB-Access", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_ITLB|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_ACCESS<<16));
-      
-      
-      // Cache Accesses: Write
       // registerCounter("LLC-write-accesses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_LL|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_ACCESS<<16));
       // registerCounter("memory-write-accesses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_NODE|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_ACCESS<<16));
-      
-      // Cache Misses: Write
       registerCounter("LLC-write-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_LL|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16)); 
-      // registerCounter("memory-write-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_NODE|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
-
+      registerCounter("memory-write-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_NODE|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       // For dbserver, L1D write misses donot seem to work
       // registerCounter("L1D-writes-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
-      
-      registerCounter("task-clock", PERF_TYPE_SOFTWARE, PERF_COUNT_SW_TASK_CLOCK);
-
+      registerCounter("MEM_LOAD_L3_MISS_RETIRED:LOCAL_DRAM", PERF_TYPE_RAW, 0x5301d3);
+      registerCounter("MEM_LOAD_L3_MISS_RETIRED:REMOTE_DRAM", PERF_TYPE_RAW, 0x5302d3);
+      // registerCounter("UNC_UPI_TXL_FLITS.ALL_DATA.L0", 368, 0xf02);
+      // registerCounter("UNC_UPI_TXL_FLITS.ALL_DATA.L1", 19, 0xf02);
+      // registerCounter("UNC_UPI_TXL_FLITS.ALL_DATA.L2", 20, 0xf02);
       // registerCounter("L1D_PEND_MISS.PENDING_CYCLES", PERF_TYPE_RAW, 0x1530148);
-      // Commented them July 1
       // registerCounter("CYCLE_ACTIVITY.CYCLES_L1D_MISS", PERF_TYPE_RAW, 0x85308a3);
       // registerCounter("CYCLE_ACTIVITY.CYCLES_L2_MISS", PERF_TYPE_RAW, 0x15301a3);
-      // registerCounter("CYCLE_ACTIVITY.CYCLES_L3_MISS", PERF_TYPE_RAW, 0x25302a3);
-      // registerCounter("CYCLE_ACTIVITY.CYCLES_MEM_ANY", PERF_TYPE_RAW, 0x105310a3);
-            
-      
+      registerCounter("CYCLE_ACTIVITY.CYCLES_L3_MISS", PERF_TYPE_RAW, 0x25302a3);
+      registerCounter("CYCLE_ACTIVITY.CYCLES_MEM_ANY", PERF_TYPE_RAW, 0x105310a3);
       // registerCounter("Stalled cycles fend", PERF_TYPE_HARDWARE, PERF_COUNT_HW_STALLED_CYCLES_FRONTEND);
       // registerCounter("Stalled cycles bkend", PERF_TYPE_HARDWARE, PERF_COUNT_HW_STALLED_CYCLES_BACKEND);
-
+      registerCounter("task-clock", PERF_TYPE_SOFTWARE, PERF_COUNT_SW_TASK_CLOCK);
+      
       // additional counters can be found in linux/perf_event.h
+
+
 
       for (unsigned i=0; i<events.size(); i++) {
          auto& event = events[i];
+         
          event.fd = static_cast<int>(syscall(__NR_perf_event_open, &event.pe, 0, -1, -1, 0));
+         
          if (event.fd < 0) {
-            std::cerr << "Error opening counter " << names[i] << std::endl;
+            std::cerr << "Error opening counter " << names[i] << " " << event.fd << std::endl;
             events.resize(0);
             names.resize(0);
             return;

@@ -1,15 +1,19 @@
 #ifndef PMOSS_INIT_H_
 #define PMOSS_INIT_H_
 
-
+#define INTEL_CPU 1
 #include <numa.h>
 // -------------------------------------------------------------------------------------
-
 #include "threads/TPM.hpp"
 #include "scheduling/RM.hpp"
 #include "scheduling/GM.hpp"
-
 // -------------------------------------------------------------------------------------
+#if defined(__GNUC__) || defined(__clang__)
+    #include <cpuid.h>  // For __get_cpuid function
+#elif defined(_MSC_VER)
+    #include <intrin.h> // For __cpuid on MSVC
+#endif
+
 
 namespace erebus
 {

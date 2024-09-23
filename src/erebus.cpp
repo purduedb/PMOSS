@@ -31,75 +31,20 @@ erebus::storage::rtree::RTree* Erebus::build_rtree(int ds, int insert_strategy, 
 	ifstream ifs;
 	int totPoints = 0;
 
-	#if MACHINE == 0 
-		if (ds == OSM_USNE){
-			ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-			totPoints = 90000000;
-		}
-		else if (ds == GEOLITE){
-			ifs.open("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-			totPoints = 24000000;
-		}
-		else if (ds == BERLINMOD02){
-			ifs.open("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-			totPoints = 11975098;
-		}
-		else {
-			ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-			totPoints = 90000000;
-		}
-	#elif MACHINE == 1 
-		if (ds == OSM_USNE){
-			ifs.open("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-			totPoints = 90000;
-		}
-		else if (ds == GEOLITE){
-			ifs.open("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-			totPoints = 24000000;
-		}
-		else if (ds == BERLINMOD02){
-			ifs.open("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-			totPoints = 11975098;
-		}
-		else {
-			ifs.open("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-			totPoints = 90000000;
-		}
-	#elif MACHINE == 2 
-		if (ds == OSM_USNE){
-			ifs.open("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-			totPoints = 90000;
-		}
-		else if (ds == GEOLITE){
-			ifs.open("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-			totPoints = 24000000;
-		}
-		else if (ds == BERLINMOD02){
-			ifs.open("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-			totPoints = 11975098;
-		}
-		else {
-			ifs.open("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-			totPoints = 90000000;
-		}
-	#elif MACHINE == 3 
-		if (ds == OSM_USNE){
-			ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-			totPoints = 90000;
-		}
-		else if (ds == GEOLITE){
-			ifs.open("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-			totPoints = 24000000;
-		}
-		else if (ds == BERLINMOD02){
-			ifs.open("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-			totPoints = 11975098;
-		}
-		else {
-			ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-			totPoints = 90000000;
-		}
-	#endif
+	
+	if (ds == OSM_USNE){
+		ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		totPoints = 90000000;
+	}
+	else if (ds == GEOLITE){
+		ifs.open("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		totPoints = 24000000;
+	}
+	else if (ds == BERLINMOD02){
+		ifs.open("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		totPoints = 11975098;
+	}
+	
 	
 	for (int i = 0; i < totPoints; i++) {
 		double l, r, b, t;
@@ -164,7 +109,7 @@ erebus::storage::qtree::QuadTree* Erebus::build_idx(float min_x, float max_x, fl
 	ifstream ifs;
 	int totPoints = 0;
 
-	#if MACHINE == 0 
+	
 	#if DATASET == OSM_USNE
 		ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		totPoints = 90000000;
@@ -177,67 +122,6 @@ erebus::storage::qtree::QuadTree* Erebus::build_idx(float min_x, float max_x, fl
 	#else 
 		ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
 		totPoints = 90000000;
-	#endif
-	#endif
-	#if MACHINE == 3 
-	#if DATASET == OSM_USNE
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		totPoints = 90000000;
-	#elif DATASET == GEOLITE
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-		totPoints = 24000000;
-	#elif DATASET == BERLINMOD02
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-		totPoints = 11975098;
-	#else 
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		totPoints = 90000000;
-	#endif
-	#endif
-	#if MACHINE == 1 
-	#if DATASET == OSM_USNE
-		ifs.open("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		totPoints = 90000000;
-	#elif DATASET == GEOLITE
-		ifs.open("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-		totPoints = 24000000;
-	#elif DATASET == BERLINMOD02
-		ifs.open("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-		totPoints = 11975098;
-	#else 
-		ifs.open("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		totPoints = 90000000;
-	#endif
-	#endif
-	#if MACHINE == 2 
-	#if DATASET == OSM_USNE
-		ifs.open("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		totPoints = 90000000;
-	#elif DATASET == GEOLITE
-		ifs.open("/home/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-		totPoints = 24000000;
-	#elif DATASET == BERLINMOD02
-		ifs.open("/home/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-		totPoints = 11975098;
-	#else 
-		ifs.open("/home/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		totPoints = 90000000;
-	#endif
-	#endif
-	#if MACHINE == 3 
-	#if DATASET == OSM_USNE
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		totPoints = 90000000;
-	#elif DATASET == GEOLITE
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
-		totPoints = 24000000;
-	#elif DATASET == BERLINMOD02
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
-		totPoints = 11975098;
-	#else 
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		totPoints = 90000000;
-	#endif
 	#endif
 	
 	this->idx_qtree = new erebus::storage::qtree::QuadTree(
@@ -262,17 +146,12 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	std::vector<keytype> &init_keys, std::vector<uint64_t> &values){
 	this->idx_btree = new erebus::storage::BTreeOLCIndex<keytype, keycomp>(kt);
 
-	// std::vector<keytype> init_keys;
-	// std::vector<uint64_t> values;
 	std::vector<keytype> keys;
 	std::vector<int> ranges;
-	std::vector<int> ops; //INSERT = 0, READ = 1, UPDATE = 2
+	std::vector<int> ops; 
 	int max_init_key = -1;
 	static const uint64_t value_type=1; // 0 = random pointers, 1 = pointers to keys
 
-	// std::vector<keytype> init_keys;
-	// init_keys.reserve(50000000);
-	// values.reserve(BTREE_INIT_LIMIT);
 	keys.reserve(10000000);
 	ranges.reserve(10000000);
 	ops.reserve(10000000);
@@ -290,7 +169,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
     init_file = "/homes/yrayhan/works/erebus/src/workloads/loada_zipf_int_100M.dat";
     txn_file = "/homes/yrayhan/works/erebus/src/workloads/txnsa_zipf_int_100M.dat";
   } else if (kt == RAND_KEY && wl == WORKLOAD_C) {
-    init_file = "/homes/yrayhan/works/erebus/src/workloads/loadc_zipf_int_100M.dat";
+		init_file = "/homes/yrayhan/works/erebus/src/workloads/loadc_zipf_int_100M.dat";
     txn_file = "/homes/yrayhan/works/erebus/src/workloads/txnsc_zipf_int_100M.dat";
   } else if (kt == RAND_KEY && wl == WORKLOAD_E) {
     init_file = "/homes/yrayhan/works/erebus/src/workloads/loade_zipf_int_100M.dat";
@@ -310,7 +189,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   }
 
   std::ifstream infile_load(init_file);
-
+	
   std::string op;
   keytype key;
   int range;
@@ -479,9 +358,30 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 }   // namespace erebus
 
 
+std::string get_cpu_vendor() {
+    char cpu_vendor[13] = {0};  // Vendor string is 12 characters long + null terminator
+
+#if defined(__GNUC__) || defined(__clang__)
+    unsigned int eax, ebx, ecx, edx;
+    // cpuid with eax=0 gives the vendor ID in ebx, edx, ecx
+    __get_cpuid(0, &eax, &ebx, &ecx, &edx);
+    std::memcpy(cpu_vendor + 0, &ebx, 4);  // EBX contains the first 4 characters
+    std::memcpy(cpu_vendor + 4, &edx, 4);  // EDX contains the next 4 characters
+    std::memcpy(cpu_vendor + 8, &ecx, 4);  // ECX contains the last 4 characters
+#elif defined(_MSC_VER)
+    int cpu_info[4] = {0};
+    __cpuid(cpu_info, 0);  // CPUID function with eax=0
+    std::memcpy(cpu_vendor + 0, &cpu_info[1], 4);  // EBX contains the first 4 characters
+    std::memcpy(cpu_vendor + 4, &cpu_info[3], 4);  // EDX contains the next 4 characters
+    std::memcpy(cpu_vendor + 8, &cpu_info[2], 4);  // ECX contains the last 4 characters
+#endif
+
+    return std::string(cpu_vendor);
+}
+
 int main(int argc, char* argv[])
 {	
-	int cfgIdx = 38;
+	int cfgIdx = 1;
 	
 	if (argc > 1)
 		cfgIdx = std::atoi(argv[1]);
@@ -498,7 +398,6 @@ int main(int argc, char* argv[])
 	// Pointers to the keys
 	std::vector<uint64_t> values;
 	values.reserve(SINGLE_DIMENSION_KEY_LIMIT);
-
 	
 	double min_x, max_x, min_y, max_y;
 	if (ds == OSM_USNE){  
@@ -591,10 +490,11 @@ int main(int argc, char* argv[])
 
 	
 	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
+	
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif
-	
+
 
 	
 	glb_gm.printGM();
@@ -623,12 +523,12 @@ int main(int argc, char* argv[])
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 
 	glb_tpool.init_worker_threads();
-	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	glb_tpool.init_syssweeper_threads();
 	glb_tpool.init_megamind_threads();
 	glb_tpool.init_ncoresweeper_threads();
+	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(490000));  // 1000000 previously
+	std::this_thread::sleep_for(std::chrono::milliseconds(490000));  // 490000, 1000000 previously
 	glb_tpool.terminate_ncoresweeper_threads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	glb_tpool.dump_ncoresweeper_threads();

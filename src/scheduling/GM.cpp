@@ -27,43 +27,6 @@ GridManager::GridManager(int config, int wkload, int iam, int xPar, int yPar, do
 	for(auto i = 0; i < MAX_GRID_CELL; i++) this->DataDist.push_back(0);
 }
 
-void GridManager::register_grid_cells(){
-    int nGridCellsPerThread = this->nGridCells / 40 + 1; // utils::CntHWThreads();
-    std::vector<double> xList = utils::linspace<double>(this->minXSpace, this->maxXSpace, this->xPar+1);
-    std::vector<double> yList = utils::linspace<double>(this->minYSpace, this->maxYSpace, this->yPar+1);
-    double delX = xList[1] - xList[0];
-    double delY = yList[1] - yList[0];
-    int trk_cid = 0;
-    
-    // -------------------------------------------------------------------------------------
-    // 1. #instruction, 2. #Accesses (Shadows Data)
-    ifstream ifsLRCoeff1("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
-    ifstream ifsLRCoeff2("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
-    
-    for(auto i = 0; i < this->xPar; i++){
-        for (auto j = 0; j < this->yPar; j++){
-            this->glbGridCell[trk_cid].cid = trk_cid;
-            
-            this->glbGridCell[trk_cid].lx = xList[i];
-            this->glbGridCell[trk_cid].ly = yList[j];
-            this->glbGridCell[trk_cid].hx = xList[i]+delX;
-            this->glbGridCell[trk_cid].hy = yList[j]+delY;
-            this->glbGridCell[trk_cid].idCPU = trk_cid/nGridCellsPerThread;
-            
-            // -------------------------------------------------------------------------------------
-            #if USE_MODEL
-            for(auto pI = 0; pI < STAMP_LR_PARAM; pI++){
-                ifsLRCoeff1 >> this->glbGridCell[trk_cid].lRegCoeff[0][pI];
-                ifsLRCoeff2 >> this->glbGridCell[trk_cid].lRegCoeff[1][pI];
-            }
-            #endif
-
-            
-            trk_cid++;
- 
-        }
-    }
-}
 
 void GridManager::register_grid_cells(vector<CPUID> availCPUs){
     int nGridCellsPerThread = this->nGridCells / availCPUs.size() + 1; 
@@ -75,8 +38,8 @@ void GridManager::register_grid_cells(vector<CPUID> availCPUs){
     
     // -------------------------------------------------------------------------------------
     // 1. #instruction, 2. #Accesses (Shadows Data)
-    ifstream ifsLRCoeff1("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
-    ifstream ifsLRCoeff2("/homes/yrayhan/works/erebus/src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
+    ifstream ifsLRCoeff1("./src/stamp_model/lr_coeff_ins.txt", std::ifstream::in);
+    ifstream ifsLRCoeff2("./src/stamp_model/lr_coeff_acc.txt", std::ifstream::in);
     
 
     int trk_cid = 0;
@@ -138,6 +101,7 @@ void GridManager::register_grid_cells(string configFile){
 
 	for(auto i = 0; i < this->xPar; i++){
 		for (auto j = 0; j < this->yPar; j++){
+
 			this->glbGridCell[trk_cid].cid = trk_cid;
 			
 			this->glbGridCell[trk_cid].lx = xList[i];
@@ -164,11 +128,10 @@ void GridManager::register_grid_cells(string configFile){
 			trk_cid++; 
 		}
 	}
-
+  
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
   cout << "Checkpoint: INDEX_MIGRATION_COMPLETED: " << elapsed.count() << endl;
-	
 }
 
 void GridManager::register_index(erebus::storage::rtree::RTree * idx)

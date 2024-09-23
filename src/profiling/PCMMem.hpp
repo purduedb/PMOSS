@@ -30,7 +30,7 @@ using namespace pcm;
 #define max_edc_channels ServerUncoreCounterState::maxChannels
 #define max_imc_controllers ServerUncoreCounterState::maxControllers
 #define SPR_CXL false
-#define max_qpi 5
+#define max_qpi ServerUncoreCounterState::maxXPILinks
 
 
 typedef struct memdata {

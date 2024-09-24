@@ -1,5 +1,5 @@
 #!/bin/bash
 
-for cfg in {11..31..2}; do
-  /homes/yrayhan/works/erebus/build/bin/erebus $cfg
+for cfg in {21..39..2}; do
+  /users/yrayhan/works/erebus/build/bin/erebus $cfg
 done

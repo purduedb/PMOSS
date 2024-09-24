@@ -315,7 +315,7 @@ void TPManager::init_ncoresweeper_threads(){
                 
                 ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
                 for(auto ex = 0; ex < PERF_EVENT_CNT; ex++){
-                  ddSnap.rawQCounter[pc.gIdx][ex] += (pc.raw_counter_values[ex] / pc.raw_counter_values[ex])*1000;
+                  ddSnap.rawQCounter[pc.gIdx][ex] += (pc.raw_counter_values[ex] / pc.raw_counter_values[1])*1000;
                 }
                 ddSnap.rawQCounter[pc.gIdx][1] = pc.raw_counter_values[1];
 
@@ -470,7 +470,8 @@ void TPManager::dump_ncoresweeper_threads(){
     // -------------------------------------------------------------------------------------
     ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
     const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
-    const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
+    // const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
+    const int scalarDumpSize = MAX_GRID_CELL * PERF_EVENT_CNT;
     
     alignas(64) double dataViewScalarDump[scalarDumpSize] = {};
         

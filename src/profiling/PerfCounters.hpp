@@ -62,15 +62,15 @@ enum WKLOAD_DIST{
     UNIFORM, SINGLE_HOTSPOT, FOUR_HOTSPOT
 };
 
-struct IntelPCMCounter
-{
-    memdata_t sysParams;
-    double upi_incoming[max_sockets][max_qpi];
-    double upi_outgoing[max_sockets][max_qpi];
-    double upi_system[4]; // sustem-wide info
-    int qType;
+// struct IntelPCMCounter
+// {
+//     memdata_t sysParams;
+//     double upi_incoming[max_sockets][max_qpi];
+//     double upi_outgoing[max_sockets][max_qpi];
+//     double upi_system[4]; // sustem-wide info
+//     int qType;
 
-    // You will need to write copy constructor for
-};
+//     // You will need to write copy constructor for
+// };
 
 }  // namespace erebus

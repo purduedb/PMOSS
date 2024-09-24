@@ -6,6 +6,5 @@ src/interference/*
 kb/*
 kb_quad/*
 kb_b/*
-src/config/*
 src/profiling/PCMMem.cpp
 learned/*

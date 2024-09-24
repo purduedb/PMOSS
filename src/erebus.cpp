@@ -381,7 +381,7 @@ std::string get_cpu_vendor() {
 
 int main(int argc, char* argv[])
 {	
-	
+
 	int cfgIdx = 1;
 	
 	if (argc > 1) cfgIdx = std::atoi(argv[1]);

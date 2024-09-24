@@ -30,18 +30,21 @@ erebus::storage::rtree::RTree* Erebus::build_rtree(int ds, int insert_strategy, 
 	
 	ifstream ifs;
 	int totPoints = 0;
+	std::string ds_file = std::string(PROJECT_SOURCE_DIR) + "/src/dataset/";
 
-	
 	if (ds == OSM_USNE){
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+		ds_file += "us.txt";
+		ifs.open(ds_file, std::ifstream::in); // 100000000
 		totPoints = 90000000;
 	}
 	else if (ds == GEOLITE){
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+		ds_file += "geo.txt";
+		ifs.open(ds_file, std::ifstream::in); // 24000000
 		totPoints = 24000000;
 	}
 	else if (ds == BERLINMOD02){
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+		ds_file += "bmod02.txt";
+		ifs.open(ds_file, std::ifstream::in);  //11975098
 		totPoints = 11975098;
 	}
 	
@@ -54,75 +57,77 @@ erebus::storage::rtree::RTree* Erebus::build_rtree(int ds, int insert_strategy, 
 	}
 	ifs.close();
 	cout << this->idx->height_ << " " << GetIndexSizeInMB(this->idx) << endl;
-	
-	// int pgCnt = 10;
-	// void *pgs[pgCnt];
-	// for(auto i = 0; i < pgCnt; i++) pgs[i] = this->idx->tree_nodes_[i];
-	// int status [pgCnt];
-	// const int destNodes[pgCnt] = {0, 1, 2, 3, 4, 5, 6, 7, 0, 1};
-	// int ret_code  = move_pages(0, pgCnt, pgs, destNodes, status, 0);
+	/*
+	int pgCnt = 10;
+	void *pgs[pgCnt];
+	for(auto i = 0; i < pgCnt; i++) pgs[i] = this->idx->tree_nodes_[i];
+	int status [pgCnt];
+	const int destNodes[pgCnt] = {0, 1, 2, 3, 4, 5, 6, 7, 0, 1};
+	int ret_code  = move_pages(0, pgCnt, pgs, destNodes, status, 0);
 
-	// for(auto pnode = 0; pnode < pgCnt; pnode++){
-		// void *ptr_to_check = this->idx->tree_nodes_[pnode];
-	// 	int tstatus[1];
-	// 	const int tDestNodes[1] = {destNodes[pnode]};
-	// 	int tret_code = move_pages(0, 1, &ptr_to_check, tDestNodes, tstatus, 0);
-	// 	printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, tstatus[0], tret_code);    
-		// void *pgs[9] = {
-		// 	&(this->idx->tree_nodes_[pnode]->father),
-		// 	&(this->idx->tree_nodes_[pnode]->children),
-		// 	&(this->idx->tree_nodes_[pnode]->entry_num),
-		// 	&(this->idx->tree_nodes_[pnode]->is_overflow),
-		// 	&(this->idx->tree_nodes_[pnode]->is_leaf),
-		// 	&(this->idx->tree_nodes_[pnode]->origin_center),
-		// 	&(this->idx->tree_nodes_[pnode]->maximum_entry),
-		// 	&(this->idx->tree_nodes_[pnode]->minimum_entry),
-		// 	&(this->idx->tree_nodes_[pnode]->RR_s)
-		// 			};
+	for(auto pnode = 0; pnode < pgCnt; pnode++){
+		void *ptr_to_check = this->idx->tree_nodes_[pnode];
+		int tstatus[1];
+		const int tDestNodes[1] = {destNodes[pnode]};
+		int tret_code = move_pages(0, 1, &ptr_to_check, tDestNodes, tstatus, 0);
+		printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, tstatus[0], tret_code);    
+		void *pgs[9] = {
+			&(this->idx->tree_nodes_[pnode]->father),
+			&(this->idx->tree_nodes_[pnode]->children),
+			&(this->idx->tree_nodes_[pnode]->entry_num),
+			&(this->idx->tree_nodes_[pnode]->is_overflow),
+			&(this->idx->tree_nodes_[pnode]->is_leaf),
+			&(this->idx->tree_nodes_[pnode]->origin_center),
+			&(this->idx->tree_nodes_[pnode]->maximum_entry),
+			&(this->idx->tree_nodes_[pnode]->minimum_entry),
+			&(this->idx->tree_nodes_[pnode]->RR_s)
+					};
 		
-		// int pgStatus[9];
-		// move_pages(0, 9, pgs, NULL, pgStatus, 0);
-		// for(auto i = 0; i < 9; i++)
-		// 	cout << pgStatus[i] << " ";
-		// cout << endl;
+		int pgStatus[9];
+		move_pages(0, 9, pgs, NULL, pgStatus, 0);
+		for(auto i = 0; i < 9; i++)
+			cout << pgStatus[i] << " ";
+		cout << endl;
 		
 		
-		// // print all the nodes addresses
-		// cout << "\t\t\t-------------------------------------------------------------------------------------" << endl;
-		// for(auto cnode = 0; cnode <= pnode; cnode++){
-		// 	void *cptr_to_check = this->idx->tree_nodes_[cnode];
-		// 	int tcstatus[1];
+		// print all the nodes addresses
+		cout << "\t\t\t-------------------------------------------------------------------------------------" << endl;
+		for(auto cnode = 0; cnode <= pnode; cnode++){
+			void *cptr_to_check = this->idx->tree_nodes_[cnode];
+			int tcstatus[1];
 			
-		// 	int ctret_code = move_pages(0, 1, &cptr_to_check, NULL, tcstatus, 0);
-		// 	printf("Memory at %p is at %d node (retcode %d)\n", cptr_to_check, tcstatus[0], ctret_code);    
+			int ctret_code = move_pages(0, 1, &cptr_to_check, NULL, tcstatus, 0);
+			printf("Memory at %p is at %d node (retcode %d)\n", cptr_to_check, tcstatus[0], ctret_code);    
 
-		// }
-		// cout << "\t\t\t-------------------------------------------------------------------------------------" << endl;
+		}
+		cout << "\t\t\t-------------------------------------------------------------------------------------" << endl;
 		
-	// }
+	}*/
 		
 	return this->idx;
 }
 
-erebus::storage::qtree::QuadTree* Erebus::build_idx(float min_x, float max_x, float min_y, float max_y) 
+erebus::storage::qtree::QuadTree* Erebus::build_idx(int ds, float min_x, float max_x, float min_y, float max_y) 
 {
 	ifstream ifs;
 	int totPoints = 0;
+	std::string ds_file = std::string(PROJECT_SOURCE_DIR) + "/src/dataset/";
 
-	
-	#if DATASET == OSM_USNE
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
+	if (ds == OSM_USNE){
+		ds_file += "us.txt";
+		ifs.open(ds_file, std::ifstream::in); // 100000000
 		totPoints = 90000000;
-	#elif DATASET == GEOLITE
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/geo.txt", std::ifstream::in); // 24000000
+	}
+	else if (ds == GEOLITE){
+		ds_file += "geo.txt";
+		ifs.open(ds_file, std::ifstream::in); // 24000000
 		totPoints = 24000000;
-	#elif DATASET == BERLINMOD02
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/bmod02.txt", std::ifstream::in);  //11975098
+	}
+	else if (ds == BERLINMOD02){
+		ds_file += "bmod02.txt";
+		ifs.open(ds_file, std::ifstream::in);  //11975098
 		totPoints = 11975098;
-	#else 
-		ifs.open("/homes/yrayhan/works/erebus/src/dataset/us.txt", std::ifstream::in); // 100000000
-		totPoints = 90000000;
-	#endif
+	}
 	
 	this->idx_qtree = new erebus::storage::qtree::QuadTree(
 		{min_x, min_y, (max_x-min_x), (max_y-min_y)}, 100, 100
@@ -162,27 +167,22 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	memset(&ranges[0], 0x00, 10000000 * sizeof(int));
 	memset(&ops[0], 0x00, 10000000 * sizeof(int));
 
-	std::string init_file;
-  std::string txn_file;
-
-  if (kt == RAND_KEY && wl == WORKLOAD_A) {
-    init_file = "/homes/yrayhan/works/erebus/src/workloads/loada_zipf_int_100M.dat";
-    txn_file = "/homes/yrayhan/works/erebus/src/workloads/txnsa_zipf_int_100M.dat";
+	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
+  std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
+	  
+	if (kt == RAND_KEY && wl == WORKLOAD_A) {
+		
   } else if (kt == RAND_KEY && wl == WORKLOAD_C) {
-		init_file = "/homes/yrayhan/works/erebus/src/workloads/loadc_zipf_int_100M.dat";
-    txn_file = "/homes/yrayhan/works/erebus/src/workloads/txnsc_zipf_int_100M.dat";
+		
   } else if (kt == RAND_KEY && wl == WORKLOAD_E) {
-    init_file = "/homes/yrayhan/works/erebus/src/workloads/loade_zipf_int_100M.dat";
-    txn_file = "/homes/yrayhan/works/erebus/src/workloads/txnse_zipf_int_100M.dat";
+		init_file += "loade_zipf_int_100M.dat";
+		txn_file += "txnse_zipf_int_100M.dat";
   } else if (kt == MONO_KEY && wl == WORKLOAD_A) {
-    init_file = "/homes/yrayhan/works/erebus/src/workloads/mono_inc_loada_zipf_int_100M.dat";
-    txn_file = "/homes/yrayhan/works/erebus/src/workloads/mono_inc_txnsa_zipf_int_100M.dat";
+    
   } else if (kt == MONO_KEY && wl == WORKLOAD_C) {
-    init_file = "/homes/yrayhan/works/erebus/src/workloads/mono_inc_loadc_zipf_int_100M.dat";
-    txn_file = "/homes/yrayhan/works/erebus/src/workloads/mono_inc_txnsc_zipf_int_100M.dat";
+    
   } else if (kt == MONO_KEY && wl == WORKLOAD_E) {
-    init_file = "/homes/yrayhan/works/erebus/src/workloads/mono_inc_loade_zipf_int_100M.dat";
-    txn_file = "/homes/yrayhan/works/erebus/src/workloads/mono_inc_txnse_zipf_int_100M.dat";
+    
   } else {
     fprintf(stderr, "Unknown workload type or key type: %d, %d\n", wl, kt);
     exit(1);
@@ -381,12 +381,13 @@ std::string get_cpu_vendor() {
 
 int main(int argc, char* argv[])
 {	
-	int cfgIdx = 1;
 	
-	if (argc > 1)
-		cfgIdx = std::atoi(argv[1]);
+	int cfgIdx = 103;
+	
+	if (argc > 1) cfgIdx = std::atoi(argv[1]);
 	
 	cout << cfgIdx << endl;
+	
 	int ds = YCSB;
 	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
@@ -447,10 +448,10 @@ int main(int argc, char* argv[])
 	
 	#if MACHINE == 0
 		int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#elif MACHINE == 3
-		int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#elif MACHINE == 1
 		int nWorkers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
+	#elif MACHINE == 3
+		int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#else
 		int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#endif
@@ -488,8 +489,8 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
-	
-	glb_gm.register_grid_cells("/homes/yrayhan/works/erebus/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt");
+	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt";
+	glb_gm.register_grid_cells(config_file);
 	
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
@@ -498,13 +499,8 @@ int main(int argc, char* argv[])
 
 	
 	glb_gm.printGM();
-	// glb_gm.printQueryDistPushed();
 	
-	
-	// glb_gm.buildDataDistIdx();
-	// glb_gm.printDataDistIdx();
-	// glb_gm.printDataDistIdxT();
-	
+
 	// WHICH INDEX?
 	// -------------------------------------------------------------------------------------
 	// #if STORAGE == 0

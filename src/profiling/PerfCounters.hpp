@@ -2,7 +2,7 @@
 #include <immintrin.h>
 // -------------------------------------------------------------------------------------
 #include "shared-headers/PerfEvent.hpp"
-#include "PCMMem.hpp"
+// #include "PCMMem.hpp"
 // -------------------------------------------------------------------------------------
 #define QUERY_THRESHOLD_INS 9
 #define QUERY_THRESHOLD_ACC 9

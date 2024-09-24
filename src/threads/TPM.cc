@@ -151,115 +151,115 @@ void TPManager::init_megamind_threads(){
   }
 }
 
-void TPManager::init_syssweeper_threads(){
-  // -------------------------------------------------------------------------------------
-  for (unsigned i = 0; i < CURR_SYS_SWEEPER_THREADS; ++i) {
-    glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].th = std::thread([i, this] {
-      erebus::utils::PinThisThread(sys_sweeper_cpuids[i]);
-      glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].cpuid=sys_sweeper_cpuids[i];
+// void TPManager::init_syssweeper_threads(){
+//   // -------------------------------------------------------------------------------------
+//   for (unsigned i = 0; i < CURR_SYS_SWEEPER_THREADS; ++i) {
+//     glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].th = std::thread([i, this] {
+//       erebus::utils::PinThisThread(sys_sweeper_cpuids[i]);
+//       glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].cpuid=sys_sweeper_cpuids[i];
             
-        // -------------------------------------------------------------------------------------
-        // Params for DRAM Throughput
-        double delay = 30000;
-        bool csv = false, csvheader = false, show_channel_output = true, print_update = false;
-        uint32 no_columns = DEFAULT_DISPLAY_COLUMNS; // Default number of columns is 2
+//         // -------------------------------------------------------------------------------------
+//         // Params for DRAM Throughput
+//         double delay = 30000;
+//         bool csv = false, csvheader = false, show_channel_output = true, print_update = false;
+//         uint32 no_columns = DEFAULT_DISPLAY_COLUMNS; // Default number of columns is 2
         
-        ServerUncoreMemoryMetrics metrics = PartialWrites;
-        int rankA = -1, rankB = -1;
-        // -------------------------------------------------------------------------------------
-        // Params for UPI links
-        std::vector<CoreCounterState> cstates1, cstates2;
-        std::vector<SocketCounterState> sktstate1, sktstate2;
-        SystemCounterState sstate1, sstate2;
-        // -------------------------------------------------------------------------------------
+//         ServerUncoreMemoryMetrics metrics = PartialWrites;
+//         int rankA = -1, rankB = -1;
+//         // -------------------------------------------------------------------------------------
+//         // Params for UPI links
+//         std::vector<CoreCounterState> cstates1, cstates2;
+//         std::vector<SocketCounterState> sktstate1, sktstate2;
+//         SystemCounterState sstate1, sstate2;
+//         // -------------------------------------------------------------------------------------
             
             
-        PCM * m = PCM::getInstance();
-        PCM::ErrorCode status2 = m->programServerUncoreMemoryMetrics(metrics, rankA, rankB);
-        m->checkError(status2);
+//         PCM * m = PCM::getInstance();
+//         PCM::ErrorCode status2 = m->programServerUncoreMemoryMetrics(metrics, rankA, rankB);
+//         m->checkError(status2);
         
         
-        const uint32 qpiLinks = (uint32)m->getQPILinksPerSocket();
-        uint32 imc_channels = (pcm::uint32)m->getMCChannelsPerSocket();
-        uint32 numSockets = m->getNumSockets();
+//         const uint32 qpiLinks = (uint32)m->getQPILinksPerSocket();
+//         uint32 imc_channels = (pcm::uint32)m->getMCChannelsPerSocket();
+//         uint32 numSockets = m->getNumSockets();
 
-        m->getUncoreCounterStates(sstate1, sktstate1);
-        // m->getAllCounterStates(sstate1, sktstate1, cstates1);
+//         m->getUncoreCounterStates(sstate1, sktstate1);
+//         // m->getAllCounterStates(sstate1, sktstate1, cstates1);
         
-        // -------------------------------------------------------------------------------------
-        // Params for DRAM Throughput
+//         // -------------------------------------------------------------------------------------
+//         // Params for DRAM Throughput
             
-        uint64 SPR_CHA_CXL_Event_Count = 0;
-        rankA = 0;
-        rankB = 1;
-        std::vector<ServerUncoreCounterState> BeforeState(m->getNumSockets());
-        std::vector<ServerUncoreCounterState> AfterState(m->getNumSockets());
-        // -------------------------------------------------------------------------------------
+//         uint64 SPR_CHA_CXL_Event_Count = 0;
+//         rankA = 0;
+//         rankB = 1;
+//         std::vector<ServerUncoreCounterState> BeforeState(m->getNumSockets());
+//         std::vector<ServerUncoreCounterState> AfterState(m->getNumSockets());
+//         // -------------------------------------------------------------------------------------
 
-        memdata_t mDataCh;
-        uint64 BeforeTime = 0, AfterTime = 0;            
-        while (1) {
-          if(!glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].running) {
-              break;
-          }
+//         memdata_t mDataCh;
+//         uint64 BeforeTime = 0, AfterTime = 0;            
+//         while (1) {
+//           if(!glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].running) {
+//               break;
+//           }
             
-          IntelPCMCounter iPCMCnt;
-          readState(BeforeState);            
-          BeforeTime = m->getTickCount();
-          MySleepMs(delay);
-          AfterTime = m->getTickCount();
-          readState(AfterState);
-          m->getUncoreCounterStates(sstate2, sktstate2);          
-          // m->getAllCounterStates(sstate1, sktstate1, cstates1);
+//           IntelPCMCounter iPCMCnt;
+//           readState(BeforeState);            
+//           BeforeTime = m->getTickCount();
+//           MySleepMs(delay);
+//           AfterTime = m->getTickCount();
+//           readState(AfterState);
+//           m->getUncoreCounterStates(sstate2, sktstate2);          
+//           // m->getAllCounterStates(sstate1, sktstate1, cstates1);
 
-          mDataCh = calculate_bandwidth(m,BeforeState,AfterState,AfterTime-BeforeTime,csv,csvheader, no_columns, metrics,
-            show_channel_output, print_update, SPR_CHA_CXL_Event_Count);
+//           mDataCh = calculate_bandwidth(m,BeforeState,AfterState,AfterTime-BeforeTime,csv,csvheader, no_columns, metrics,
+//             show_channel_output, print_update, SPR_CHA_CXL_Event_Count);
 
           
-          if (m->getNumSockets() > 1 && m->incomingQPITrafficMetricsAvailable()){
-            for (uint32 skt = 0; skt < m->getNumSockets(); ++skt){
-              for (uint32 l = 0; l < qpiLinks; ++l){
-                iPCMCnt.upi_incoming[skt][l] = getIncomingQPILinkBytes(skt, l, sstate1, sstate2);
-              }
-              // TODO: the getQPILinkSpeed returns 0, hence all the methods that use this function return bad result.
-            }
-            iPCMCnt.upi_system[0] = getAllIncomingQPILinkBytes(sstate1, sstate2);
-            iPCMCnt.upi_system[1] = getQPItoMCTrafficRatio(sstate1, sstate2);
-          } 
+//           if (m->getNumSockets() > 1 && m->incomingQPITrafficMetricsAvailable()){
+//             for (uint32 skt = 0; skt < m->getNumSockets(); ++skt){
+//               for (uint32 l = 0; l < qpiLinks; ++l){
+//                 iPCMCnt.upi_incoming[skt][l] = getIncomingQPILinkBytes(skt, l, sstate1, sstate2);
+//               }
+//               // TODO: the getQPILinkSpeed returns 0, hence all the methods that use this function return bad result.
+//             }
+//             iPCMCnt.upi_system[0] = getAllIncomingQPILinkBytes(sstate1, sstate2);
+//             iPCMCnt.upi_system[1] = getQPItoMCTrafficRatio(sstate1, sstate2);
+//           } 
               
-          if (m->getNumSockets() > 1 && (m->outgoingQPITrafficMetricsAvailable())){ // QPI info only for multi socket systems
-            for (uint32 skt = 0; skt < m->getNumSockets(); ++skt){
-                for (uint32 l = 0; l < qpiLinks; ++l){
-                  iPCMCnt.upi_outgoing[skt][l] = getMyOutgoingQPILinkBytes(skt, l, sstate1, sstate2);
-                }
-            }
-            iPCMCnt.upi_system[2] = getAllOutgoingQPILinkBytes(sstate1, sstate2);
-          }
+//           if (m->getNumSockets() > 1 && (m->outgoingQPITrafficMetricsAvailable())){ // QPI info only for multi socket systems
+//             for (uint32 skt = 0; skt < m->getNumSockets(); ++skt){
+//                 for (uint32 l = 0; l < qpiLinks; ++l){
+//                   iPCMCnt.upi_outgoing[skt][l] = getMyOutgoingQPILinkBytes(skt, l, sstate1, sstate2);
+//                 }
+//             }
+//             iPCMCnt.upi_system[2] = getAllOutgoingQPILinkBytes(sstate1, sstate2);
+//           }
           
-          // TODO: For now skipping the ranks stuff
-          // calculate_bandwidth_rank(m, BeforeState, AfterState, AfterTime - BeforeTime, csv, csvheader, 
-          //     no_columns, rankA, rankB);
+//           // TODO: For now skipping the ranks stuff
+//           // calculate_bandwidth_rank(m, BeforeState, AfterState, AfterTime - BeforeTime, csv, csvheader, 
+//           //     no_columns, rankA, rankB);
             
-          iPCMCnt.sysParams = mDataCh;
-          glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].pcmCounters.push(iPCMCnt);
+//           iPCMCnt.sysParams = mDataCh;
+//           glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].pcmCounters.push(iPCMCnt);
               
 
             
-          swap(BeforeTime, AfterTime);
-          swap(BeforeState, AfterState);
-          std::swap(sstate1, sstate2);
-          std::swap(sktstate1, sktstate2);
+//           swap(BeforeTime, AfterTime);
+//           swap(BeforeState, AfterState);
+//           std::swap(sstate1, sstate2);
+//           std::swap(sktstate1, sktstate2);
         
-          if(rankA == 6) rankA = 0;
-          else rankA += 2;
+//           if(rankA == 6) rankA = 0;
+//           else rankA += 2;
           
-          if(rankB == 7) rankB = 1;
-          else rankB += 2;      
+//           if(rankB == 7) rankB = 1;
+//           else rankB += 2;      
 
-        }
-        });
-  }
-}
+//         }
+//         });
+//   }
+// }
 
 
 void TPManager::init_ncoresweeper_threads(){
@@ -285,11 +285,11 @@ void TPManager::init_ncoresweeper_threads(){
         }
         
         // Then, push the token to the system_sweeper cpu to get the System View (MemChannel)
-        if (i == 0){
-          IntelPCMCounter iPCMCnt;
-          iPCMCnt.qType = SYNC_TOKEN;
-          glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.push(iPCMCnt);
-        }
+        // if (i == 0){
+        //   IntelPCMCounter iPCMCnt;
+        //   iPCMCnt.qType = SYNC_TOKEN;
+        //   glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.push(iPCMCnt);
+        // }
         
         // Take a snapshot of the DataView from the  threads
         const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
@@ -377,28 +377,28 @@ void TPManager::init_ncoresweeper_threads(){
         
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the System View (Memory Channel View)
-        if (i == 0){
-            bool token_found = false;                    
-            // memdata_t DRAMResUsageSnap;
-            IntelPCMCounter DRAMResUsageSnap;
-            while(!token_found){
-                size_t size_stats = glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.unsafe_size();
-                IntelPCMCounter iPCMCnt;
-                if (size_stats != 0){
-                    glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.try_pop(iPCMCnt);
-                    if (iPCMCnt.qType == SYNC_TOKEN){
-                        break;
-                    }
+        // if (i == 0){
+        //     bool token_found = false;                    
+        //     // memdata_t DRAMResUsageSnap;
+        //     IntelPCMCounter DRAMResUsageSnap;
+        //     while(!token_found){
+        //         size_t size_stats = glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.unsafe_size();
+        //         IntelPCMCounter iPCMCnt;
+        //         if (size_stats != 0){
+        //             glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.try_pop(iPCMCnt);
+        //             if (iPCMCnt.qType == SYNC_TOKEN){
+        //                 break;
+        //             }
             
-                    // Use SIMD to compute the Memory Channel View
-                    // DRAMResUsageSnap = iPCMCnt.sysParams;
-                    DRAMResUsageSnap = iPCMCnt;
-                }
-                else
-                    break;
-            }
-            glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].DRAMResUsageReel.push_back(DRAMResUsageSnap);
-        }
+        //             // Use SIMD to compute the Memory Channel View
+        //             // DRAMResUsageSnap = iPCMCnt.sysParams;
+        //             DRAMResUsageSnap = iPCMCnt;
+        //         }
+        //         else
+        //             break;
+        //     }
+        //     glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].DRAMResUsageReel.push_back(DRAMResUsageSnap);
+        // }
         
       }
       // glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].th.detach();
@@ -423,44 +423,44 @@ void TPManager::dump_ncoresweeper_threads(){
   cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         // -------------------------------------------------------------------------------------
     ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
-    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
-        int tReel = i;
-        memChannelView << this->gm->config << " ";
-        memChannelView << tReel << " ";
-        memChannelView << this->gm->wkload << " ";
-        memChannelView << this->gm->iam << " ";
-        /**
-         * TODO: Have a global config header file that saves the value of 
-         * global hw params
-         * 6 definitely needs to be replaced with such param
-         * It should not be numa_num_configured nodes
-        */
-        // Dump Read Socket Channel
-        for (auto sc = 0; sc < 4; sc++){
-            for(auto ch = 0; ch < 6; ch++){
-                memChannelView <<  glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Rd_socket_chan[sc][ch] << " ";
-            }
-        }
-        // Dump Write Socket Channel
-        for (auto sc = 0; sc < 4; sc++){
-            for(auto ch = 0; ch < 6; ch++){
-                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Wr_socket_chan[sc][ch] << " ";
-            }
-        }
-        // // Dump Write Socket Channel
-        for (auto sc = 0; sc < 4; sc++){
-            for(auto ul = 0; ul < 3; ul++){
-                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_incoming[sc][ul] << " ";
-            }
-        }
-        // Dump Write Socket Channel
-        for (auto sc = 0; sc < 4; sc++){
-            for(auto ul = 0; ul < 3; ul++){
-                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_outgoing[sc][ul] << " ";
-            }
-        }
-        memChannelView << endl;
-    }
+    // for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
+    //     int tReel = i;
+    //     memChannelView << this->gm->config << " ";
+    //     memChannelView << tReel << " ";
+    //     memChannelView << this->gm->wkload << " ";
+    //     memChannelView << this->gm->iam << " ";
+    //     /**
+    //      * TODO: Have a global config header file that saves the value of 
+    //      * global hw params
+    //      * 6 definitely needs to be replaced with such param
+    //      * It should not be numa_num_configured nodes
+    //     */
+    //     // Dump Read Socket Channel
+    //     for (auto sc = 0; sc < 4; sc++){
+    //         for(auto ch = 0; ch < 6; ch++){
+    //             memChannelView <<  glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Rd_socket_chan[sc][ch] << " ";
+    //         }
+    //     }
+    //     // Dump Write Socket Channel
+    //     for (auto sc = 0; sc < 4; sc++){
+    //         for(auto ch = 0; ch < 6; ch++){
+    //             memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Wr_socket_chan[sc][ch] << " ";
+    //         }
+    //     }
+    //     // // Dump Write Socket Channel
+    //     for (auto sc = 0; sc < 4; sc++){
+    //         for(auto ul = 0; ul < 3; ul++){
+    //             memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_incoming[sc][ul] << " ";
+    //         }
+    //     }
+    //     // Dump Write Socket Channel
+    //     for (auto sc = 0; sc < 4; sc++){
+    //         for(auto ul = 0; ul < 3; ul++){
+    //             memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_outgoing[sc][ul] << " ";
+    //         }
+    //     }
+    //     memChannelView << endl;
+    // }
     // -------------------------------------------------------------------------------------
     ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
     const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;

@@ -86,7 +86,7 @@ class TPManager{
       u64 cpuid;
       
 
-      oneapi::tbb::concurrent_queue<IntelPCMCounter> pcmCounters;
+      // oneapi::tbb::concurrent_queue<IntelPCMCounter> pcmCounters;
       
       bool running = true;
       bool job_set = false;   // Has job
@@ -108,8 +108,7 @@ class TPManager{
       // 
       vector <DataDistSnap> dataDistReel;
       vector<QueryViewSnap> queryViewReel;
-      vector<IntelPCMCounter> DRAMResUsageReel;
-      // vector<memdata_t> DRAMResUsageReel;
+      // vector<IntelPCMCounter> DRAMResUsageReel;
       vector<QueryExecSnap> queryExecReel; 
       
       // int corrQueryReel[MAX_GRID_CELL][MAX_GRID_CELL] = {0};

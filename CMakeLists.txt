@@ -36,7 +36,6 @@ set(SOURCE_FILES
   src/utils/Misc.cpp
   src/scheduling/RM.cpp
   src/scheduling/GM.cpp
-  src/profiling/PCMMem.cpp
   src/utils/ZipfGenerator.cpp
   src/utils/RandomGenerator.cpp
   src/utils/ScrambledZipfGenerator.cpp

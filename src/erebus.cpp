@@ -382,7 +382,7 @@ std::string get_cpu_vendor() {
 int main(int argc, char* argv[])
 {	
 	
-	int cfgIdx = 103;
+	int cfgIdx = 1;
 	
 	if (argc > 1) cfgIdx = std::atoi(argv[1]);
 	
@@ -446,17 +446,18 @@ int main(int argc, char* argv[])
 	 * global
 	*/
 	
+	int num_workers = 0;
 	#if MACHINE == 0
-		int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#elif MACHINE == 1
-		int nWorkers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#elif MACHINE == 3
-		int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		num_workers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
+	#elif MACHINE == 2
+		num_workers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#else
-		int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#endif
 	
-	ss_cpuids.push_back(99);
+	ss_cpuids.push_back(110);
 	for(auto n=0; n < num_NUMA_nodes; n++){
 		mm_cpuids.push_back(cPool[n][0]);
 		
@@ -468,7 +469,7 @@ int main(int argc, char* argv[])
 		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
 			wrk_cpuids.push_back(cPool[n][j]);
 			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-			if (cnt == nWorkers) break;
+			if (cnt == num_workers) break;
 		}
 	}
 	
@@ -489,7 +490,7 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt";
+	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd-machine-configs/config_" + std::to_string(cfgIdx) + ".txt";
 	glb_gm.register_grid_cells(config_file);
 	
 	#if STORAGE == 2
@@ -519,7 +520,7 @@ int main(int argc, char* argv[])
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 
 	glb_tpool.init_worker_threads();
-	glb_tpool.init_syssweeper_threads();
+	// glb_tpool.init_syssweeper_threads();
 	glb_tpool.init_megamind_threads();
 	glb_tpool.init_ncoresweeper_threads();
 	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);

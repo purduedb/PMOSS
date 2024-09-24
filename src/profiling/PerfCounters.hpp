@@ -35,7 +35,8 @@ struct HWCounterStats{
 };
 
 struct DataDistSnap{
-    __m512d rawQCounter[MAX_GRID_CELL][int(PERF_EVENT_CNT/8)+1];  // This gets copied to the main array
+    double rawQCounter[MAX_GRID_CELL][PERF_EVENT_CNT];  // This gets copied to the main array
+    // __m512d rawQCounter[MAX_GRID_CELL][int(PERF_EVENT_CNT/8)+1];  // This gets copied to the main array
     double rawCntSamples[MAX_GRID_CELL] = {0};   
 };
 

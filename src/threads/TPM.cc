@@ -292,7 +292,7 @@ void TPManager::init_ncoresweeper_threads(){
         }
         
         // Take a snapshot of the DataView from the  threads
-        const int nQCounterCline = PERF_EVENT_CNT/8 + 1;
+        const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
         /**
          * It has to be a complete snap.
          * Unless for all the cores you have got the token
@@ -409,63 +409,18 @@ void TPManager::init_ncoresweeper_threads(){
 void TPManager::dump_ncoresweeper_threads(){
   cout << "==========================DUMPING Core Sweeper Threads=======================" << endl;
   for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
-#if MACHINE == 0
+
+  string dirName = std::string(PROJECT_SOURCE_DIR);
   #if STORAGE == 0
-      string dirName = "/homes/yrayhan/works/erebus/kb/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+      dirName += "/kb/" + std::to_string(key);
   #elif STORAGE == 1
-      string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+      dirName += "/kb_quad/" + std::to_string(key);
   #elif STORAGE == 2
-      string dirName = "/homes/yrayhan/works/erebus/kb_b/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+      dirName += "/kb_b/" + std::to_string(key);
   #endif
-#elif MACHINE == 1
-  #if STORAGE == 0
-      string dirName = "/home/yrayhan/works/erebus/home/kb/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-  #elif STORAGE == 1
-      string dirName = "/home/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-  #elif STORAGE == 2
-      string dirName = "/home/yrayhan/works/erebus/kb_b/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-  #endif
-#elif MACHINE == 2
-  #if STORAGE == 0
-      string dirName = "/home/yrayhan/works/erebus/kb_1S/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-  #elif STORAGE == 1
-      string dirName = "/home/yrayhan/works/erebus/kb_quad_1S/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-  #elif STORAGE == 2
-      string dirName = "/home/yrayhan/works/erebus/kb_b/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-  #endif
-#elif MACHINE == 3
-  #if STORAGE == 0
-      string dirName = "/homes/yrayhan/works/erebus/kb_4S/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-  #elif STORAGE == 1
-      string dirName = "/homes/yrayhan/works/erebus/kb_quad/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-  #elif STORAGE == 2
-      string dirName = "/homes/yrayhan/works/erebus/kb_b/" + std::to_string(key);
-      mkdir(dirName.c_str(), 0777);
-      cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-  #endif
-#endif
+  
+  mkdir(dirName.c_str(), 0777);
+  cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         // -------------------------------------------------------------------------------------
     ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
     for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
@@ -947,14 +902,19 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // for inserts open different keyrange config for different router
       // or use a single router
       std::ifstream input;
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
+
       if (wl == SD_YCSB_WKLOADA){
-        input.open("/homes/yrayhan/works/erebus/src/workloads/ycsb_workloada");
+        wl_config += "ycsb_workloada";
+        input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADC){
-        input.open("/homes/yrayhan/works/erebus/src/workloads/ycsb_workloadc");
+        wl_config += "ycsb_workloadc";
+        input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADE){
-        input.open("/homes/yrayhan/works/erebus/src/workloads/ycsb_workloade");
+        wl_config += "ycsb_workloade";
+        input.open(wl_config);
       }
       else{
         cerr << "ycsb workload not recognized" << endl;

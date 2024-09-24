@@ -34,7 +34,7 @@ class Erebus
     
     // -------------------------------------------------------------------------------------
     erebus::storage::rtree::RTree* build_rtree(int ds, int insert_strategy, int split_strategy);
-    erebus::storage::qtree::QuadTree* build_idx(float min_x, float max_x, float min_y, float max_y);
+    erebus::storage::qtree::QuadTree* build_idx(int ds, float min_x, float max_x, float min_y, float max_y);
     erebus::storage::BTreeOLCIndex<keytype, keycomp>* build_btree(const uint64_t wl, const uint64_t kt, std::vector<keytype> &init_keys, 
       std::vector<uint64_t> &values);
     void register_threadpool(erebus::tp::TPManager *tp);

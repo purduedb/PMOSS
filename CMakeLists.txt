@@ -46,6 +46,8 @@ set(SOURCE_FILES
   src/ycsbc/acknowledged_counter_generator.cc
 )
 
+add_definitions(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
 # Executables
 add_executable(erebus ${SOURCE_FILES})
 target_link_libraries(erebus 

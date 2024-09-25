@@ -898,7 +898,11 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       dLength_ureal  = std::uniform_real_distribution<> (1, max_length);
       dWidth_ureal = std::uniform_real_distribution<> (1, max_width);
     }
-    else if (wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE){
+    else if (
+      wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
+      wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADG || wl == SD_YCSB_WKLOADH || 
+      wl == SD_YCSB_WKLOADI
+    ){
       // for inserts open different keyrange config for different router
       // or use a single router
       std::ifstream input;
@@ -914,6 +918,22 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       }
       else if (wl == SD_YCSB_WKLOADE){
         wl_config += "ycsb_workloade";
+        input.open(wl_config);
+      }
+      else if (wl == SD_YCSB_WKLOADF){
+        wl_config += "ycsb_workloadf";
+        input.open(wl_config);
+      }
+      else if (wl == SD_YCSB_WKLOADG){
+        wl_config += "ycsb_workloadg";
+        input.open(wl_config);
+      }
+      else if (wl == SD_YCSB_WKLOADH){
+        wl_config += "ycsb_workloadh";
+        input.open(wl_config);
+      }
+      else if (wl == SD_YCSB_WKLOADI){
+        wl_config += "ycsb_workloadi";
         input.open(wl_config);
       }
       else{
@@ -1091,7 +1111,11 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       hy = ly + width;
       query = Rectangle(lx, hx, ly, hy);
     }
-    else if (wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE){
+    else if (
+      wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
+      wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADG || wl == SD_YCSB_WKLOADH || 
+      wl == SD_YCSB_WKLOADI
+    ){
       ycsb_wl.DoTransaction(tx_keys);  
       uint64_t value = -1;
       

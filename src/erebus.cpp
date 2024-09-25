@@ -439,36 +439,33 @@ int main(int argc, char* argv[])
 			if (numa_bitmask_isbitset(bmp, j)) cPool[n].push_back(j);
 		}
 	}
-
-	/**
-	 * TODO: cleaner version would check the number of rt/numa node and allocate accordingly 
-	 * Also would remove the number from the TPM.cc file about the #of threads and make it 
-	 * global
-	*/
 	
+	int num_workers = 0;
 	#if MACHINE == 0
-		int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		ss_cpuids.push_back(11);
+		mm_cpuids.push_back(23);
 	#elif MACHINE == 1
-		int nWorkers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#elif MACHINE == 3
-		int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		num_workers = 40;  
+	#elif MACHINE == 2
+		num_workers = 28;  
+		ss_cpuids.push_back(31);
+		mm_cpuids.push_back(63);
 	#else
-		int nWorkers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		num_workers = 7;  
 	#endif
 	
-	ss_cpuids.push_back(99);
 	for(auto n=0; n < num_NUMA_nodes; n++){
-		mm_cpuids.push_back(cPool[n][0]);
-		
 		rt_cpuids.push_back(cPool[n][1]);
 		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
 		
 		ncore_cpuids.push_back(cPool[n][2]);
+		
 		int cnt = 1;
 		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
 			wrk_cpuids.push_back(cPool[n][j]);
 			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-			if (cnt == nWorkers) break;
+			if (cnt == num_workers) break;
 		}
 	}
 	
@@ -489,7 +486,7 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/machine-configs/config_" + std::to_string(cfgIdx) + ".txt";
+	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/machine-configs/intel_skx_4s_8n/c_" + std::to_string(cfgIdx) + ".txt";
 	glb_gm.register_grid_cells(config_file);
 	
 	#if STORAGE == 2

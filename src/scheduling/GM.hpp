@@ -14,7 +14,7 @@ using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define SINGLE_DIMENSION_KEY_LIMIT 50000000       
-#define BTREE_INIT_LIMIT 50000000    
+#define BTREE_INIT_LIMIT 5000    
 #define LIMIT 1000                  // test btree workload
 #define MAX_GRID_CELL 100
 #define STAMP_LR_PARAM 4            // For now think of the query MBR as only output
@@ -29,7 +29,6 @@ using std::ofstream;
 #define MACHINE 0 // 0 (BIGDATA), 1(DBSERVER)
 #define LINUX 3 // 0 (SE 0, SE-NUMA 1, SN-NUMA 2, OURS, 3)
 // -------------------------------------------------------------------------------------
-#define WKLOAD SD_YCSB_WKLOADE
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 

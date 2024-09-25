@@ -66,7 +66,7 @@ class TPManager{
     static const int CURR_NCORE_SWEEPER_THREADS = 2;
     static const int CURR_SYS_SWEEPER_THREADS = 1;
     static const int CURR_MEGAMIND_THREADS = 2;
-    static const int CURR_ROUTER_THREADS = 2;
+    static const int CURR_ROUTER_THREADS = 2;  //For ycsb-insert realted set it to 1
 	  static const int CURR_WORKER_THREADS = 80;
 #elif MACHINE == 3
     static const int CURR_NCORE_SWEEPER_THREADS = 4;

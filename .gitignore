@@ -1,7 +1,8 @@
 build/*
 .vscode/*
 src/dataset/*
-src/workloads/*
+src/workloads/loade_zipf_int_100M.dat
+src/workloads/txnse_zipf_int_100M.dat
 src/interference/*
 kb/*
 kb_quad/*

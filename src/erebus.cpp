@@ -389,7 +389,7 @@ int main(int argc, char* argv[])
 	cout << cfgIdx << endl;
 	
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADG;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -449,22 +449,25 @@ int main(int argc, char* argv[])
 	int num_workers = 0;
 	#if MACHINE == 0
 		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		ss_cpuids.push_back(11);
+		mm_cpuids.push_back(23);
 	#elif MACHINE == 1
 		num_workers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#elif MACHINE == 2
-		num_workers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		num_workers = 28;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		ss_cpuids.push_back(31);
+		mm_cpuids.push_back(63);
 	#else
 		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#endif
 	
-	ss_cpuids.push_back(110);
+	
 	for(auto n=0; n < num_NUMA_nodes; n++){
-		mm_cpuids.push_back(cPool[n][0]);
-		
 		rt_cpuids.push_back(cPool[n][1]);
 		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
 		
 		ncore_cpuids.push_back(cPool[n][2]);
+		
 		int cnt = 1;
 		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
 			wrk_cpuids.push_back(cPool[n][j]);

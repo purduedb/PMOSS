@@ -120,12 +120,14 @@ void GridManager::register_grid_cells(string configFile){
 		#elif STORAGE == 1
 			MigrateNodesQuad(this->idx_quadtree, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
 		#elif STORAGE == 2
+            cout << xList[i] << ' ' << xList[i]+delX << ' ' << numaConfig[trk_cid] << endl;
 			uint64_t leaf_count = this->idx_btree->migrate(xList[i], xList[i]+delX, 1000000, numaConfig[trk_cid]);
 		#endif
 	#endif
-			// -------------------------------------------------------------------------------------
-
-			trk_cid++; 
+    
+		// -------------------------------------------------------------------------------------
+        trk_cid++;
+			
 		}
 	}
   
@@ -213,25 +215,42 @@ void GridManager::printQueryDistOstanding(){
     cout << "-------------------------------------------------------------------------------------" << endl;
     cout << "-------------------------------------------------------------------------------------" << endl;
 }
-void GridManager::buildDataDistIdx(){
-    for(unsigned int i = 0; i < this->idx->objects_.size(); i++){
-        double lx = this->idx->objects_[i]->left_;
-        double hx = this->idx->objects_[i]->right_;
-        double ly = this->idx->objects_[i]->bottom_;
-        double hy = this->idx->objects_[i]->top_;
+void GridManager::buildDataDistIdx(int access_method, std::vector<keytype> &init_keys){
+    if (access_method == BTREE){
+      for(unsigned int i = 0; i < BTREE_INIT_LIMIT; i++){
+          double lx = init_keys[i];
 
-        for (auto gc = 0; gc < nGridCells; gc++){
+          for (auto gc = 0; gc < nGridCells; gc++){
             double glx = glbGridCell[gc].lx;
-            double gly = glbGridCell[gc].ly;
             double ghx = glbGridCell[gc].hx;
-            double ghy = glbGridCell[gc].hy;
+      
+            if (lx <= ghx && lx >= glx)
+              DataDist[gc]++;
+            else 
+              continue;       
+          }
+      }
+    }
+    else{
+      for(unsigned int i = 0; i < this->idx->objects_.size(); i++){
+          double lx = this->idx->objects_[i]->left_;
+          double hx = this->idx->objects_[i]->right_;
+          double ly = this->idx->objects_[i]->bottom_;
+          double hy = this->idx->objects_[i]->top_;
 
-            if (hx < glx || lx > ghx || hy < gly || ly > ghy)
-                continue;
-            else {
-                DataDist[gc]++;
-            }        
-        }
+          for (auto gc = 0; gc < nGridCells; gc++){
+              double glx = glbGridCell[gc].lx;
+              double gly = glbGridCell[gc].ly;
+              double ghx = glbGridCell[gc].hx;
+              double ghy = glbGridCell[gc].hy;
+
+              if (hx < glx || lx > ghx || hy < gly || ly > ghy)
+                  continue;
+              else {
+                  DataDist[gc]++;
+              }        
+          }
+      }
     }
 }
 void GridManager::printDataDistIdx(){

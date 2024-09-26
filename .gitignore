@@ -8,3 +8,4 @@ kb_quad/*
 kb_b/*
 src/profiling/PCMMem.cpp
 learned/*
+dataset/*.dat

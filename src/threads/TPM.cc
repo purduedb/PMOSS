@@ -272,7 +272,7 @@ void TPManager::init_ncoresweeper_threads(){
       {
         if(!glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].running) 
             break;
-        std::this_thread::sleep_for(std::chrono::milliseconds(80000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(40000));  // 80000
         
         // First, push the token to the worker cpus to get the DataView
         PerfCounter perf_counter;
@@ -912,27 +912,28 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     else if (
       wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
       wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADG || wl == SD_YCSB_WKLOADH || 
-      wl == SD_YCSB_WKLOADI
+      wl == SD_YCSB_WKLOADI ||
+      wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE 
     ){
       // for inserts open different keyrange config for different router
       // or use a single router
       std::ifstream input;
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
-
-      if (wl == SD_YCSB_WKLOADA){
-        wl_config += "ycsb_workloada";
+      
+      if (wl == SD_YCSB_WKLOADA || WIKI_WKLOADA){
+        wl_config += "ycsb_workloada_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
-      else if (wl == SD_YCSB_WKLOADC){
+      else if (wl == SD_YCSB_WKLOADC || WIKI_WKLOADC){
         wl_config += "ycsb_workloadc";
         input.open(wl_config);
       }
-      else if (wl == SD_YCSB_WKLOADE){
-        wl_config += "ycsb_workloade";
+      else if (wl == SD_YCSB_WKLOADE || WIKI_WKLOADE){
+        wl_config += "ycsb_workloade_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADF){
-        wl_config += "ycsb_workloadf";
+        wl_config += "ycsb_workloadf_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADG){
@@ -1124,7 +1125,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     }
     else if (
       wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
-      wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADG || wl == SD_YCSB_WKLOADH || wl == SD_YCSB_WKLOADI
+      wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADG || wl == SD_YCSB_WKLOADH || wl == SD_YCSB_WKLOADI ||
+      wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE 
       ){
       ycsb_wl.DoTransaction(tx_keys);  
       uint64_t value = -1;

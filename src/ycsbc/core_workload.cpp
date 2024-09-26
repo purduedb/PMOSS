@@ -410,7 +410,8 @@ void CoreWorkload::TransactionUpdate(uint64_t* tx_params) {
 
 void CoreWorkload::TransactionInsert(uint64_t* tx_params) {
   // TODO: How to pass the value (pointer)?
-  tx_params[0] = transaction_insert_key_sequence_->Next();
+  tx_params[0] = insert_key_sequence_->Next();
+  // tx_params[0] = transaction_insert_key_sequence_->Next();
   return;
 }
 

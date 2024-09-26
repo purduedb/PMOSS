@@ -147,7 +147,7 @@ erebus::storage::qtree::QuadTree* Erebus::build_idx(int ds, float min_x, float m
 	return this->idx_qtree;	
 }
 
-erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint64_t wl, const uint64_t kt,
+erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint64_t ds, const uint64_t kt,  
 	std::vector<keytype> &init_keys, std::vector<uint64_t> &values){
 	this->idx_btree = new erebus::storage::BTreeOLCIndex<keytype, keycomp>(kt);
 
@@ -167,29 +167,28 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	memset(&ranges[0], 0x00, 10000000 * sizeof(int));
 	memset(&ops[0], 0x00, 10000000 * sizeof(int));
 
-	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
-  std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
+	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
+  std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
 	  
-	if (kt == RAND_KEY && wl == WORKLOAD_A) {
-		
-  } else if (kt == RAND_KEY && wl == WORKLOAD_C) {
-		
-  } else if (kt == RAND_KEY && wl == WORKLOAD_E) {
-		init_file += "loade_zipf_int_100M.dat";
-		txn_file += "txnse_zipf_int_100M.dat";
-  } else if (kt == MONO_KEY && wl == WORKLOAD_A) {
-    
-  } else if (kt == MONO_KEY && wl == WORKLOAD_C) {
-    
-  } else if (kt == MONO_KEY && wl == WORKLOAD_E) {
-    
-  } else {
-    fprintf(stderr, "Unknown workload type or key type: %d, %d\n", wl, kt);
+	if (ds == YCSB) {
+		init_file += "workloads/loade_zipf_int_100M.dat";
+		txn_file += "workloads/txnse_zipf_int_100M.dat";
+  } 
+	else if (ds == WIKI){
+		init_file += "dataset/wiki_ts_200M_uint64.dat";
+	}
+	else {
+    fprintf(stderr, "Unknown workload type or key type: %d, %d\n", ds, kt);
     exit(1);
   }
 
   std::ifstream infile_load(init_file);
-	
+	if(infile_load.is_open()){
+		cout << "CHECKPOINT: FILE OPENED CORRECTLY" << endl;
+	}
+	else{
+		cout << "CHECKPOINT FAILED!!!!\n FILE DID NOT OPEN CORRECTLY" << endl;
+	}
   std::string op;
   keytype key;
   int range;
@@ -358,27 +357,6 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 }   // namespace erebus
 
 
-std::string get_cpu_vendor() {
-    char cpu_vendor[13] = {0};  // Vendor string is 12 characters long + null terminator
-
-#if defined(__GNUC__) || defined(__clang__)
-    unsigned int eax, ebx, ecx, edx;
-    // cpuid with eax=0 gives the vendor ID in ebx, edx, ecx
-    __get_cpuid(0, &eax, &ebx, &ecx, &edx);
-    std::memcpy(cpu_vendor + 0, &ebx, 4);  // EBX contains the first 4 characters
-    std::memcpy(cpu_vendor + 4, &edx, 4);  // EDX contains the next 4 characters
-    std::memcpy(cpu_vendor + 8, &ecx, 4);  // ECX contains the last 4 characters
-#elif defined(_MSC_VER)
-    int cpu_info[4] = {0};
-    __cpuid(cpu_info, 0);  // CPUID function with eax=0
-    std::memcpy(cpu_vendor + 0, &cpu_info[1], 4);  // EBX contains the first 4 characters
-    std::memcpy(cpu_vendor + 4, &cpu_info[3], 4);  // EDX contains the next 4 characters
-    std::memcpy(cpu_vendor + 8, &cpu_info[2], 4);  // ECX contains the last 4 characters
-#endif
-
-    return std::string(cpu_vendor);
-}
-
 int main(int argc, char* argv[])
 {	
 
@@ -388,8 +366,8 @@ int main(int argc, char* argv[])
 	
 	cout << cfgIdx << endl;
 	
-	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADC;
+	int ds = WIKI;
+	int wl = WIKI_WKLOADC;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -412,6 +390,12 @@ int main(int argc, char* argv[])
 	}	
 	else if (ds == YCSB){
 		min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
+	}
+	else if (ds == WIKI){
+		min_x = 979672113; max_x = 1216240436; min_y = -1; max_y = -1; 
+	}
+	else if (ds == FB){
+		min_x = 1; max_x = 18446744073709551615; min_y = -1; max_y = -1; 
 	}
 	
 #if MULTIDIM == 1
@@ -488,21 +472,20 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_qtree);
 	#elif STORAGE == 2
 		int kt = RAND_KEY;
-		int wl_ = WORKLOAD_E;
-		db.build_btree(wl_, kt, init_keys, values);
+		db.build_btree(ds, kt, init_keys, values);
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd-machine-configs/config_" + std::to_string(cfgIdx) + ".txt";
+	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
 	glb_gm.register_grid_cells(config_file);
 	
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif
-
-
-	
 	glb_gm.printGM();
+
+	glb_gm.buildDataDistIdx(iam, init_keys);
+	glb_gm.printDataDistIdx();
 	
 
 	// WHICH INDEX?
@@ -528,7 +511,7 @@ int main(int argc, char* argv[])
 	glb_tpool.init_ncoresweeper_threads();
 	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(490000));  // 490000, 1000000 previously
+	std::this_thread::sleep_for(std::chrono::milliseconds(300000));  // 200000(ycsb-a), 490000 (ini) 
 	glb_tpool.terminate_ncoresweeper_threads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	glb_tpool.dump_ncoresweeper_threads();

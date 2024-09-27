@@ -486,8 +486,11 @@ int main(int argc, char* argv[])
 		db.build_btree(ds, kt, init_keys, values);
 		glb_gm.register_index(db.idx_btree);
 	#endif
-
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/machine-configs/intel_skx_4s_8n/c_" + std::to_string(cfgIdx) + ".txt";
+	#if MACHINE==0
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/machine-configs/intel_skx_4s_8n/c_" + std::to_string(cfgIdx) + ".txt";
+	#elif MACHINE==1
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/machine-configs/intel_ice_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
+	#endif
 	glb_gm.register_grid_cells(config_file);
 	glb_gm.buildDataDistIdx(iam, init_keys);
 	glb_gm.printDataDistIdx();

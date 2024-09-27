@@ -149,6 +149,7 @@ erebus::storage::qtree::QuadTree* Erebus::build_idx(int ds, float min_x, float m
 
 erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint64_t ds, const uint64_t kt,  
 	std::vector<keytype> &init_keys, std::vector<uint64_t> &values){
+	
 	this->idx_btree = new erebus::storage::BTreeOLCIndex<keytype, keycomp>(kt);
 
 	std::vector<keytype> keys;
@@ -177,18 +178,19 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
 	}
+	else if (ds == FB){
+		init_file += "dataset/fb_200M_uint64.dat";
+	}
 	else {
     fprintf(stderr, "Unknown workload type or key type: %d, %d\n", ds, kt);
     exit(1);
   }
 
   std::ifstream infile_load(init_file);
-	if(infile_load.is_open()){
-		cout << "CHECKPOINT: FILE OPENED CORRECTLY" << endl;
+	if(!infile_load.is_open()){
+		cout << "CHECKPOINT FAILED!!!!\nFILE DID NOT OPEN CORRECTLY" << endl;
 	}
-	else{
-		cout << "CHECKPOINT FAILED!!!!\n FILE DID NOT OPEN CORRECTLY" << endl;
-	}
+	
   std::string op;
   keytype key;
   int range;
@@ -367,7 +369,7 @@ int main(int argc, char* argv[])
 	cout << cfgIdx << endl;
 	
 	int ds = WIKI;
-	int wl = WIKI_WKLOADC;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -478,14 +480,16 @@ int main(int argc, char* argv[])
 
 	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
 	glb_gm.register_grid_cells(config_file);
-	
+	glb_gm.buildDataDistIdx(iam, init_keys);
+	glb_gm.printDataDistIdx();
+	glb_gm.enforce_scheduling();
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif
 	glb_gm.printGM();
 
-	glb_gm.buildDataDistIdx(iam, init_keys);
-	glb_gm.printDataDistIdx();
+	
+	
 	
 
 	// WHICH INDEX?

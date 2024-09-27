@@ -87,7 +87,8 @@ void GridManager::register_grid_cells(string configFile){
 		cpuConfig.push_back(cpuID);
     // cout << cpuID << " ";
 	}
-    
+  ifs.close();
+
 	std::vector<double> xList = utils::linspace<double>(this->minXSpace, this->maxXSpace, this->xPar+1);
 	std::vector<double> yList = utils::linspace<double>(this->minYSpace, this->maxYSpace, this->yPar+1);
 	double delX = xList[1] - xList[0];
@@ -97,7 +98,7 @@ void GridManager::register_grid_cells(string configFile){
 	
 	int trk_cid = 0;
   
-	auto start = std::chrono::high_resolution_clock::now();
+	// auto start = std::chrono::high_resolution_clock::now();
 
 	for(auto i = 0; i < this->xPar; i++){
 		for (auto j = 0; j < this->yPar; j++){
@@ -113,27 +114,52 @@ void GridManager::register_grid_cells(string configFile){
 			this->glbGridCell[trk_cid].idNUMA = numaConfig[trk_cid];
 			this->glbGridCell[trk_cid].idCPU = cpuConfig[trk_cid]; 
 			
+      
 			// Reallocate the index nodes according to the configuration
-	#if LINUX != 0
-		#if STORAGE == 0
-			MigrateNodes(this->idx, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
-		#elif STORAGE == 1
-			MigrateNodesQuad(this->idx_quadtree, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
-		#elif STORAGE == 2
-            cout << xList[i] << ' ' << xList[i]+delX << ' ' << numaConfig[trk_cid] << endl;
-			uint64_t leaf_count = this->idx_btree->migrate(xList[i], xList[i]+delX, 1000000, numaConfig[trk_cid]);
-		#endif
-	#endif
+	// #if LINUX != 0
+	// 	#if STORAGE == 0
+	// 		MigrateNodes(this->idx, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
+	// 	#elif STORAGE == 1
+	// 		MigrateNodesQuad(this->idx_quadtree, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
+	// 	#elif STORAGE == 2
+	// 		this->idx_btree->migrate(xList[i], xList[i]+delX, 30000000, numaConfig[trk_cid]);
+	// 	#endif
+	// #endif
     
 		// -------------------------------------------------------------------------------------
-        trk_cid++;
+      trk_cid++;
 			
 		}
 	}
   
+  // auto finish = std::chrono::high_resolution_clock::now();
+  // std::chrono::duration<double> elapsed = finish - start;
+  // cout << "Checkpoint: INDEX_MIGRATION_COMPLETED: " << elapsed.count() << endl;
+}
+
+
+void GridManager::enforce_scheduling(){
+  auto start = std::chrono::high_resolution_clock::now();
+  for(size_t i = 0; i < MAX_GRID_CELL; i++){
+    double lx = this->glbGridCell[i].lx;
+    double hx = this->glbGridCell[i].hx;
+    double ly = this->glbGridCell[i].ly;
+    double hy = this->glbGridCell[i].hy;
+    int numa_id = this->glbGridCell[i].idNUMA;
+  #if LINUX != 0
+		#if STORAGE == 0
+			MigrateNodes(this->idx, lx, hx, ly, hy, numa_id);    
+		#elif STORAGE == 1
+			MigrateNodesQuad(this->idx_quadtree, lx, hx, ly, hy, numa_id);    
+		#elif STORAGE == 2
+			this->idx_btree->migrate_(lx, this->DataDist[i], numa_id);
+		#endif
+	#endif
+  }
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
   cout << "Checkpoint: INDEX_MIGRATION_COMPLETED: " << elapsed.count() << endl;
+  
 }
 
 void GridManager::register_index(erebus::storage::rtree::RTree * idx)

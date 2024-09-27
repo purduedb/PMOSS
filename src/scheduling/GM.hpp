@@ -14,7 +14,7 @@ using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define SINGLE_DIMENSION_KEY_LIMIT 200000000       
-#define BTREE_INIT_LIMIT 30000000
+#define BTREE_INIT_LIMIT 200000000
 #define LIMIT 1000                  // test btree workload
 #define MAX_GRID_CELL 100
 #define STAMP_LR_PARAM 4            // For now think of the query MBR as only output
@@ -101,6 +101,7 @@ class GridManager
     void register_index(erebus::storage::rtree::RTree *idx);
     void register_index(erebus::storage::qtree::QuadTree *idx_quadtree);
     void register_index(erebus::storage::BTreeOLCIndex<keytype, keycomp> *idx_btree);
+    void enforce_scheduling();
     
     void printGM();
     void printQueryDistPushed();

@@ -13,10 +13,14 @@ workload=com.yahoo.ycsb.workloads.CoreWorkload
 
 readallfields=true
 
-readproportion=0.5
-updateproportion=
-scanproportion=0
-insertproportion=0.5
+readproportion=0.34
+updateproportion=0
+scanproportion=0.33
+insertproportion=0.33
+readmodifywriteproportion=0
 
 requestdistribution=zipfian
 
+maxscanlength=30000
+
+scanlengthdistribution=uniform

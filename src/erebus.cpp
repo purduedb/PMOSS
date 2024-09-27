@@ -147,7 +147,7 @@ erebus::storage::qtree::QuadTree* Erebus::build_idx(int ds, float min_x, float m
 	return this->idx_qtree;	
 }
 
-erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint64_t wl, const uint64_t kt,
+erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint64_t ds, const uint64_t kt,
 	std::vector<keytype> &init_keys, std::vector<uint64_t> &values){
 	this->idx_btree = new erebus::storage::BTreeOLCIndex<keytype, keycomp>(kt);
 
@@ -167,28 +167,26 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	memset(&ranges[0], 0x00, 10000000 * sizeof(int));
 	memset(&ops[0], 0x00, 10000000 * sizeof(int));
 
-	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
-  std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
-	  
-	if (kt == RAND_KEY && wl == WORKLOAD_A) {
-		
-  } else if (kt == RAND_KEY && wl == WORKLOAD_C) {
-		
-  } else if (kt == RAND_KEY && wl == WORKLOAD_E) {
-		init_file += "loade_zipf_int_100M.dat";
-		txn_file += "txnse_zipf_int_100M.dat";
-  } else if (kt == MONO_KEY && wl == WORKLOAD_A) {
-    
-  } else if (kt == MONO_KEY && wl == WORKLOAD_C) {
-    
-  } else if (kt == MONO_KEY && wl == WORKLOAD_E) {
-    
+	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
+  std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
+  
+	if (ds == YCSB) {
+		init_file += "workloads/loade_zipf_int_100M.dat";
+		txn_file += "workloads/txnse_zipf_int_100M.dat";
+  } else if (ds == WIKI) {
+    init_file = "/scratch1/yrayhan/wiki_ts_200M_uint64.dat";
   } else {
-    fprintf(stderr, "Unknown workload type or key type: %d, %d\n", wl, kt);
+    fprintf(stderr, "Unknown workload type or key type: %d, %d\n", ds, kt);
     exit(1);
   }
 
   std::ifstream infile_load(init_file);
+	if(infile_load.is_open()){
+		cout << "CHECKPOINT: FILE OPENED CORRECTLY" << endl;
+	}
+	else{
+		cout << "CHECKPOINT FAILED!!!!: FILE DID NOT OPEN CORRECTLY" << endl;
+	}
 	
   std::string op;
   keytype key;
@@ -389,7 +387,7 @@ int main(int argc, char* argv[])
 	cout << cfgIdx << endl;
 	
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADC;
+	int wl = SD_YCSB_WKLOADF;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -481,8 +479,7 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_qtree);
 	#elif STORAGE == 2
 		int kt = RAND_KEY;
-		int wl_ = WORKLOAD_E;
-		db.build_btree(wl_, kt, init_keys, values);
+		db.build_btree(ds, kt, init_keys, values);
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
@@ -521,7 +518,7 @@ int main(int argc, char* argv[])
 	glb_tpool.init_ncoresweeper_threads();
 	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(490000));  // 490000, 1000000 previously
+	std::this_thread::sleep_for(std::chrono::milliseconds(300000));  //200000(ycsb-a), 490000, 1000000 previously
 	glb_tpool.terminate_ncoresweeper_threads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	glb_tpool.dump_ncoresweeper_threads();

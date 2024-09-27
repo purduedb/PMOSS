@@ -118,6 +118,10 @@ enum {
   SD_YCSB_WKLOADG,
   SD_YCSB_WKLOADH,
   SD_YCSB_WKLOADI,
+  WIKI_WKLOADA,
+  WIKI_WKLOADC,
+  WIKI_WKLOADE,
+  WIKI_WKLOADF,
 };
 
 enum {
@@ -125,6 +129,8 @@ enum {
   GEOLITE,
   BERLINMOD02,
   YCSB,
+  WIKI,
+  FB,
 };
 
 enum {

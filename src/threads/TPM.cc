@@ -272,7 +272,7 @@ void TPManager::init_ncoresweeper_threads(){
       {
         if(!glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].running) 
             break;
-        std::this_thread::sleep_for(std::chrono::milliseconds(80000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(40000));  // 80000
         
         // First, push the token to the worker cpus to get the DataView
         PerfCounter perf_counter;
@@ -909,7 +909,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
 
       if (wl == SD_YCSB_WKLOADA){
-        wl_config += "ycsb_workloada";
+        wl_config += "ycsb_workloada_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADC){
@@ -917,11 +917,11 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADE){
-        wl_config += "ycsb_workloade";
+        wl_config += "ycsb_workloade_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADF){
-        wl_config += "ycsb_workloadf";
+        wl_config += "ycsb_workloadf_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADG){

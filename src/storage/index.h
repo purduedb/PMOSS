@@ -176,6 +176,28 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
     return count;
   }
 
+  uint64_t migrate_(KeyType key, int range, int destNUMA) {
+    uint64_t results[range];
+    uint64_t count = idx.scan(key, range, results);
+    if (count==0)
+       return 0;
+
+    while (count < range) {
+      KeyType nextKey = *reinterpret_cast<KeyType*>(results[count-1]);
+      // ISSUE: issue a range scan for the 3rd largest key and range_size = 100
+      //  what will happen is count = 3, enter the while loop, nextkey will get you to an invalid value
+      //  that does not exist
+      //  One solution: the range size have to be less than what you can get
+      incKey(nextKey); // hack: this only works for fixed-size keys
+      
+      uint64_t nextCount = idx.migratory_scan_(nextKey, range - count, results + count, destNUMA);
+      if (nextCount==0)
+        break; // no more entries
+      count += nextCount;
+    }
+    return count;
+  }
+
 
   int64_t getMemory() const {
     return 0;

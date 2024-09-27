@@ -386,8 +386,8 @@ int main(int argc, char* argv[])
 	
 	cout << cfgIdx << endl;
 	
-	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADF;
+	int ds = WIKI;
+	int wl = WIKI_WKLOADC;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -410,6 +410,10 @@ int main(int argc, char* argv[])
 	}	
 	else if (ds == YCSB){
 		min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
+	}
+	else if (ds == WIKI){
+		// min_x = 979672113; max_x = 1216240436; min_y = -1; max_y = -1; // 200M points
+		min_x = 979672113; max_x = 1173396408; min_y = -1; max_y = -1;  //100M points
 	}
 	
 #if MULTIDIM == 1
@@ -485,10 +489,13 @@ int main(int argc, char* argv[])
 
 	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/machine-configs/intel_skx_4s_8n/c_" + std::to_string(cfgIdx) + ".txt";
 	glb_gm.register_grid_cells(config_file);
-	
+	glb_gm.buildDataDistIdx(iam, init_keys);
+	glb_gm.printDataDistIdx();
+	glb_gm.enforce_scheduling();
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif
+	glb_gm.printGM();
 
 
 	

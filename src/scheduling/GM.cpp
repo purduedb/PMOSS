@@ -97,7 +97,6 @@ void GridManager::register_grid_cells(string configFile){
 	
 	int trk_cid = 0;
   
-	auto start = std::chrono::high_resolution_clock::now();
 
 	for(auto i = 0; i < this->xPar; i++){
 		for (auto j = 0; j < this->yPar; j++){
@@ -114,24 +113,37 @@ void GridManager::register_grid_cells(string configFile){
 			this->glbGridCell[trk_cid].idCPU = cpuConfig[trk_cid]; 
 			
 			// Reallocate the index nodes according to the configuration
-	#if LINUX != 0
-		#if STORAGE == 0
-			MigrateNodes(this->idx, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
-		#elif STORAGE == 1
-			MigrateNodesQuad(this->idx_quadtree, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
-		#elif STORAGE == 2
-			uint64_t leaf_count = this->idx_btree->migrate(xList[i], xList[i]+delX, 1000000, numaConfig[trk_cid]);
-		#endif
-	#endif
 			// -------------------------------------------------------------------------------------
 
 			trk_cid++; 
 		}
 	}
   
+  
+}
+
+void GridManager::enforce_scheduling(){
+  auto start = std::chrono::high_resolution_clock::now();
+  for(size_t i = 0; i < MAX_GRID_CELL; i++){
+    double lx = this->glbGridCell[i].lx;
+    double hx = this->glbGridCell[i].hx;
+    double ly = this->glbGridCell[i].ly;
+    double hy = this->glbGridCell[i].hy;
+    int numa_id = this->glbGridCell[i].idNUMA;
+  #if LINUX != 0
+		#if STORAGE == 0
+			MigrateNodes(this->idx, lx, hx, ly, hy, numa_id);    
+		#elif STORAGE == 1
+			MigrateNodesQuad(this->idx_quadtree, lx, hx, ly, hy, numa_id);    
+		#elif STORAGE == 2
+			this->idx_btree->migrate_(lx, this->DataDist[i], numa_id);
+		#endif
+	#endif
+  }
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
   cout << "Checkpoint: INDEX_MIGRATION_COMPLETED: " << elapsed.count() << endl;
+  
 }
 
 void GridManager::register_index(erebus::storage::rtree::RTree * idx)
@@ -213,27 +225,46 @@ void GridManager::printQueryDistOstanding(){
     cout << "-------------------------------------------------------------------------------------" << endl;
     cout << "-------------------------------------------------------------------------------------" << endl;
 }
-void GridManager::buildDataDistIdx(){
-    for(unsigned int i = 0; i < this->idx->objects_.size(); i++){
-        double lx = this->idx->objects_[i]->left_;
-        double hx = this->idx->objects_[i]->right_;
-        double ly = this->idx->objects_[i]->bottom_;
-        double hy = this->idx->objects_[i]->top_;
 
-        for (auto gc = 0; gc < nGridCells; gc++){
+void GridManager::buildDataDistIdx(int access_method, std::vector<keytype> &init_keys){
+    if (access_method == BTREE){
+      for(unsigned int i = 0; i < BTREE_INIT_LIMIT; i++){
+          double lx = init_keys[i];
+
+          for (auto gc = 0; gc < nGridCells; gc++){
             double glx = glbGridCell[gc].lx;
-            double gly = glbGridCell[gc].ly;
             double ghx = glbGridCell[gc].hx;
-            double ghy = glbGridCell[gc].hy;
+      
+            if (lx <= ghx && lx >= glx)
+              DataDist[gc]++;
+            else 
+              continue;       
+          }
+      }
+    }
+    else{
+      for(unsigned int i = 0; i < this->idx->objects_.size(); i++){
+          double lx = this->idx->objects_[i]->left_;
+          double hx = this->idx->objects_[i]->right_;
+          double ly = this->idx->objects_[i]->bottom_;
+          double hy = this->idx->objects_[i]->top_;
 
-            if (hx < glx || lx > ghx || hy < gly || ly > ghy)
-                continue;
-            else {
-                DataDist[gc]++;
-            }        
-        }
+          for (auto gc = 0; gc < nGridCells; gc++){
+              double glx = glbGridCell[gc].lx;
+              double gly = glbGridCell[gc].ly;
+              double ghx = glbGridCell[gc].hx;
+              double ghy = glbGridCell[gc].hy;
+
+              if (hx < glx || lx > ghx || hy < gly || ly > ghy)
+                  continue;
+              else {
+                  DataDist[gc]++;
+              }        
+          }
+      }
     }
 }
+
 void GridManager::printDataDistIdx(){
     cout << "-------------------------------------------------------------------------------------" << endl;
     cout << "-------------------------------DataDistribution-------------------------------------" << endl;

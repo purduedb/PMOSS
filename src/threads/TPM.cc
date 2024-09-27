@@ -704,11 +704,9 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     discrete_dist w;
     std::lognormal_distribution<double> dlx_lnorm;
     std::lognormal_distribution<double> dly_lnorm;
-    // b tree experiments
-    std::uniform_int_distribution<uint64_t> dx_uint64;  
-    std::uniform_int_distribution<uint64_t> dLength_uint64;  
+    
 
-
+    // btree experiments
     ycsbc::utils::Properties props;
     ycsbc::CoreWorkload ycsb_wl;
     
@@ -901,7 +899,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     else if (
       wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
       wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADG || wl == SD_YCSB_WKLOADH || 
-      wl == SD_YCSB_WKLOADI
+      wl == SD_YCSB_WKLOADI || 
+      wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE 
     ){
       // for inserts open different keyrange config for different router
       // or use a single router
@@ -934,6 +933,18 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       }
       else if (wl == SD_YCSB_WKLOADI){
         wl_config += "ycsb_workloadi";
+        input.open(wl_config);
+      }
+      else if(wl == WIKI_WKLOADA){
+        wl_config += "wiki_workloada_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if(wl == WIKI_WKLOADC){
+        wl_config += "wiki_workloadc";
+        input.open(wl_config);
+      }
+      else if(wl == WIKI_WKLOADE){
+        wl_config += "wiki_workloade_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
       else{
@@ -1114,7 +1125,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     else if (
       wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
       wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADG || wl == SD_YCSB_WKLOADH || 
-      wl == SD_YCSB_WKLOADI
+      wl == SD_YCSB_WKLOADI || 
+      wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE 
     ){
       ycsb_wl.DoTransaction(tx_keys);  
       uint64_t value = -1;

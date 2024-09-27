@@ -920,15 +920,15 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       std::ifstream input;
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
       
-      if (wl == SD_YCSB_WKLOADA || WIKI_WKLOADA){
+      if (wl == SD_YCSB_WKLOADA){
         wl_config += "ycsb_workloada_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
-      else if (wl == SD_YCSB_WKLOADC || WIKI_WKLOADC){
+      else if (wl == SD_YCSB_WKLOADC){
         wl_config += "ycsb_workloadc";
         input.open(wl_config);
       }
-      else if (wl == SD_YCSB_WKLOADE || WIKI_WKLOADE){
+      else if (wl == SD_YCSB_WKLOADE){
         wl_config += "ycsb_workloade_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
@@ -946,6 +946,18 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       }
       else if (wl == SD_YCSB_WKLOADI){
         wl_config += "ycsb_workloadi";
+        input.open(wl_config);
+      }
+      else if(wl == WIKI_WKLOADA){
+        wl_config += "wiki_workloada_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if(wl == WIKI_WKLOADC){
+        wl_config += "wiki_workloadc";
+        input.open(wl_config);
+      }
+      else if(wl == WIKI_WKLOADE){
+        wl_config += "wiki_workloade_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
       else{

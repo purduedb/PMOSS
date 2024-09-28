@@ -448,7 +448,9 @@ int main(int argc, char* argv[])
 		ss_cpuids.push_back(11);
 		mm_cpuids.push_back(23);
 	#elif MACHINE == 1
-		num_workers = 40;  
+		num_workers = 28;  
+		ss_cpuids.push_back(74);
+		mm_cpuids.push_back(75);
 	#elif MACHINE == 2
 		num_workers = 28;  
 		ss_cpuids.push_back(31);

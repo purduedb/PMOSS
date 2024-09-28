@@ -123,6 +123,7 @@ enum {
   WIKI_WKLOADE,
   WIKI_WKLOADF,
   WIKI_WKLOADI,
+  WIKI_WKLOADH,
 };
 
 enum {

@@ -369,7 +369,7 @@ int main(int argc, char* argv[])
 	cout << cfgIdx << endl;
 	
 	int ds = WIKI;
-	int wl = WIKI_WKLOADH;
+	int wl = WIKI_WKLOADA2;
 	int iam = BTREE;
 
 	// Keys in database 

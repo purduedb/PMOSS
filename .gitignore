@@ -1,7 +1,6 @@
 build/*
 .vscode/*
 src/dataset/*
-src/workloads/*
 src/interference/*
 kb/*
 kb_quad/*

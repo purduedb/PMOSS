@@ -108,7 +108,6 @@ void TPManager::init_worker_threads(){
           else 
             glb_worker_thrds[worker_cpuids[i]].qExecutedMice.insert({rec_pop.aGrid, 1});
 
-          // cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
           // std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
                 
@@ -901,8 +900,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADG || wl == SD_YCSB_WKLOADH || 
       wl == SD_YCSB_WKLOADI || 
       wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE || wl == WIKI_WKLOADI ||
-      wl == WIKI_WKLOADH
-
+      wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3 
     ){
       // for inserts open different keyrange config for different router
       // or use a single router
@@ -939,6 +937,14 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       }
       else if(wl == WIKI_WKLOADA){
         wl_config += "wiki_workloada_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if(wl == WIKI_WKLOADA1){
+        wl_config += "wiki_workloada1_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if(wl == WIKI_WKLOADA2){
+        wl_config += "wiki_workloada2_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
       else if(wl == WIKI_WKLOADC){
@@ -1137,7 +1143,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADG || wl == SD_YCSB_WKLOADH || 
       wl == SD_YCSB_WKLOADI || 
       wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE || wl == WIKI_WKLOADI || 
-      wl == WIKI_WKLOADH
+      wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3 
     ){
       ycsb_wl.DoTransaction(tx_keys);  
       uint64_t value = -1;

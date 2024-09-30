@@ -88,7 +88,9 @@
         "cuchar": "cpp",
         "latch": "cpp",
         "syncstream": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "format": "cpp",
+        "__nullptr": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

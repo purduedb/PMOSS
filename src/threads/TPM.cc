@@ -73,7 +73,8 @@ void TPManager::init_worker_threads(){
           #endif
           
           
-                      
+          gm->freqQueryDistCompleted[rec_pop.aGrid] += 1;
+
           auto itQExecMice = glb_worker_thrds[worker_cpuids[i]].qExecutedMice.find(rec_pop.aGrid);
           if(itQExecMice != glb_worker_thrds[worker_cpuids[i]].qExecutedMice.end()) 
             itQExecMice->second += 1;
@@ -518,6 +519,9 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     erebus::utils::PinThisThread(router_cpuids[i]);
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
     
+  for (auto z=0; z<CURR_WORKER_THREADS; z++){
+      cout << this->worker_cpuids[z] << endl;
+    }
     
     double pseudo_min_x = 1;
     double pseudo_max_x = 1 + (max_x - min_x);
@@ -999,12 +1003,39 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       query.op = tx_keys[2];
       // cout << tx_keys[0] << ' ' << tx_keys[2] << endl;
     }
+
+  
+      
+
+      // std::vector <int> valid_gcells;
+      // for (auto gc = 0; gc < gm->nGridCells; gc++){
+      //   valid_gcells.push_back(gc); 
+      //   query.validGridIds.push_back(gc); // May not be necessary
+      // }    
+      
+      // if (valid_gcells.size() == 0) continue;      
+
       
       // Push the query to the correct worker thread's job queue
+      // std::mt19937 genInt(rd());
+      // std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1);
+      
+      // int insert_tid = dq(genInt);
+      // int glbGridCellInsert = valid_gcells[insert_tid];
+      // query.aGrid = glbGridCellInsert;
+      // // -------------------------------------------------------------------------------------
+      // // Update the query view of each cell
+      // // gm->glbGridCell[glbGridCellInsert].qType[query.qStamp] += 1;
+      // // gm->freqQueryDistPushed[glbGridCellInsert]++;
+      // // gm->freqQueryDistCompleted[glbGridCellInsert]++;
+        
+      // int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
+      // glb_worker_thrds[cpuid].jobs.push(query);
+      
+
       std::mt19937 genInt(rd());
       std::uniform_int_distribution<int> dq(0, CURR_WORKER_THREADS-1);
       int cpuid_idx = dq(genInt);
-
       int cpuid = this->worker_cpuids[cpuid_idx];
       glb_worker_thrds[cpuid].jobs.push(query);
       // -------------------------------------------------------------------------------------

@@ -147,7 +147,7 @@ erebus::storage::qtree::QuadTree* Erebus::build_idx(int ds, float min_x, float m
 	return this->idx_qtree;	
 }
 
-erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint64_t machine, const uint64_t ds, const uint64_t kt,  
+erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint64_t ds, const uint64_t kt,  
 	std::vector<keytype> &init_keys, std::vector<uint64_t> &values){
 	
 	this->idx_btree = new erebus::storage::BTreeOLCIndex<keytype, keycomp>(kt);
@@ -170,19 +170,13 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	std::string init_file;
 	std::string txn_file;
 	
-	if (machine==0){
+	#if MACHINE==0
 		init_file = "/scratch1/yrayhan/";
-	}
-	else if (machine==1){
+	#elif MACHINE==1
 		init_file = "/home/yrayhan/works/erebus/src/";
-	}
-	else if (machine==2){
+	#elif MACHINE==2
 		init_file = "/users/yrayhan/works/erebus/src/";
-	}
-	else{
-
-	}
-	
+	#endif 
 	
 	  
 	if (ds == YCSB) {
@@ -375,15 +369,15 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 int main(int argc, char* argv[])
 {	
 
-	int cfgIdx = 500;
+	int cfgIdx = 501;
 	
 	if (argc > 1) cfgIdx = std::atoi(argv[1]);
 	
 	cout << cfgIdx << endl;
 	
-	int machine = 2;
-	int ds = WIKI;
-	int wl = WIKI_WKLOADC;
+
+	int ds = YCSB;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -446,14 +440,10 @@ int main(int argc, char* argv[])
 	int num_workers = 0;
 	#if MACHINE == 0
 		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
-		ss_cpuids.push_back(11);
-		mm_cpuids.push_back(23);
 	#elif MACHINE == 1
-		num_workers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		num_workers = 28;  
 	#elif MACHINE == 2
 		num_workers = 28;  // Change the CURR_WORKER_THREADS in TPM.hpp
-		ss_cpuids.push_back(31);
-		mm_cpuids.push_back(63);
 	#else
 		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#endif
@@ -485,14 +475,19 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_qtree);
 	#elif STORAGE == 2
 		int kt = RAND_KEY;
-		db.build_btree(machine, ds, kt, init_keys, values);
+		db.build_btree(ds, kt, init_keys, values);
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
-	// std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
-	// glb_gm.register_grid_cells(config_file);
-	glb_gm.buildDataDistIdx(iam, init_keys);
-	glb_gm.printDataDistIdx();
+	// #if MACHINE  == 0
+	// std::string pro_name = 
+	// #elif MACHINE == 1
+	// #elif MACHINE ==2
+	// #endif
+	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/c_" + std::to_string(cfgIdx) + ".txt";
+	glb_gm.register_grid_cells(config_file);
+	// glb_gm.buildDataDistIdx(iam, init_keys);
+	// glb_gm.printDataDistIdx();
 	// glb_gm.enforce_scheduling();
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);

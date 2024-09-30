@@ -147,7 +147,7 @@ erebus::storage::qtree::QuadTree* Erebus::build_idx(int ds, float min_x, float m
 	return this->idx_qtree;	
 }
 
-erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint64_t ds, const uint64_t kt,  
+erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint64_t machine, const uint64_t ds, const uint64_t kt,  
 	std::vector<keytype> &init_keys, std::vector<uint64_t> &values){
 	
 	this->idx_btree = new erebus::storage::BTreeOLCIndex<keytype, keycomp>(kt);
@@ -167,13 +167,26 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	memset(&keys[0], 0x00, 10000000 * sizeof(keytype));
 	memset(&ranges[0], 0x00, 10000000 * sizeof(int));
 	memset(&ops[0], 0x00, 10000000 * sizeof(int));
+	std::string init_file;
+	std::string txn_file;
+	
+	if (machine==0){
+		init_file = "/scratch1/yrayhan/";
+	}
+	else if (machine==1){
+		init_file = "/home/yrayhan/works/erebus/src/";
+	}
+	else if (machine==2){
+		init_file = "/users/yrayhan/works/erebus/src/";
+	}
+	else{
 
-	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
-  std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
+	}
+	
+	
 	  
 	if (ds == YCSB) {
 		init_file += "workloads/loade_zipf_int_100M.dat";
-		txn_file += "workloads/txnse_zipf_int_100M.dat";
   } 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
@@ -368,8 +381,9 @@ int main(int argc, char* argv[])
 	
 	cout << cfgIdx << endl;
 	
-	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADE1;
+	int machine = 2;
+	int ds = WIKI;
+	int wl = WIKI_WKLOADC;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -427,12 +441,8 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	/**
-	 * TODO: cleaner version would check the number of rt/numa node and allocate accordingly 
-	 * Also would remove the number from the TPM.cc file about the #of threads and make it 
-	 * global
-	*/
 	
+
 	int num_workers = 0;
 	#if MACHINE == 0
 		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
@@ -475,12 +485,12 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_qtree);
 	#elif STORAGE == 2
 		int kt = RAND_KEY;
-		db.build_btree(ds, kt, init_keys, values);
+		db.build_btree(machine, ds, kt, init_keys, values);
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
-	glb_gm.register_grid_cells(config_file);
+	// std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
+	// glb_gm.register_grid_cells(config_file);
 	glb_gm.buildDataDistIdx(iam, init_keys);
 	glb_gm.printDataDistIdx();
 	// glb_gm.enforce_scheduling();

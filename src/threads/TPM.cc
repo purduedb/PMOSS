@@ -999,49 +999,13 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       query.op = tx_keys[2];
       // cout << tx_keys[0] << ' ' << tx_keys[2] << endl;
     }
-
-      // -------------------------------------------------------------------------------------
-      // Check which grid the query belongs to 
-      std::vector<int> valid_gcells;
-
-      for (auto gc = 0; gc < gm->nGridCells; gc++){
-        valid_gcells.push_back(gc); 
-        query.validGridIds.push_back(gc); // May not be necessary
-      }                
-
       
-      // Check the sanity of the query       
-      if (valid_gcells.size() == 0) continue;  
-      
-      // Update the Query Correlation Matrix
-      for(size_t qc1 = 0; qc1 < valid_gcells.size()-1; qc1++){
-          int pCell = valid_gcells[qc1];
-          for(size_t qc2 = qc1; qc2 < valid_gcells.size(); qc2++){
-              int cCell = valid_gcells[qc2];
-              glb_router_thrds[router_cpuids[i]].qCorrMatrix[pCell][cCell] ++;
-              glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
-          }
-      }
-            
       // Push the query to the correct worker thread's job queue
       std::mt19937 genInt(rd());
-      std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
-      int insert_tid = dq(genInt);
+      std::uniform_int_distribution<int> dq(0, CURR_WORKER_THREADS-1);
+      int cpuid_idx = dq(genInt);
 
-      int glbGridCellInsert = valid_gcells[insert_tid];
-                
-    
-      query.aGrid = glbGridCellInsert;
-      // -------------------------------------------------------------------------------------
-      // Update the query view of each cell
-      gm->glbGridCell[glbGridCellInsert].qType[query.qStamp] += 1;
-      gm->freqQueryDistPushed[glbGridCellInsert]++;
-      gm->freqQueryDistCompleted[glbGridCellInsert]++;
-      // -------------------------------------------------------------------------------------
-      /**
-       * TODO: The idCpu can be a vector, as multiple threads might be allocated to this grid 
-      */
-      int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
+      int cpuid = this->worker_cpuids[cpuid_idx];
       glb_worker_thrds[cpuid].jobs.push(query);
       // -------------------------------------------------------------------------------------
         // Use it as a throttling factor

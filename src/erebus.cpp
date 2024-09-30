@@ -172,8 +172,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
 	  
 	if (ds == YCSB) {
-		init_file += "workloads/loade_zipf_int_100M.dat";
-		txn_file += "workloads/txnse_zipf_int_100M.dat";
+		init_file += "dataset/loade_zipf_int_100M.dat";
   } 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
@@ -427,12 +426,6 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	/**
-	 * TODO: cleaner version would check the number of rt/numa node and allocate accordingly 
-	 * Also would remove the number from the TPM.cc file about the #of threads and make it 
-	 * global
-	*/
-	
 	int num_workers = 0;
 	#if MACHINE == 0
 		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
@@ -444,24 +437,40 @@ int main(int argc, char* argv[])
 		num_workers = 28;  // Change the CURR_WORKER_THREADS in TPM.hpp
 		ss_cpuids.push_back(31);
 		mm_cpuids.push_back(63);
+	#elif MACHINE == 3
+		num_workers = 6;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#else
 		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#endif
 	
-	
-	for(auto n=0; n < num_NUMA_nodes; n++){
-		rt_cpuids.push_back(cPool[n][1]);
-		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
-		
-		ncore_cpuids.push_back(cPool[n][2]);
-		
-		int cnt = 1;
-		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
-			wrk_cpuids.push_back(cPool[n][j]);
-			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-			if (cnt == num_workers) break;
+	#if MACHINE ==2
+		for(auto n=0; n < num_NUMA_nodes; n++){
+			rt_cpuids.push_back(cPool[n][1]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			
+			ncore_cpuids.push_back(cPool[n][2]);
+			
+			int cnt = 1;
+			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
 		}
-	}
+	#elif MACHINE==3
+		
+		for(auto n=0; n < num_NUMA_nodes; n++){
+			rt_cpuids.push_back(cPool[n][0]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
+			ncore_cpuids.push_back(cPool[n][1]);
+			int cnt = 1;
+			for(size_t j = 2; j < cPool[n].size(); j++, cnt++){
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
+		}
+	#endif 
 	
 	erebus::scheduler::ResourceManager glb_rm;  
 	erebus::Erebus db(&glb_gm, &glb_rm);

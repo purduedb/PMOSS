@@ -24,8 +24,6 @@ void TPManager::init_worker_threads(){
       erebus::utils::PinThisThread(worker_cpuids[i]);
       glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
           
-      PerfEvent e;
-      static int cnt = 0;
       
       // ofstream outfile;
       // outfile.open ("/homes/yrayhan/works/erebus/src/a_test/" + std::to_string(worker_cpuids[i]) + "example.txt");
@@ -44,10 +42,7 @@ void TPManager::init_worker_threads(){
                     
         if (size_jobqueue != 0){
           glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
-          // if (cnt % PERF_STAT_COLLECTION_INTERVAL == 0) {
-          //     e.startCounters();
-          // }
-          e.startCounters();
+          
                     
           // -------------------------------------------------------------------------------------
           #if STORAGE == 0
@@ -77,44 +72,19 @@ void TPManager::init_worker_threads(){
             //   << static_cast<uint64_t>(rec_pop.bottom_) << endl;
           #endif
           
-          // cnt +=1;
-          // if (cnt % PERF_STAT_COLLECTION_INTERVAL == (PERF_STAT_COLLECTION_INTERVAL-1)){
-          e.stopCounters();
-                    
-          PerfCounter perf_counter;
-          for(auto j=0; j < e.events.size(); j++){
-            if (isnan(e.events[j].readCounter()) || isinf(e.events[j].readCounter())) perf_counter.raw_counter_values[j] = 0;
-            else perf_counter.raw_counter_values[j] = e.events[j].readCounter();
-          }
-                            
-          perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
-          perf_counter.rscan_query = rec_pop;
-          perf_counter.result = result;
-          perf_counter.gIdx = rec_pop.aGrid;
-                            
-          glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
-          // cnt = 0;
-                
-
-                    
-          /**
-           * TODO: You should be updating the outstanding queries 
-          */
-          gm->freqQueryDistCompleted[rec_pop.aGrid] += 1;
           
+                      
           auto itQExecMice = glb_worker_thrds[worker_cpuids[i]].qExecutedMice.find(rec_pop.aGrid);
           if(itQExecMice != glb_worker_thrds[worker_cpuids[i]].qExecutedMice.end()) 
             itQExecMice->second += 1;
           else 
             glb_worker_thrds[worker_cpuids[i]].qExecutedMice.insert({rec_pop.aGrid, 1});
 
-          // cout << "Threads= " << worker_cpuids[i] << " Result = " << result << " " << rec_pop.validGridIds[0] << endl;
           // std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
                 
     }
                 
-    // glb_worker_thrds[worker_cpuids[i]].th.detach();
     });
   }
 }
@@ -274,72 +244,7 @@ void TPManager::init_ncoresweeper_threads(){
             break;
         std::this_thread::sleep_for(std::chrono::milliseconds(40000));  // 80000
         
-        // First, push the token to the worker cpus to get the DataView
-        PerfCounter perf_counter;
-        perf_counter.qType = SYNC_TOKEN;
-        for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
-        {
-          int wkCPUID = itr->second;
-          // cout << itr->first<< '\t' << itr->second << '\n';
-          glb_worker_thrds[wkCPUID].perf_stats.push(perf_counter);
-        }
-        
-        // Then, push the token to the system_sweeper cpu to get the System View (MemChannel)
-        // if (i == 0){
-        //   IntelPCMCounter iPCMCnt;
-        //   iPCMCnt.qType = SYNC_TOKEN;
-        //   glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.push(iPCMCnt);
-        // }
-        
-        // Take a snapshot of the DataView from the  threads
-        const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
-        /**
-         * It has to be a complete snap.
-         * Unless for all the cores you have got the token
-         * do not insert
-        */
-        DataDistSnap ddSnap;  // Snapshot for the current NUMA node
-        for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
-        {
-          int wkCPUID = itr->second;
-          bool token_found = false;                    
-          while(!token_found){
-            size_t size_stats = glb_worker_thrds[wkCPUID].perf_stats.unsafe_size();
-            PerfCounter pc;
-            if (size_stats != 0){
-                glb_worker_thrds[wkCPUID].perf_stats.try_pop(pc);
-                if (pc.qType == SYNC_TOKEN){
-                    break;
-                }
-                
-                
-                ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
-                for(auto ex = 0; ex < PERF_EVENT_CNT; ex++){
-                  ddSnap.rawQCounter[pc.gIdx][ex] += (pc.raw_counter_values[ex] / pc.raw_counter_values[1])*1000;
-                }
-                ddSnap.rawQCounter[pc.gIdx][1] = pc.raw_counter_values[1];
 
-                // Use SIMD to compute the DataView
-                // __m512d rawQCounter[nQCounterCline];
-                // __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
-                // for (auto vCline = 0; vCline < nQCounterCline; vCline++){
-                //   rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
-                //   rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
-                //   rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
-                //   if (vCline == 0){
-                //     rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
-                //   }
-                //   ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
-                // }      
-                
-
-            }
-            else break;
-          }   
-        }
-        
-        glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].dataDistReel.push_back(ddSnap);
-        
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the QueryExecuted from the worker threads
         struct QueryExecSnap qExecSnap;
@@ -428,85 +333,7 @@ void TPManager::dump_ncoresweeper_threads(){
   mkdir(dirName.c_str(), 0777);
   cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         // -------------------------------------------------------------------------------------
-    ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
-    // for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
-    //     int tReel = i;
-    //     memChannelView << this->gm->config << " ";
-    //     memChannelView << tReel << " ";
-    //     memChannelView << this->gm->wkload << " ";
-    //     memChannelView << this->gm->iam << " ";
-    //     /**
-    //      * TODO: Have a global config header file that saves the value of 
-    //      * global hw params
-    //      * 6 definitely needs to be replaced with such param
-    //      * It should not be numa_num_configured nodes
-    //     */
-    //     // Dump Read Socket Channel
-    //     for (auto sc = 0; sc < 4; sc++){
-    //         for(auto ch = 0; ch < 6; ch++){
-    //             memChannelView <<  glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Rd_socket_chan[sc][ch] << " ";
-    //         }
-    //     }
-    //     // Dump Write Socket Channel
-    //     for (auto sc = 0; sc < 4; sc++){
-    //         for(auto ch = 0; ch < 6; ch++){
-    //             memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Wr_socket_chan[sc][ch] << " ";
-    //         }
-    //     }
-    //     // // Dump Write Socket Channel
-    //     for (auto sc = 0; sc < 4; sc++){
-    //         for(auto ul = 0; ul < 3; ul++){
-    //             memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_incoming[sc][ul] << " ";
-    //         }
-    //     }
-    //     // Dump Write Socket Channel
-    //     for (auto sc = 0; sc < 4; sc++){
-    //         for(auto ul = 0; ul < 3; ul++){
-    //             memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_outgoing[sc][ul] << " ";
-    //         }
-    //     }
-    //     memChannelView << endl;
-    // }
-    // -------------------------------------------------------------------------------------
-    ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
-    const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
-    // const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
-    const int scalarDumpSize = MAX_GRID_CELL * PERF_EVENT_CNT;
     
-    alignas(64) double dataViewScalarDump[scalarDumpSize] = {};
-        
-    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].dataDistReel.size(); i++){
-        int tReel = i;
-        DataDistSnap dd = glb_ncore_sweeper_thrds[key].dataDistReel[i];
-
-        dataView << this->gm->config  << " ";
-        dataView << tReel << " ";
-        dataView << this->gm->wkload << " ";
-        dataView << this->gm->iam << " ";
-        
-        for (auto g = 0; g < MAX_GRID_CELL; g++){
-          memcpy(dataViewScalarDump+g*PERF_EVENT_CNT, dd.rawQCounter[g], sizeof(dd.rawQCounter[g]));
-        }
-
-        // Load the SIMD values in a memory address
-        // for (auto g = 0; g < MAX_GRID_CELL; g++){
-        //     for (auto cLine = 0; cLine < nQCounterCline; cLine++){
-        //         _mm512_store_pd(dataViewScalarDump + (g*nQCounterCline*8)+(cLine*8), dd.rawQCounter[g][cLine]);
-        //     }     
-        // }
-        
-        //Dump the perf counters
-        for (auto aSize = 0; aSize < scalarDumpSize; aSize++){
-            dataView << dataViewScalarDump[aSize] << " ";
-        }
-
-        //Dump the sample counts 
-        for (auto aSize = 0; aSize < MAX_GRID_CELL; aSize++){
-            dataView << dd.rawCntSamples[aSize] << " ";
-        }
-        
-        dataView << endl;
-    }
 
     // -------------------------------------------------------------------------------------
     ofstream queryView(dirName + "/query_view.txt", std::ifstream::app);
@@ -1176,40 +1003,12 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // -------------------------------------------------------------------------------------
       // Check which grid the query belongs to 
       std::vector<int> valid_gcells;
-      #if LINUX == 3
-        for (auto gc = 0; gc < gm->nGridCells; gc++){  
-          double glx = gm->glbGridCell[gc].lx;
-          double gly = gm->glbGridCell[gc].ly;
-          double ghx = gm->glbGridCell[gc].hx;
-          double ghy = gm->glbGridCell[gc].hy;
-          #if MULTIDIM == 1
-            if (hx < glx || lx > ghx || hy < gly || ly > ghy)
-                continue;
-            else {
-                /**
-                 * 1. Store IDs of the Grids that the query intersects
-                 * 2. Update the query frequency
-                 * 3. Update the query's valid grid cells so that it can maintain a local view of the data distribution
-                */
-                valid_gcells.push_back(gc);  
-                // gm->freqQueryDistPushed[gc]++;  // I am currently only keeping where it goes, don't care about  the intersections
-                query.validGridIds.push_back(gc);
-            }
-          #else
-            if (lx <= ghx && lx >= glx){
-              valid_gcells.push_back(gc);  
-              query.validGridIds.push_back(gc);
-            }
-            else continue;
-          #endif 
-              
-        }
-      #else
-        for (auto gc = 0; gc < gm->nGridCells; gc++){
-          valid_gcells.push_back(gc); 
-          query.validGridIds.push_back(gc); // May not be necessary
-        }                
-      #endif 
+
+      for (auto gc = 0; gc < gm->nGridCells; gc++){
+        valid_gcells.push_back(gc); 
+        query.validGridIds.push_back(gc); // May not be necessary
+      }                
+
       
       // Check the sanity of the query       
       if (valid_gcells.size() == 0) continue;  
@@ -1223,125 +1022,28 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
               glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
           }
       }
+            
+      // Push the query to the correct worker thread's job queue
+      std::mt19937 genInt(rd());
+      std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
+      int insert_tid = dq(genInt);
+
+      int glbGridCellInsert = valid_gcells[insert_tid];
+                
+    
+      query.aGrid = glbGridCellInsert;
+      // -------------------------------------------------------------------------------------
+      // Update the query view of each cell
+      gm->glbGridCell[glbGridCellInsert].qType[query.qStamp] += 1;
+      gm->freqQueryDistPushed[glbGridCellInsert]++;
+      gm->freqQueryDistCompleted[glbGridCellInsert]++;
       // -------------------------------------------------------------------------------------
       /**
-       * TODO: Stamp the query whether it is a mice, elephant or mammoth
-       * I: Requires an inference model or RL model.
-       * 
-       * Things to consider: Of course you have MICE|ELEPHANT|MAMMOTH
-       * Q: What if the MICE and ELEPHANTs are accessing the same area?
-       * A: Then whoever goes first helps the other MICE|ELEPHANT.
-       * SO, they sohould be run one after another, so that they can benefit from one another. 
-       * DONOT put prioritize MICEs in such case. 
-       * TAKEAWAY: In the JOBQUEUE the spatial distance between the queries are important as well 
-       * besides the regular query classifications.
-       * 
-       * REQUIREMENT: This needs to be as lightweight as possible, why? 
-       * REQUIREMENT: Can you implement this with SIMD to make it train faster?
-       * REQUIREMENT: You want to spend as little time as possible while doing this administrative stuff before executing the queries 
-       * itself.
-       * What is interesting compared to the Onur Motlu paper: 
-       *      1. We have an index to consider.
-       *      2. We have the system
-       *      3. The definition should change considering the state of the index and the system as well.
-       *          Q: For different sized index, does the definition of the MICE, ELEPHANT and MAMMOTH change?
-       *              A: It could be counters related to CPU, Cache and Memory
-       *          Q: How to capture different sized index into features? 
-       *          Q: Can hw counters help in capturing the data distribution of the index?
-       *          Q: How to ensure this robustness?
-       *      
-       * 
-       * Features: What features do we have [before] running the query iteself?
-       *      1. QUERY SEMANTICS: SELECT, RANGE QUERY, KNN QUERY (we will think of only RANGE QUERIES OR POINT QUERIES)
-       *      2. RANGE QUERY: lx, ly, hx, hy
-       *      3. PREVIOUS HW COUNTERS OF THE DESTINATION CORE OF THIS QUERY:
-       *      4. PREVIOUS HW COUNTERS ACROSS ALL THE CORES:
-       * 
-       *      
-       * Prediction: What could we predict that will help us decide MICE|ELEPHANT|MAMMOTH?
-       *      1. CPU INSTRUCTIONS
-       *      2. CACHE ACCESSES OR MISSES (which one?)
-       * 
-       *      
-       * I donot think we care about NUMA here, only the pure values that this query will generate.
-       * 
-       * POSSIBLE MODELS: Linear Regression, Spline Regression
-       * 
-       * 
-       * O: Now the query is a mice, elephant or mammoth is relative to the work put in by the index itself.
-       * Do we go for the maximum of the system or the maximum by the index?
-       * E.g., 10 MemMissesPerKInstruction = Mice, 100 MemMissesPerKInstruction = Elephant, 1000 MemMissesPerKInstruction = Mammoth
-       * But they do not saturate the memory bw of the system, neither they affect each other 
-       * Remember the index dummy experiment I did, that should give an idea
-       * My guess is: there is a tipping point for those 
-       * 
-       * Similar Job: Predicting selectivity with lightweight models
-       * 
-       * It does not necessarily have to be hw counters; but of course that helps!
-       * 
-       * O: The best way would be: you look at the query points and you have a notion about the current status of the index (the hw parameters you are generating),
-       * based on that you can prdict the hw counters (a specific hw counter, which helps you to classify it). E.g., Memory Misses per instruction 
-       * Reference: [Onur Motlu Paper], [selectivity functions are learnable paper]
-       * 
-       * Q: Given the hw counters and the type of queries can you decide on the data distribution of the index?
-       * 
-       * O: It could be a conitnuous RL setting 
-       * 
-       * O: When do you re-train the model, when the data distribution of the index has changed. NO RL, just inference
-       * Reference: https://arxiv.org/pdf/2210.05508.pdf
-       * 
-       * O: Why not correct the model after running the query, you generate the statistics and see if the query stamp that was 
-       * stamped by the router thread is correct or not. IF not, then have a counter, given it reaches a certain threshold 
-       * it will let the router know that it needs to update itself or RL agent know that it needs to explore more?
-       * 
-       * 
-       * 
-       * I: Clustering could be another way as well which is different from query stamping, however let's not dive intot that
-       * 
-       * 
+       * TODO: The idCpu can be a vector, as multiple threads might be allocated to this grid 
       */
+      int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
+      glb_worker_thrds[cpuid].jobs.push(query);
       // -------------------------------------------------------------------------------------
-      
-    // Push the query to the correct worker thread's job queue
-    std::mt19937 genInt(rd());
-    std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
-    int insert_tid = dq(genInt);
-
-    int glbGridCellInsert = valid_gcells[insert_tid];
-                
-      // Stamping the query with something: You need to do the inverse of log_2
-    /*
-    #if USE_MODEL
-        double predictIns = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][0] + 
-                            query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][1]+ 
-                            query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][2]+ 
-                            query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[0][3];
-        double predictAcc = query.left_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][0] + 
-                            query.right_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][1]+ 
-                            query.bottom_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][2]+ 
-                            query.top_ * gm->glbGridCell[glbGridCellInsert].lRegCoeff[1][3];
-        if (predictIns < QUERY_THRESHOLD_INS && predictAcc < QUERY_THRESHOLD_ACC) 
-            query.qStamp = QUERY_MICE;
-        else if (predictIns >= QUERY_THRESHOLD_INS && predictAcc >= QUERY_THRESHOLD_ACC)
-            query.qStamp = QUERY_MAMMOTH;
-        else 
-            query.qStamp = QUERY_ELEPHANT;
-    #endif
-    */
-        // -------------------------------------------------------------------------------------
-        query.aGrid = glbGridCellInsert;
-        // -------------------------------------------------------------------------------------
-        // Update the query view of each cell
-        gm->glbGridCell[glbGridCellInsert].qType[query.qStamp] += 1;
-        gm->freqQueryDistPushed[glbGridCellInsert]++;
-        gm->freqQueryDistCompleted[glbGridCellInsert]++;
-        // -------------------------------------------------------------------------------------
-        /**
-         * TODO: The idCpu can be a vector, as multiple threads might be allocated to this grid 
-        */
-        int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
-        glb_worker_thrds[cpuid].jobs.push(query);
-        // -------------------------------------------------------------------------------------
         // Use it as a throttling factor
         // std::this_thread::sleep_for(std::chrono::milliseconds(10));
       }

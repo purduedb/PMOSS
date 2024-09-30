@@ -80,7 +80,7 @@ class Rectangle{
 		double bottom_;
 		double top_;
 		unsigned int id_;
-		int qStamp;
+		int qStamp=0;
 		vector<int> validGridIds;
 		int aGrid;
 		uint64_t op; //ycsb operation

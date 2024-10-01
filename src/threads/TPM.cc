@@ -736,8 +736,6 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       max_length = 3000; max_width = 3000;
     } 
     
-
-
     if (wl == MD_RS_UNIFORM){
       dlx_ureal = std::uniform_real_distribution<>(min_x, max_x);
       dly_ureal = std::uniform_real_distribution<>(min_y, max_y);
@@ -919,7 +917,11 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // for inserts open different keyrange config for different router
       // or use a single router
       std::ifstream input;
+      #if MACHINE==2
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
+      #elif MACHINE==3
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_8n/";
+      #endif
       
       if (wl == SD_YCSB_WKLOADA){
         wl_config += "ycsb_workloada_" + to_string(router_cpuids[i]);

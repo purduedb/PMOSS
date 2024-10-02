@@ -16,6 +16,14 @@ TPManager::TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID>
   this->megamind_cpuids = megamind_cpuids;
   this->sys_sweeper_cpuids = sys_sweeper_cpuids;
   this->ncore_sweeper_cpuids = ncore_sweeper_cpuids;
+
+  // for(size_t i=0; i<worker_cpuids.size();i++){
+  //     WorkerThread wt;
+  //     wt.th=std::thread();
+  //     wt.cpuid = worker_cpuids[i];
+  //     glb_worker_thrds[worker_cpuids[i]] = wt;
+  // }
+  
 }
 
 void TPManager::init_worker_threads(){
@@ -24,9 +32,6 @@ void TPManager::init_worker_threads(){
       erebus::utils::PinThisThread(worker_cpuids[i]);
       glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
           
-      
-      // ofstream outfile;
-      // outfile.open ("/homes/yrayhan/works/erebus/src/a_test/" + std::to_string(worker_cpuids[i]) + "example.txt");
       while (1) {  
         if(!glb_worker_thrds[worker_cpuids[i]].running) {
             break;
@@ -81,7 +86,6 @@ void TPManager::init_worker_threads(){
           else 
             glb_worker_thrds[worker_cpuids[i]].qExecutedMice.insert({rec_pop.aGrid, 1});
 
-          // std::this_thread::sleep_for(std::chrono::milliseconds(50));
       }
                 
     }
@@ -122,116 +126,6 @@ void TPManager::init_megamind_threads(){
   }
 }
 
-// void TPManager::init_syssweeper_threads(){
-//   // -------------------------------------------------------------------------------------
-//   for (unsigned i = 0; i < CURR_SYS_SWEEPER_THREADS; ++i) {
-//     glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].th = std::thread([i, this] {
-//       erebus::utils::PinThisThread(sys_sweeper_cpuids[i]);
-//       glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].cpuid=sys_sweeper_cpuids[i];
-            
-//         // -------------------------------------------------------------------------------------
-//         // Params for DRAM Throughput
-//         double delay = 30000;
-//         bool csv = false, csvheader = false, show_channel_output = true, print_update = false;
-//         uint32 no_columns = DEFAULT_DISPLAY_COLUMNS; // Default number of columns is 2
-        
-//         ServerUncoreMemoryMetrics metrics = PartialWrites;
-//         int rankA = -1, rankB = -1;
-//         // -------------------------------------------------------------------------------------
-//         // Params for UPI links
-//         std::vector<CoreCounterState> cstates1, cstates2;
-//         std::vector<SocketCounterState> sktstate1, sktstate2;
-//         SystemCounterState sstate1, sstate2;
-//         // -------------------------------------------------------------------------------------
-            
-            
-//         PCM * m = PCM::getInstance();
-//         PCM::ErrorCode status2 = m->programServerUncoreMemoryMetrics(metrics, rankA, rankB);
-//         m->checkError(status2);
-        
-        
-//         const uint32 qpiLinks = (uint32)m->getQPILinksPerSocket();
-//         uint32 imc_channels = (pcm::uint32)m->getMCChannelsPerSocket();
-//         uint32 numSockets = m->getNumSockets();
-
-//         m->getUncoreCounterStates(sstate1, sktstate1);
-//         // m->getAllCounterStates(sstate1, sktstate1, cstates1);
-        
-//         // -------------------------------------------------------------------------------------
-//         // Params for DRAM Throughput
-            
-//         uint64 SPR_CHA_CXL_Event_Count = 0;
-//         rankA = 0;
-//         rankB = 1;
-//         std::vector<ServerUncoreCounterState> BeforeState(m->getNumSockets());
-//         std::vector<ServerUncoreCounterState> AfterState(m->getNumSockets());
-//         // -------------------------------------------------------------------------------------
-
-//         memdata_t mDataCh;
-//         uint64 BeforeTime = 0, AfterTime = 0;            
-//         while (1) {
-//           if(!glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].running) {
-//               break;
-//           }
-            
-//           IntelPCMCounter iPCMCnt;
-//           readState(BeforeState);            
-//           BeforeTime = m->getTickCount();
-//           MySleepMs(delay);
-//           AfterTime = m->getTickCount();
-//           readState(AfterState);
-//           m->getUncoreCounterStates(sstate2, sktstate2);          
-//           // m->getAllCounterStates(sstate1, sktstate1, cstates1);
-
-//           mDataCh = calculate_bandwidth(m,BeforeState,AfterState,AfterTime-BeforeTime,csv,csvheader, no_columns, metrics,
-//             show_channel_output, print_update, SPR_CHA_CXL_Event_Count);
-
-          
-//           if (m->getNumSockets() > 1 && m->incomingQPITrafficMetricsAvailable()){
-//             for (uint32 skt = 0; skt < m->getNumSockets(); ++skt){
-//               for (uint32 l = 0; l < qpiLinks; ++l){
-//                 iPCMCnt.upi_incoming[skt][l] = getIncomingQPILinkBytes(skt, l, sstate1, sstate2);
-//               }
-//               // TODO: the getQPILinkSpeed returns 0, hence all the methods that use this function return bad result.
-//             }
-//             iPCMCnt.upi_system[0] = getAllIncomingQPILinkBytes(sstate1, sstate2);
-//             iPCMCnt.upi_system[1] = getQPItoMCTrafficRatio(sstate1, sstate2);
-//           } 
-              
-//           if (m->getNumSockets() > 1 && (m->outgoingQPITrafficMetricsAvailable())){ // QPI info only for multi socket systems
-//             for (uint32 skt = 0; skt < m->getNumSockets(); ++skt){
-//                 for (uint32 l = 0; l < qpiLinks; ++l){
-//                   iPCMCnt.upi_outgoing[skt][l] = getMyOutgoingQPILinkBytes(skt, l, sstate1, sstate2);
-//                 }
-//             }
-//             iPCMCnt.upi_system[2] = getAllOutgoingQPILinkBytes(sstate1, sstate2);
-//           }
-          
-//           // TODO: For now skipping the ranks stuff
-//           // calculate_bandwidth_rank(m, BeforeState, AfterState, AfterTime - BeforeTime, csv, csvheader, 
-//           //     no_columns, rankA, rankB);
-            
-//           iPCMCnt.sysParams = mDataCh;
-//           glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].pcmCounters.push(iPCMCnt);
-              
-
-            
-//           swap(BeforeTime, AfterTime);
-//           swap(BeforeState, AfterState);
-//           std::swap(sstate1, sstate2);
-//           std::swap(sktstate1, sktstate2);
-        
-//           if(rankA == 6) rankA = 0;
-//           else rankA += 2;
-          
-//           if(rankB == 7) rankB = 1;
-//           else rankB += 2;      
-
-//         }
-//         });
-//   }
-// }
-
 
 void TPManager::init_ncoresweeper_threads(){
   for (unsigned i = 0; i < CURR_NCORE_SWEEPER_THREADS; ++i) {
@@ -264,15 +158,6 @@ void TPManager::init_ncoresweeper_threads(){
         // -------------------------------------------------------------------------------------
         // -------------------------------------------------------------------------------------
         
-        // Calculate the Average
-        /**
-         * TODO: This does not tell you the full story: there can be a huge outlier
-         * which can mess up the whole average
-         * Hence the stat function to use here is just absurd I think since
-         * we are doing the dirty work with the data anyway:
-         * Need std_deviation, or just a probabilistic view
-         * */ 
-        
         
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the QueryFreq and QueryFreqView and Correlation Matrix from the router threads
@@ -286,31 +171,6 @@ void TPManager::init_ncoresweeper_threads(){
             memset(glb_router_thrds[rtCPUID].qCorrMatrix, 0, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
             glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].queryViewReel.push_back(qViewSnap);
         }
-        
-        // -------------------------------------------------------------------------------------
-        // Take a snapshot of the System View (Memory Channel View)
-        // if (i == 0){
-        //     bool token_found = false;                    
-        //     // memdata_t DRAMResUsageSnap;
-        //     IntelPCMCounter DRAMResUsageSnap;
-        //     while(!token_found){
-        //         size_t size_stats = glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.unsafe_size();
-        //         IntelPCMCounter iPCMCnt;
-        //         if (size_stats != 0){
-        //             glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.try_pop(iPCMCnt);
-        //             if (iPCMCnt.qType == SYNC_TOKEN){
-        //                 break;
-        //             }
-            
-        //             // Use SIMD to compute the Memory Channel View
-        //             // DRAMResUsageSnap = iPCMCnt.sysParams;
-        //             DRAMResUsageSnap = iPCMCnt;
-        //         }
-        //         else
-        //             break;
-        //     }
-        //     glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].DRAMResUsageReel.push_back(DRAMResUsageSnap);
-        // }
         
       }
       // glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].th.detach();
@@ -519,9 +379,6 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     erebus::utils::PinThisThread(router_cpuids[i]);
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
     
-  for (auto z=0; z<CURR_WORKER_THREADS; z++){
-      cout << this->worker_cpuids[z] << endl;
-    }
     
     double pseudo_min_x = 1;
     double pseudo_max_x = 1 + (max_x - min_x);
@@ -550,10 +407,11 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     std::uniform_int_distribution<uint64_t> dx_uint64;  
     std::uniform_int_distribution<uint64_t> dLength_uint64;  
 
-
     ycsbc::utils::Properties props;
     ycsbc::CoreWorkload ycsb_wl;
-    
+
+    std::mt19937 genInt(rd());
+    std::uniform_int_distribution<int> dq(0, CURR_WORKER_THREADS-1);    
     // -------------------------------------------------------------------------------------
     double max_length, max_width;
 
@@ -1006,41 +864,72 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
 
   
       
-
-      // std::vector <int> valid_gcells;
+      
+      std::vector<int> valid_gcells;
+      // for (auto gc = 0; gc < gm->nGridCells; gc++){  
+      //   double glx = gm->glbGridCell[gc].lx;
+      //   double gly = gm->glbGridCell[gc].ly;
+      //   double ghx = gm->glbGridCell[gc].hx;
+      //   double ghy = gm->glbGridCell[gc].hy;
+      //   #if MULTIDIM == 1
+      //     if (hx < glx || lx > ghx || hy < gly || ly > ghy)
+      //       continue;
+      //     else {
+      //       valid_gcells.push_back(gc);  
+      //       query.validGridIds.push_back(gc);
+      //     }
+      //   #else
+      //     if (lx <= ghx && lx >= glx){
+      //       valid_gcells.push_back(gc);  
+      //       query.validGridIds.push_back(gc);
+      //     }
+      //     else 
+      //       continue; 
+      //   #endif
+      // }
+      
       // for (auto gc = 0; gc < gm->nGridCells; gc++){
-      //   valid_gcells.push_back(gc); 
-      //   query.validGridIds.push_back(gc); // May not be necessary
-      // }    
+      //   valid_gcells.push_back(gc);   
+      // }                
+      // if (valid_gcells.size() == 0) continue;  
       
-      // if (valid_gcells.size() == 0) continue;      
-
+      for(size_t qc1 = 0; qc1 < valid_gcells.size()-1; qc1++){
+          int pCell = valid_gcells[qc1];
+          for(size_t qc2 = qc1; qc2 < valid_gcells.size(); qc2++){
+              int cCell = valid_gcells[qc2];
+              glb_router_thrds[router_cpuids[i]].qCorrMatrix[pCell][cCell] ++;
+              glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
+          }
+      }
       
+      valid_gcells ={
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 
+        31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 
+        61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 
+        91, 92, 93, 94, 95, 96, 97, 98, 99, 100
+      };
       // Push the query to the correct worker thread's job queue
-      // std::mt19937 genInt(rd());
-      // std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1);
+      std::mt19937 genInts(rd());
+      std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1);
       
-      // int insert_tid = dq(genInt);
-      // int glbGridCellInsert = valid_gcells[insert_tid];
-      // query.aGrid = glbGridCellInsert;
+      int insert_tid = dq(genInts);
+      int glbGridCellInsert = valid_gcells[insert_tid];
+      query.aGrid = glbGridCellInsert;
       // // -------------------------------------------------------------------------------------
-      // // Update the query view of each cell
-      // // gm->glbGridCell[glbGridCellInsert].qType[query.qStamp] += 1;
-      // // gm->freqQueryDistPushed[glbGridCellInsert]++;
-      // // gm->freqQueryDistCompleted[glbGridCellInsert]++;
+      // Update the query view of each cell
+      gm->glbGridCell[glbGridCellInsert].qType[query.qStamp] += 1;
+      gm->freqQueryDistPushed[glbGridCellInsert]++;
+      gm->freqQueryDistCompleted[glbGridCellInsert]++;
         
-      // int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
-      // glb_worker_thrds[cpuid].jobs.push(query);
+      int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
+      glb_worker_thrds[cpuid].jobs.push(query);
       
 
-      std::mt19937 genInt(rd());
-      std::uniform_int_distribution<int> dq(0, CURR_WORKER_THREADS-1);
-      int cpuid_idx = dq(genInt);
-      int cpuid = this->worker_cpuids[cpuid_idx];
-      glb_worker_thrds[cpuid].jobs.push(query);
+      // int cpuid_idx = dq(genInt);
+      // int cpuid = this->worker_cpuids[cpuid_idx];
+      // glb_worker_thrds[cpuid].jobs.push(query);
       // -------------------------------------------------------------------------------------
-        // Use it as a throttling factor
-        // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      
       }
             
     });

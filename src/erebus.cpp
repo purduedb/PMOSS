@@ -367,8 +367,8 @@ int main(int argc, char* argv[])
 	
 	cout << cfgIdx << endl;
 	
-	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADH;
+	int ds = WIKI;
+	int wl = WIKI_WKLOADA;
 	int iam = BTREE;
 
 	// Keys in database 

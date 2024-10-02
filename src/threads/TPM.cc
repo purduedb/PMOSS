@@ -28,11 +28,11 @@ void TPManager::init_worker_threads(){
       // ofstream outfile;
       // outfile.open ("/homes/yrayhan/works/erebus/src/a_test/" + std::to_string(worker_cpuids[i]) + "example.txt");
       while (1) {  
+        // std::this_thread::sleep_for(std::chrono::milliseconds(50));
         if(!glb_worker_thrds[worker_cpuids[i]].running) {
             break;
         }
-                    
-        int result = 0;        
+                      
         Rectangle rec_pop;
         int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
         
@@ -43,7 +43,8 @@ void TPManager::init_worker_threads(){
         if (size_jobqueue != 0){
           glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
           
-                    
+
+          int result=0;
           // -------------------------------------------------------------------------------------
           #if STORAGE == 0
             result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
@@ -519,9 +520,6 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     erebus::utils::PinThisThread(router_cpuids[i]);
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
     
-  for (auto z=0; z<CURR_WORKER_THREADS; z++){
-      cout << this->worker_cpuids[z] << endl;
-    }
     
     double pseudo_min_x = 1;
     double pseudo_max_x = 1 + (max_x - min_x);
@@ -1004,10 +1002,6 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // cout << tx_keys[0] << ' ' << tx_keys[2] << endl;
     }
 
-  
-      
-
-      // std::vector <int> valid_gcells;
       // for (auto gc = 0; gc < gm->nGridCells; gc++){
       //   valid_gcells.push_back(gc); 
       //   query.validGridIds.push_back(gc); // May not be necessary

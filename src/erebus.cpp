@@ -361,14 +361,14 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 int main(int argc, char* argv[])
 {	
 
-	int cfgIdx = 1;
+	int cfgIdx = 34;
 	
 	if (argc > 1) cfgIdx = std::atoi(argv[1]);
 	
 	cout << cfgIdx << endl;
 	
-	int ds = WIKI;
-	int wl = WIKI_WKLOADA;
+	int ds = YCSB;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 
 	// Keys in database 

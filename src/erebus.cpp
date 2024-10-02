@@ -525,12 +525,12 @@ int main(int argc, char* argv[])
 	glb_tpool.init_ncoresweeper_threads();
 	
 	
-	// std::this_thread::sleep_for(std::chrono::milliseconds(300000));  // 200000(ycsb-a), 490000 (ini) 
-	// glb_tpool.terminate_ncoresweeper_threads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	// glb_tpool.dump_ncoresweeper_threads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	// exit(0);
+	std::this_thread::sleep_for(std::chrono::milliseconds(300000));  // 200000(ycsb-a), 490000 (ini) 
+	glb_tpool.terminate_ncoresweeper_threads();
+	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	glb_tpool.dump_ncoresweeper_threads();
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	exit(0);
 	while(1);
 }
 

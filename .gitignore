@@ -1,6 +1,7 @@
 build/*
 .vscode/*
 src/dataset/*.dat
+src/dataset/
 src/workloads/loade_zipf_int_100M.dat
 src/interference/*
 kb/*

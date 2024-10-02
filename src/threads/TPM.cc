@@ -372,10 +372,10 @@ TPManager::~TPManager(){
 }
 
 void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y,
-    std::vector<keytype> &init_keys, std::vector<uint64_t> &values){
+    std::vector<keytype> &init_keys, std::vector<uint64_t> &values, std::string machine_name){
   
   for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {
-    glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys, &values] {
+    glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys, &values, machine_name] {
     
     erebus::utils::PinThisThread(router_cpuids[i]);
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
@@ -609,7 +609,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // for inserts open different keyrange config for different router
       // or use a single router
       std::ifstream input;
-      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/" + machine_name + "/";
       
       if (wl == SD_YCSB_WKLOADA){
         wl_config += "ycsb_workloada_" + to_string(router_cpuids[i]);
@@ -867,27 +867,27 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       
       
       std::vector<int> valid_gcells;
-      // for (auto gc = 0; gc < gm->nGridCells; gc++){  
-      //   double glx = gm->glbGridCell[gc].lx;
-      //   double gly = gm->glbGridCell[gc].ly;
-      //   double ghx = gm->glbGridCell[gc].hx;
-      //   double ghy = gm->glbGridCell[gc].hy;
-      //   #if MULTIDIM == 1
-      //     if (hx < glx || lx > ghx || hy < gly || ly > ghy)
-      //       continue;
-      //     else {
-      //       valid_gcells.push_back(gc);  
-      //       query.validGridIds.push_back(gc);
-      //     }
-      //   #else
-      //     if (lx <= ghx && lx >= glx){
-      //       valid_gcells.push_back(gc);  
-      //       query.validGridIds.push_back(gc);
-      //     }
-      //     else 
-      //       continue; 
-      //   #endif
-      // }
+      for (auto gc = 0; gc < gm->nGridCells; gc++){  
+        double glx = gm->glbGridCell[gc].lx;
+        double gly = gm->glbGridCell[gc].ly;
+        double ghx = gm->glbGridCell[gc].hx;
+        double ghy = gm->glbGridCell[gc].hy;
+        #if MULTIDIM == 1
+          if (hx < glx || lx > ghx || hy < gly || ly > ghy)
+            continue;
+          else {
+            valid_gcells.push_back(gc);  
+            query.validGridIds.push_back(gc);
+          }
+        #else
+          if (lx <= ghx && lx >= glx){
+            valid_gcells.push_back(gc);  
+            query.validGridIds.push_back(gc);
+          }
+          else 
+            continue; 
+        #endif
+      }
       
       // for (auto gc = 0; gc < gm->nGridCells; gc++){
       //   valid_gcells.push_back(gc);   
@@ -902,13 +902,14 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
               glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
           }
       }
-      
+
       valid_gcells ={
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 
         31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 
         61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 
         91, 92, 93, 94, 95, 96, 97, 98, 99, 100
       };
+      
       // Push the query to the correct worker thread's job queue
       std::mt19937 genInts(rd());
       std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1);

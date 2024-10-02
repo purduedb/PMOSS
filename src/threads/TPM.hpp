@@ -69,11 +69,11 @@ class TPManager{
     static const int CURR_ROUTER_THREADS = 2;
 	  static const int CURR_WORKER_THREADS = 56;
 #elif MACHINE == 3
-    static const int CURR_NCORE_SWEEPER_THREADS = 4;
+    static const int CURR_NCORE_SWEEPER_THREADS = 8;
     static const int CURR_SYS_SWEEPER_THREADS = 1;
-    static const int CURR_MEGAMIND_THREADS = 4;
-    static const int CURR_ROUTER_THREADS = 4;
-	  static const int CURR_WORKER_THREADS = 28;
+    static const int CURR_MEGAMIND_THREADS = 1;
+    static const int CURR_ROUTER_THREADS = 8;
+	  static const int CURR_WORKER_THREADS = 48;
 #else
 	  static const int CURR_WORKER_THREADS = 56;
 #endif
@@ -183,7 +183,7 @@ class TPManager{
     TPManager();
     TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID> sys_sweeper_cpuids, std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
     void init_worker_threads();
-    void init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y, std::vector<keytype> &init_keys, std::vector<uint64_t> &values);
+    void init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y, std::vector<keytype> &init_keys, std::vector<uint64_t> &values, std::string machine_name);
     void init_megamind_threads();
     void init_syssweeper_threads();
     void init_ncoresweeper_threads();

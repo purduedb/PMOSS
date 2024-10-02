@@ -372,10 +372,8 @@ int main(int argc, char* argv[])
 {	
 
 	int cfgIdx = 500;
-	
 	if (argc > 1) cfgIdx = std::atoi(argv[1]);
-	
-	cout << cfgIdx << endl;
+	cout << "CONFIG=" << cfgIdx << endl;
 	
 
 	int ds = YCSB;
@@ -440,25 +438,30 @@ int main(int argc, char* argv[])
 	
 
 	int num_workers = 0;
+	std::string machine_name;
 	#if MACHINE == 0
 		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		machine_name = "intel_skx_4s_8n";
 	#elif MACHINE == 1
 		num_workers = 28;  
+		machine_name = "intel_ice_2s_2n";
 	#elif MACHINE == 2
 		num_workers = 28;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#else
-		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		machine_name = "amd_epyc7543_2s_2n";
+	#elif MACHINE == 3
+		num_workers = 6;  // Change the CURR_WORKER_THREADS in TPM.hpp	
+		machine_name = "amd_epyc7543_2s_8n";
 	#endif
 	
 	
 	for(auto n=0; n < num_NUMA_nodes; n++){
-		rt_cpuids.push_back(cPool[n][1]);
-		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+		rt_cpuids.push_back(cPool[n][0]);
+		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
 		
-		ncore_cpuids.push_back(cPool[n][2]);
+		ncore_cpuids.push_back(cPool[n][1]);
 		
 		int cnt = 1;
-		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+		for(size_t j = 2; j < cPool[n].size(); j++, cnt++){
 			wrk_cpuids.push_back(cPool[n][j]);
 			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
 			if (cnt == num_workers) break;
@@ -482,8 +485,11 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
-	// std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/c_" + std::to_string(cfgIdx) + ".txt";
-	// glb_gm.register_grid_cells(config_file);
+	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/";
+	config_file += machine_name;
+	config_file += "/c_" + std::to_string(cfgIdx) + ".txt";
+
+	glb_gm.register_grid_cells(config_file);
 	// glb_gm.buildDataDistIdx(iam, init_keys);
 	// glb_gm.printDataDistIdx();
 	// glb_gm.enforce_scheduling();
@@ -514,7 +520,7 @@ int main(int argc, char* argv[])
 	
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 
-	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
+	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values, machine_name);
 	glb_tpool.init_worker_threads();
 	glb_tpool.init_ncoresweeper_threads();
 	

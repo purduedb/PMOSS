@@ -167,20 +167,22 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	memset(&keys[0], 0x00, 10000000 * sizeof(keytype));
 	memset(&ranges[0], 0x00, 10000000 * sizeof(int));
 	memset(&ops[0], 0x00, 10000000 * sizeof(int));
-	std::string init_file;
-	std::string txn_file;
-	
-	#if MACHINE==0
-		init_file = "/scratch1/yrayhan/";
-	#elif MACHINE==1
-		init_file = "/home/yrayhan/works/erebus/src/";
-	#elif MACHINE==2
-		init_file = "/users/yrayhan/works/erebus/src/";
-	#endif 
+
+
+	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
+	// #if MACHINE==0
+	// 	init_file = "/scratch1/yrayhan/";
+	// #elif MACHINE==1
+	// 	init_file = "/home/yrayhan/works/erebus/src/";
+	// #elif MACHINE==2
+	// 	init_file = "/users/yrayhan/works/erebus/src/";
+	// #elif MACHINE==3
+	// 	init_file = "/users/yrayhan/works/erebus/src/";
+	// #endif 
 	
 	  
 	if (ds == YCSB) {
-		init_file += "workloads/loade_zipf_int_100M.dat";
+		init_file += "dataset/loade_zipf_int_100M.dat";
   } 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
@@ -369,7 +371,7 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 int main(int argc, char* argv[])
 {	
 
-	int cfgIdx = 501;
+	int cfgIdx = 500;
 	
 	if (argc > 1) cfgIdx = std::atoi(argv[1]);
 	
@@ -462,6 +464,7 @@ int main(int argc, char* argv[])
 			if (cnt == num_workers) break;
 		}
 	}
+
 	
 	erebus::scheduler::ResourceManager glb_rm;  
 	erebus::Erebus db(&glb_gm, &glb_rm);
@@ -479,16 +482,12 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
-	// #if MACHINE  == 0
-	// std::string pro_name = 
-	// #elif MACHINE == 1
-	// #elif MACHINE ==2
-	// #endif
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/c_" + std::to_string(cfgIdx) + ".txt";
-	glb_gm.register_grid_cells(config_file);
+	// std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/c_" + std::to_string(cfgIdx) + ".txt";
+	// glb_gm.register_grid_cells(config_file);
 	// glb_gm.buildDataDistIdx(iam, init_keys);
 	// glb_gm.printDataDistIdx();
 	// glb_gm.enforce_scheduling();
+	
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif
@@ -520,58 +519,13 @@ int main(int argc, char* argv[])
 	glb_tpool.init_ncoresweeper_threads();
 	
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(300000));  // 200000(ycsb-a), 490000 (ini) 
-	glb_tpool.terminate_ncoresweeper_threads();
-	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	glb_tpool.dump_ncoresweeper_threads();
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	exit(0);
-	
-	// glb_tpool.terminateRouterThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	// glb_tpool.terminateWorkerThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	// glb_tpool.terminateMegaMindThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	// glb_tpool.terminateSysSweeperThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-
-	// glb_tpool.glb_router_thrds.clear();
-	// glb_tpool.glb_worker_thrds.clear();
-	// glb_tpool.glb_sys_sweeper_thrds.clear();
-	// glb_tpool.glb_megamind_thrds.clear();
-	// glb_tpool.glb_ncore_sweeper_thrds.clear();
-		
+	// std::this_thread::sleep_for(std::chrono::milliseconds(300000));  // 200000(ycsb-a), 490000 (ini) 
+	// glb_tpool.terminate_ncoresweeper_threads();
+	// std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	// glb_tpool.dump_ncoresweeper_threads();
+	// std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	// exit(0);
 	while(1);
-
-	// -------------------------------------------------------------------------------------
-
-	// pcm::SystemCounterState after_sstate = pcm::getSystemCounterState();
-
-	// std::cout << "Instructions per clock:" << pcm::getIPC(before_sstate,after_sstate) << std::endl;
-	// std::cout << "Bytes read:" << pcm::getBytesReadFromMC(before_sstate,after_sstate) << std::endl; 
-	// m->cleanup();
-	// -------------------------------------------------------------------------------------
-
-	// pcm::PCM * m = pcm::PCM::getInstance();
-
-	// pcm::PCM * m2 = pcm::PCM::getInstance();
-
-	// pcm::PCM::ErrorCode returnResult = m->program();
-	// pcm::PCM::ErrorCode returnResult2 = m2->program();
-	// if (returnResult != pcm::PCM::Success){
-	// 	std::cerr << "Intel's PCM couldn't start" << std::endl;
-	// 	std::cerr << "Error code: " << returnResult << std::endl;
-	// 	exit(1);
-	// }
-	// if (returnResult2 != pcm::PCM::Success){
-	// 	std::cerr << "Intel's PCM couldn't start" << std::endl;
-	// 	std::cerr << "Error code: " << returnResult2 << std::endl;
-	// 	exit(1);
-	// }
-
-	// pcm::SystemCounterState before_sstate = pcm::getSystemCounterState();
-	
 }
 
 

@@ -33,11 +33,11 @@ void TPManager::init_worker_threads(){
       glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
           
       while (1) {  
+        // std::this_thread::sleep_for(std::chrono::milliseconds(50));
         if(!glb_worker_thrds[worker_cpuids[i]].running) {
             break;
         }
-                    
-        int result = 0;        
+                      
         Rectangle rec_pop;
         int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
         
@@ -48,7 +48,8 @@ void TPManager::init_worker_threads(){
         if (size_jobqueue != 0){
           glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
           
-                    
+
+          int result=0;
           // -------------------------------------------------------------------------------------
           #if STORAGE == 0
             result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);

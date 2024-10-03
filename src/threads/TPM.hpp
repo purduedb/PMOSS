@@ -78,7 +78,7 @@ class TPManager{
     // static const int CURR_ROUTER_THREADS = 8;
     
     // -------------------------------------------------------------------------------------    
-    static const u64 PERF_STAT_COLLECTION_INTERVAL = 1;
+    static const u64 PERF_STAT_COLLECTION_INTERVAL = 100;
     // -------------------------------------------------------------------------------------
     
     struct SysSweeperThread {

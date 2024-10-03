@@ -8,20 +8,19 @@
 
 recordcount=30000000
 operationcount=100000000
-insertstart = 30000000
+insertstart = 62000000
 workload=com.yahoo.ycsb.workloads.CoreWorkload
 
 readallfields=true
 
 readproportion=0
 updateproportion=0
-scanproportion=1
-insertproportion=0
+scanproportion=0.70
+insertproportion=0.30
 
 requestdistribution=zipfian
 
-maxscanlength=30000
+maxscanlength=100
 
 scanlengthdistribution=uniform
-
 

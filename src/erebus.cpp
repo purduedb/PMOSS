@@ -171,11 +171,14 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   
 	if (ds == YCSB) {
-		init_file += "workloads/loade_zipf_int_100M.dat";
-		txn_file += "workloads/txnse_zipf_int_100M.dat";
+		init_file = "/scratch1/yrayhan/loade_zipf_int_100M.dat";
+		// txn_file += "workloads/txnse_zipf_int_100M.dat";
   } else if (ds == WIKI) {
     init_file = "/scratch1/yrayhan/wiki_ts_200M_uint64.dat";
-  } else {
+  } else if (ds == OSM_CELLIDS) {
+    init_file = "/scratch1/yrayhan/osm_cellids_200M_uint64.dat";
+  } 
+	else {
     fprintf(stderr, "Unknown workload type or key type: %d, %d\n", ds, kt);
     exit(1);
   }
@@ -386,8 +389,8 @@ int main(int argc, char* argv[])
 	
 	cout << cfgIdx << endl;
 	
-	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADA;
+	int ds = OSM_CELLIDS;
+	int wl = OSM_WKLOADH;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -414,6 +417,10 @@ int main(int argc, char* argv[])
 	else if (ds == WIKI){
 		// min_x = 979672113; max_x = 1216240436; min_y = -1; max_y = -1; // 200M points
 		min_x = 979672113; max_x = 1173396408; min_y = -1; max_y = -1;  //100M points
+	}
+	else if (ds == OSM_CELLIDS){
+		// min_x = 33246697004540789; max_x = 13748551737189149045; min_y = -1; max_y = -1;  //800M points
+		min_x = 33246697004540789; max_x = 13748550930623082253; min_y = -1; max_y = -1;  //200M points
 	}
 	
 #if MULTIDIM == 1

@@ -1,10 +1,12 @@
 #!/bin/bash
-ulimit -s unlimited
 
+ulimit -s unlimited
+export PCM_NO_MSR=1
+export PCM_NMI_WATCHDOG=1
 for cfg in {1..79..5}; do
   /homes/yrayhan/works/erebus/build/bin/erebus $cfg
 done
 
-# for cfg in 40 42 43 44 45 47 49; do
+# for cfg in 32 33 34 35 37 38 39; do
 #   /homes/yrayhan/works/erebus/build/bin/erebus $cfg
 # done

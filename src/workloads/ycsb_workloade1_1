@@ -15,13 +15,11 @@ readallfields=true
 
 readproportion=0
 updateproportion=0
-scanproportion=1
-insertproportion=0
+scanproportion=0.70
+insertproportion=0.30
 
 requestdistribution=zipfian
 
-maxscanlength=30000
+maxscanlength=100
 
 scanlengthdistribution=uniform
-
-

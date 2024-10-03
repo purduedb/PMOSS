@@ -389,8 +389,8 @@ int main(int argc, char* argv[])
 	
 	cout << cfgIdx << endl;
 	
-	int ds = OSM_CELLIDS;
-	int wl = OSM_WKLOADH;
+	int ds = YCSB;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 
 	// Keys in database 

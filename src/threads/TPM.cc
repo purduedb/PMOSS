@@ -27,11 +27,16 @@ TPManager::TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID>
 }
 
 void TPManager::init_worker_threads(){
+  std::mutex worker_mutex;
+
   for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
-    glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this]{
+    // worker_mutex.lock();
+    glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this, &worker_mutex]{
       erebus::utils::PinThisThread(worker_cpuids[i]);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
       glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
-          
+      // worker_mutex.unlock();
+
       while (1) {  
         // std::this_thread::sleep_for(std::chrono::milliseconds(50));
         if(!glb_worker_thrds[worker_cpuids[i]].running) {
@@ -91,38 +96,6 @@ void TPManager::init_worker_threads(){
                 
     }
                 
-    });
-  }
-}
-
-void TPManager::init_megamind_threads(){
-  // -------------------------------------------------------------------------------------
-  for (unsigned i = 0; i < CURR_MEGAMIND_THREADS; ++i) {
-    glb_megamind_thrds[megamind_cpuids[i]].th = std::thread([i, this] {
-      erebus::utils::PinThisThread(megamind_cpuids[i]);
-      glb_megamind_thrds[megamind_cpuids[i]].cpuid=megamind_cpuids[i];
-      int numaID = numa_node_of_cpu(megamind_cpuids[i]);
-      while (1) {
-        if(!glb_megamind_thrds[megamind_cpuids[i]].running) {
-            // glb_megamind_thrds[megamind_cpuids[i]].th.detach();
-            break;
-        }
-          
-        // std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-        // PerfCounter perf_counter;
-        // perf_counter.qType = SYNC_TOKEN;
-        // for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
-        // {
-        //     int wkCPUID = itr->second;
-        //     // cout << itr->first<< '\t' << itr->second << '\n';
-        //     glb_worker_thrds[wkCPUID].perf_stats.push(perf_counter);
-        // }
-
-        // IntelPCMCounter iPCMCnt;
-        // iPCMCnt.qType = SYNC_TOKEN;
-        // glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.push(iPCMCnt);
-      }
-      // glb_megamind_thrds[megamind_cpuids[i]].th.detach();
     });
   }
 }
@@ -374,12 +347,15 @@ TPManager::~TPManager(){
 void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y,
     std::vector<keytype> &init_keys, std::vector<uint64_t> &values, std::string machine_name){
   
-  for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {
-    glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys, &values, machine_name] {
-    
+  std::mutex router_mutex;
+  for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {  
+    glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, 
+      &init_keys, &values, machine_name, &router_mutex] {
+
     erebus::utils::PinThisThread(router_cpuids[i]);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
-    
+
     
     double pseudo_min_x = 1;
     double pseudo_max_x = 1 + (max_x - min_x);
@@ -864,8 +840,6 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     }
 
   
-      
-      
       std::vector<int> valid_gcells;
       for (auto gc = 0; gc < gm->nGridCells; gc++){  
         double glx = gm->glbGridCell[gc].lx;

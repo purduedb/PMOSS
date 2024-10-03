@@ -56,54 +56,7 @@ erebus::storage::rtree::RTree* Erebus::build_rtree(int ds, int insert_strategy, 
 		DefaultInsert(this->idx, rectangle);
 	}
 	ifs.close();
-	cout << this->idx->height_ << " " << GetIndexSizeInMB(this->idx) << endl;
-	/*
-	int pgCnt = 10;
-	void *pgs[pgCnt];
-	for(auto i = 0; i < pgCnt; i++) pgs[i] = this->idx->tree_nodes_[i];
-	int status [pgCnt];
-	const int destNodes[pgCnt] = {0, 1, 2, 3, 4, 5, 6, 7, 0, 1};
-	int ret_code  = move_pages(0, pgCnt, pgs, destNodes, status, 0);
-
-	for(auto pnode = 0; pnode < pgCnt; pnode++){
-		void *ptr_to_check = this->idx->tree_nodes_[pnode];
-		int tstatus[1];
-		const int tDestNodes[1] = {destNodes[pnode]};
-		int tret_code = move_pages(0, 1, &ptr_to_check, tDestNodes, tstatus, 0);
-		printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, tstatus[0], tret_code);    
-		void *pgs[9] = {
-			&(this->idx->tree_nodes_[pnode]->father),
-			&(this->idx->tree_nodes_[pnode]->children),
-			&(this->idx->tree_nodes_[pnode]->entry_num),
-			&(this->idx->tree_nodes_[pnode]->is_overflow),
-			&(this->idx->tree_nodes_[pnode]->is_leaf),
-			&(this->idx->tree_nodes_[pnode]->origin_center),
-			&(this->idx->tree_nodes_[pnode]->maximum_entry),
-			&(this->idx->tree_nodes_[pnode]->minimum_entry),
-			&(this->idx->tree_nodes_[pnode]->RR_s)
-					};
-		
-		int pgStatus[9];
-		move_pages(0, 9, pgs, NULL, pgStatus, 0);
-		for(auto i = 0; i < 9; i++)
-			cout << pgStatus[i] << " ";
-		cout << endl;
-		
-		
-		// print all the nodes addresses
-		cout << "\t\t\t-------------------------------------------------------------------------------------" << endl;
-		for(auto cnode = 0; cnode <= pnode; cnode++){
-			void *cptr_to_check = this->idx->tree_nodes_[cnode];
-			int tcstatus[1];
-			
-			int ctret_code = move_pages(0, 1, &cptr_to_check, NULL, tcstatus, 0);
-			printf("Memory at %p is at %d node (retcode %d)\n", cptr_to_check, tcstatus[0], ctret_code);    
-
-		}
-		cout << "\t\t\t-------------------------------------------------------------------------------------" << endl;
-		
-	}*/
-		
+	cout << this->idx->height_ << " " << GetIndexSizeInMB(this->idx) << endl;	
 	return this->idx;
 }
 
@@ -376,8 +329,8 @@ int main(int argc, char* argv[])
 	cout << "CONFIG=" << cfgIdx << endl;
 	
 
-	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADC;
+	int ds = WIKI;
+	int wl = WIKI_WKLOADC;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -519,9 +472,8 @@ int main(int argc, char* argv[])
 	// -------------------------------------------------------------------------------------
 	
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
-
-	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values, machine_name);
 	glb_tpool.init_worker_threads();
+	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values, machine_name);
 	glb_tpool.init_ncoresweeper_threads();
 	
 	

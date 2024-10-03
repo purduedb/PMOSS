@@ -123,19 +123,20 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 
 
 	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
-	// #if MACHINE==0
-	// 	init_file = "/scratch1/yrayhan/";
+	#if MACHINE==0
+		init_file = "/scratch1/yrayhan/";
 	// #elif MACHINE==1
 	// 	init_file = "/home/yrayhan/works/erebus/src/";
 	// #elif MACHINE==2
 	// 	init_file = "/users/yrayhan/works/erebus/src/";
 	// #elif MACHINE==3
 	// 	init_file = "/users/yrayhan/works/erebus/src/";
-	// #endif 
+	#endif 
 	
 	  
 	if (ds == YCSB) {
-		init_file += "dataset/loade_zipf_int_100M.dat";
+		// init_file += "dataset/loade_zipf_int_100M.dat";
+		init_file += "loade_zipf_int_100M.dat";
   } 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
@@ -329,8 +330,8 @@ int main(int argc, char* argv[])
 	cout << "CONFIG=" << cfgIdx << endl;
 	
 
-	int ds = WIKI;
-	int wl = WIKI_WKLOADC;
+	int ds = YCSB;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -406,7 +407,7 @@ int main(int argc, char* argv[])
 		machine_name = "amd_epyc7543_2s_8n";
 	#endif
 	
-	
+	#if MACHINE==3
 	for(auto n=0; n < num_NUMA_nodes; n++){
 		rt_cpuids.push_back(cPool[n][0]);
 		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
@@ -420,7 +421,21 @@ int main(int argc, char* argv[])
 			if (cnt == num_workers) break;
 		}
 	}
-
+	#else
+		for(auto n=0; n < num_NUMA_nodes; n++){
+		rt_cpuids.push_back(cPool[n][1]);
+		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+		
+		ncore_cpuids.push_back(cPool[n][2]);
+		
+		int cnt = 1;
+		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+			wrk_cpuids.push_back(cPool[n][j]);
+			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+			if (cnt == num_workers) break;
+		}
+	}
+	#endif
 	
 	erebus::scheduler::ResourceManager glb_rm;  
 	erebus::Erebus db(&glb_gm, &glb_rm);
@@ -441,6 +456,7 @@ int main(int argc, char* argv[])
 	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/";
 	config_file += machine_name;
 	config_file += "/c_" + std::to_string(cfgIdx) + ".txt";
+	cout << config_file << endl;
 
 	glb_gm.register_grid_cells(config_file);
 	// glb_gm.buildDataDistIdx(iam, init_keys);

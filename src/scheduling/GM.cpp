@@ -95,7 +95,6 @@ void GridManager::register_grid_cells(string configFile){
 	double delY = yList[1] - yList[0];
 	
 	// -------------------------------------------------------------------------------------
-	
 	int trk_cid = 0;
   
 	// auto start = std::chrono::high_resolution_clock::now();
@@ -114,27 +113,11 @@ void GridManager::register_grid_cells(string configFile){
 			this->glbGridCell[trk_cid].idNUMA = numaConfig[trk_cid];
 			this->glbGridCell[trk_cid].idCPU = cpuConfig[trk_cid]; 
 			
-      
-			// Reallocate the index nodes according to the configuration
-	// #if LINUX != 0
-	// 	#if STORAGE == 0
-	// 		MigrateNodes(this->idx, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
-	// 	#elif STORAGE == 1
-	// 		MigrateNodesQuad(this->idx_quadtree, xList[i], xList[i]+delX, yList[j], yList[j]+delY, numaConfig[trk_cid]);    
-	// 	#elif STORAGE == 2
-	// 		this->idx_btree->migrate(xList[i], xList[i]+delX, 30000000, numaConfig[trk_cid]);
-	// 	#endif
-	// #endif
-    
 		// -------------------------------------------------------------------------------------
       trk_cid++;
 			
 		}
 	}
-  
-  // auto finish = std::chrono::high_resolution_clock::now();
-  // std::chrono::duration<double> elapsed = finish - start;
-  // cout << "Checkpoint: INDEX_MIGRATION_COMPLETED: " << elapsed.count() << endl;
 }
 
 

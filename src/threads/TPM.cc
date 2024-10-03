@@ -27,11 +27,10 @@ TPManager::TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID>
 }
 
 void TPManager::init_worker_threads(){
-  std::mutex worker_mutex;
 
   for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
     // worker_mutex.lock();
-    glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this, &worker_mutex]{
+    glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this]{
       erebus::utils::PinThisThread(worker_cpuids[i]);
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
       glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
@@ -841,48 +840,49 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
 
   
       std::vector<int> valid_gcells;
-      for (auto gc = 0; gc < gm->nGridCells; gc++){  
-        double glx = gm->glbGridCell[gc].lx;
-        double gly = gm->glbGridCell[gc].ly;
-        double ghx = gm->glbGridCell[gc].hx;
-        double ghy = gm->glbGridCell[gc].hy;
-        #if MULTIDIM == 1
-          if (hx < glx || lx > ghx || hy < gly || ly > ghy)
-            continue;
-          else {
-            valid_gcells.push_back(gc);  
-            query.validGridIds.push_back(gc);
-          }
-        #else
-          if (lx <= ghx && lx >= glx){
-            valid_gcells.push_back(gc);  
-            query.validGridIds.push_back(gc);
-          }
-          else 
-            continue; 
-        #endif
-      }
+      // for (auto gc = 0; gc < gm->nGridCells; gc++){  
+      //   double glx = gm->glbGridCell[gc].lx;
+      //   double gly = gm->glbGridCell[gc].ly;
+      //   double ghx = gm->glbGridCell[gc].hx;
+      //   double ghy = gm->glbGridCell[gc].hy;
+      //   #if MULTIDIM == 1
+      //     if (hx < glx || lx > ghx || hy < gly || ly > ghy)
+      //       continue;
+      //     else {
+      //       valid_gcells.push_back(gc);  
+      //       query.validGridIds.push_back(gc);
+      //     }
+      //   #else
+      //     if (lx <= ghx && lx >= glx){
+      //       valid_gcells.push_back(gc);  
+      //       query.validGridIds.push_back(gc);
+      //     }
+      //     else 
+      //       continue; 
+      //   #endif
+      // }
       
-      // for (auto gc = 0; gc < gm->nGridCells; gc++){
-      //   valid_gcells.push_back(gc);   
-      // }                
-      if (valid_gcells.size() == 0) continue;  
+      // valid_gcells.clear();
+      for (auto gc = 0; gc < gm->nGridCells; gc++){
+        valid_gcells.push_back(gc);   
+      }                
+      // if (valid_gcells.size() == 0) continue;  
       
-      for(size_t qc1 = 0; qc1 < valid_gcells.size()-1; qc1++){
-          int pCell = valid_gcells[qc1];
-          for(size_t qc2 = qc1; qc2 < valid_gcells.size(); qc2++){
-              int cCell = valid_gcells[qc2];
-              glb_router_thrds[router_cpuids[i]].qCorrMatrix[pCell][cCell] ++;
-              glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
-          }
-      }
+      // for(size_t qc1 = 0; qc1 < valid_gcells.size()-1; qc1++){
+      //     int pCell = valid_gcells[qc1];
+      //     for(size_t qc2 = qc1; qc2 < valid_gcells.size(); qc2++){
+      //         int cCell = valid_gcells[qc2];
+      //         glb_router_thrds[router_cpuids[i]].qCorrMatrix[pCell][cCell] ++;
+      //         glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
+      //     }
+      // }
 
-      valid_gcells ={
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 
-        31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 
-        61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 
-        91, 92, 93, 94, 95, 96, 97, 98, 99
-      };
+      // valid_gcells ={
+      //   0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 
+      //   31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 
+      //   61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 
+      //   91, 92, 93, 94, 95, 96, 97, 98, 99
+      // };
       
       // Push the query to the correct worker thread's job queue
       std::mt19937 genInts(rd());

@@ -22,6 +22,7 @@ void TPManager::init_worker_threads(){
   for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
     glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this]{
       erebus::utils::PinThisThread(worker_cpuids[i]);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
       glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
           
       PerfEvent e;
@@ -691,6 +692,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys, &values] {
     
     erebus::utils::PinThisThread(router_cpuids[i]);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
     
     
@@ -920,7 +922,11 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // for inserts open different keyrange config for different router
       // or use a single router
       std::ifstream input;
-      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/";
+      #if MACHINE==0
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/skx_4s_8n/";
+      #elif MACHINE==1
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/ice_2s_2n/";
+      #endif
 
       if (wl == SD_YCSB_WKLOADA){
         wl_config += "ycsb_workloada_" + to_string(router_cpuids[i]);

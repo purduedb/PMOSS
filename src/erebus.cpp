@@ -525,7 +525,6 @@ int main(int argc, char* argv[])
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 
 	glb_tpool.init_worker_threads();
-	// glb_tpool.init_syssweeper_threads();
 	glb_tpool.init_megamind_threads();
 	glb_tpool.init_ncoresweeper_threads();
 	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);

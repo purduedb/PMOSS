@@ -22,6 +22,7 @@ void TPManager::init_worker_threads(){
   for (unsigned i = 0; i < CURR_WORKER_THREADS; ++i) {
     glb_worker_thrds[worker_cpuids[i]].th = std::thread([i, this]{
       erebus::utils::PinThisThread(worker_cpuids[i]);
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
       glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
           
       PerfEvent e;
@@ -701,8 +702,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
   
   for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {
     glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys, &values] {
-    
     erebus::utils::PinThisThread(router_cpuids[i]);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
     
     

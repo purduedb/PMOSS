@@ -3,7 +3,7 @@
 ulimit -s unlimited
 export PCM_NO_MSR=1
 export PCM_NMI_WATCHDOG=1
-for cfg in {1..79..4}; do
+for cfg in {25..79..4}; do
   /homes/yrayhan/works/erebus/build/bin/erebus $cfg
 done
 

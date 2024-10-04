@@ -1197,40 +1197,29 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // -------------------------------------------------------------------------------------
       // Check which grid the query belongs to 
       std::vector<int> valid_gcells;
-      #if LINUX == 3
-        for (auto gc = 0; gc < gm->nGridCells; gc++){  
-          double glx = gm->glbGridCell[gc].lx;
-          double gly = gm->glbGridCell[gc].ly;
-          double ghx = gm->glbGridCell[gc].hx;
-          double ghy = gm->glbGridCell[gc].hy;
-          #if MULTIDIM == 1
-            if (hx < glx || lx > ghx || hy < gly || ly > ghy)
-                continue;
-            else {
-                /**
-                 * 1. Store IDs of the Grids that the query intersects
-                 * 2. Update the query frequency
-                 * 3. Update the query's valid grid cells so that it can maintain a local view of the data distribution
-                */
-                valid_gcells.push_back(gc);  
-                // gm->freqQueryDistPushed[gc]++;  // I am currently only keeping where it goes, don't care about  the intersections
-                query.validGridIds.push_back(gc);
-            }
-          #else
-            if (lx <= ghx && lx >= glx){
+      
+      for (auto gc = 0; gc < gm->nGridCells; gc++){  
+        double glx = gm->glbGridCell[gc].lx;
+        double gly = gm->glbGridCell[gc].ly;
+        double ghx = gm->glbGridCell[gc].hx;
+        double ghy = gm->glbGridCell[gc].hy;
+        #if MULTIDIM == 1
+          if (hx < glx || lx > ghx || hy < gly || ly > ghy)
+              continue;
+          else {
               valid_gcells.push_back(gc);  
+              // gm->freqQueryDistPushed[gc]++;  // currently only keeping where it goes, don't care about  the intersections
               query.validGridIds.push_back(gc);
-            }
-            else continue;
-          #endif 
-              
-        }
-      #else
-        for (auto gc = 0; gc < gm->nGridCells; gc++){
-          valid_gcells.push_back(gc); 
-          query.validGridIds.push_back(gc); // May not be necessary
-        }                
-      #endif 
+          }
+        #else
+          if (lx <= ghx && lx >= glx){
+            valid_gcells.push_back(gc);  
+            query.validGridIds.push_back(gc);
+          }
+          else continue;
+        #endif 
+            
+      }
       
       // Check the sanity of the query       
       if (valid_gcells.size() == 0) continue;  
@@ -1364,7 +1353,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         glb_worker_thrds[cpuid].jobs.push(query);
         // -------------------------------------------------------------------------------------
         // Use it as a throttling factor
-        // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        // std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
             
     });

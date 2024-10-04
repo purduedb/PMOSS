@@ -326,7 +326,7 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 int main(int argc, char* argv[])
 {	
 
-	int cfgIdx = 500;
+	int cfgIdx = 503;
 	if (argc > 1) cfgIdx = std::atoi(argv[1]);
 	cout << "CONFIG=" << cfgIdx << endl;
 	

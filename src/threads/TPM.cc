@@ -25,7 +25,7 @@ void TPManager::init_worker_threads(){
       glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
           
       PerfEvent e;
-      static int cnt = 0;
+      int cnt = 0;
       
       // ofstream outfile;
       // outfile.open ("/homes/yrayhan/works/erebus/src/a_test/" + std::to_string(worker_cpuids[i]) + "example.txt");
@@ -44,10 +44,10 @@ void TPManager::init_worker_threads(){
                     
         if (size_jobqueue != 0){
           glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
-          // if (cnt % PERF_STAT_COLLECTION_INTERVAL == 0) {
-          //     e.startCounters();
-          // }
-          e.startCounters();
+          if (cnt == 0) {
+            e.startCounters();
+          }
+          // e.startCounters();
                     
           // -------------------------------------------------------------------------------------
           #if STORAGE == 0
@@ -77,26 +77,40 @@ void TPManager::init_worker_threads(){
             //   << static_cast<uint64_t>(rec_pop.bottom_) << endl;
           #endif
           
-          // cnt +=1;
-          // if (cnt % PERF_STAT_COLLECTION_INTERVAL == (PERF_STAT_COLLECTION_INTERVAL-1)){
-          e.stopCounters();
-                    
-          PerfCounter perf_counter;
-          for(auto j=0; j < e.events.size(); j++){
-            if (isnan(e.events[j].readCounter()) || isinf(e.events[j].readCounter())) perf_counter.raw_counter_values[j] = 0;
-            else perf_counter.raw_counter_values[j] = e.events[j].readCounter();
-          }
-                            
-          perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
-          perf_counter.rscan_query = rec_pop;
-          perf_counter.result = result;
-          perf_counter.gIdx = rec_pop.aGrid;
-                            
-          glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
-          // cnt = 0;
-                
+          cnt +=1;
+          if (cnt == PERF_STAT_COLLECTION_INTERVAL){
+            e.stopCounters();
+            cnt=0;
+            PerfCounter perf_counter;
+            for(auto j=0; j < e.events.size(); j++){
+              if (isnan(e.events[j].readCounter()) || isinf(e.events[j].readCounter())) perf_counter.raw_counter_values[j] = 0;
+              else perf_counter.raw_counter_values[j] = e.events[j].readCounter();
+            }
+                              
+            perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
+            perf_counter.rscan_query = rec_pop;
+            perf_counter.result = result;
+            perf_counter.gIdx = rec_pop.aGrid;
+                              
+            glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
 
+          }
+          
                     
+          // PerfCounter perf_counter;
+          // for(auto j=0; j < e.events.size(); j++){
+          //   if (isnan(e.events[j].readCounter()) || isinf(e.events[j].readCounter())) perf_counter.raw_counter_values[j] = 0;
+          //   else perf_counter.raw_counter_values[j] = e.events[j].readCounter();
+          // }
+                            
+          // perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
+          // perf_counter.rscan_query = rec_pop;
+          // perf_counter.result = result;
+          // perf_counter.gIdx = rec_pop.aGrid;
+                            
+          // glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
+          
+                          
           /**
            * TODO: You should be updating the outstanding queries 
           */

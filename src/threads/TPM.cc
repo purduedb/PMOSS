@@ -860,12 +860,9 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
             continue; 
         #endif
       }
-      
-      // valid_gcells.clear();
-      // for (auto gc = 0; gc < gm->nGridCells; gc++){
-      //   valid_gcells.push_back(gc);   
-      // }                
+                    
       if (valid_gcells.size() == 0) continue;  
+      
       
       for(size_t qc1 = 0; qc1 < valid_gcells.size()-1; qc1++){
           int pCell = valid_gcells[qc1];
@@ -884,11 +881,23 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
           91, 92, 93, 94, 95, 96, 97, 98, 99
         };
       }
-      else if(this->gm->config == 502){
-        
-      }
       else if(this->gm->config == 503){
-        
+        std::vector<std::vector<int>> sn_numa;
+        #if MACHINE==0
+          sn_numa={{0, 15},{16, 27},{28, 39},{40, 51},{52, 63},{64, 75},{76, 87},{88, 99}};
+        #elif MACHINE==1
+          sn_numa={{0,49},{50,99}};
+        #elif MACHINE==2
+          sn_numa={{0,49},{50,99}};
+        #elif MACHINE==3
+          sn_numa={{0, 15},{16, 27},{28, 39},{40, 51},{52, 63},{64, 75},{76 87},{88, 99}};
+        #endif 
+        std::uniform_int_distribution<int> dqt(0, valid_gcells.size()-1);
+        int choose_numa = dqt(gen);
+        valid_gcells={};
+        for(auto k=sn_numa[choose_numa][0];k<=sn_numa[choose_numa][1];k++){
+          valid_gcells.push_back(k);
+        }
       }
 
       

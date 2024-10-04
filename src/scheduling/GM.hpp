@@ -15,7 +15,7 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define SINGLE_DIMENSION_KEY_LIMIT 100000000
 #define BTREE_INIT_LIMIT 30000000
-#define LIMIT 1000                  // test btree workload
+#define LIMIT 1000                
 #define MAX_GRID_CELL 100
 #define STAMP_LR_PARAM 4            
 #define MAX_XPAR 10
@@ -26,7 +26,7 @@ using std::ofstream;
 #define MULTIDIM 0 
 #define STORAGE 2   // RTree(0), QTree(1), BTree
 #define MACHINE 0   // 0 (BIGDATA), 1(DBSERVER), 2 (AMD 1NPS)
-#define LINUX 3     // 0 (SE 0, SE-NUMA 1, SN-NUMA 2, OURS, 3)
+#define LINUX 0     // 0 (SE 0, SE-NUMA 1, SN-NUMA 2)
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------

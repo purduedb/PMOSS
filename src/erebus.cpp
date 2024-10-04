@@ -123,20 +123,21 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 
 
 	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
+	
 	#if MACHINE==0
 		init_file = "/scratch1/yrayhan/";
-	// #elif MACHINE==1
-	// 	init_file = "/home/yrayhan/works/erebus/src/";
-	// #elif MACHINE==2
-	// 	init_file = "/users/yrayhan/works/erebus/src/";
-	// #elif MACHINE==3
-	// 	init_file = "/users/yrayhan/works/erebus/src/";
+	#elif MACHINE==1
+		init_file;
+	#elif MACHINE==2
+		init_file;
+	#elif MACHINE==3
+		init_file;
 	#endif 
 	
 	  
 	if (ds == YCSB) {
-		// init_file += "dataset/loade_zipf_int_100M.dat";
-		init_file += "loade_zipf_int_100M.dat";
+		init_file += "dataset/loade_zipf_int_100M.dat";
+		// init_file += "loade_zipf_int_100M.dat";
   } 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
@@ -319,7 +320,7 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 	this->glb_tpool = tp;
 }
 
-}   // namespace erebus
+}   
 
 
 int main(int argc, char* argv[])
@@ -329,7 +330,6 @@ int main(int argc, char* argv[])
 	if (argc > 1) cfgIdx = std::atoi(argv[1]);
 	cout << "CONFIG=" << cfgIdx << endl;
 	
-
 	int ds = YCSB;
 	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;

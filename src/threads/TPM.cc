@@ -900,8 +900,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         }
       }
 
-      
-      
+
       // Push the query to the correct worker thread's job queue
       std::mt19937 genInts(rd());
       std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1);

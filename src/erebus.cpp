@@ -127,7 +127,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	#if MACHINE==0
 		init_file = "/scratch1/yrayhan/";
 	#elif MACHINE==1
-		init_file;
+		init_file = "/home/yrayhan/works/erebus/src/workloads/";
 	#elif MACHINE==2
 		init_file;
 	#elif MACHINE==3
@@ -136,8 +136,8 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	
 	  
 	if (ds == YCSB) {
-		init_file += "dataset/loade_zipf_int_100M.dat";
-		// init_file += "loade_zipf_int_100M.dat";
+		// init_file += "dataset/loade_zipf_int_100M.dat";
+		init_file += "loade_zipf_int_100M.dat";
   } 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
@@ -459,9 +459,12 @@ int main(int argc, char* argv[])
 	cout << config_file << endl;
 
 	glb_gm.register_grid_cells(config_file);
-	// glb_gm.buildDataDistIdx(iam, init_keys);
-	// glb_gm.printDataDistIdx();
-	// glb_gm.enforce_scheduling();
+	if (cfgIdx != 500){
+		glb_gm.buildDataDistIdx(iam, init_keys);
+		glb_gm.printDataDistIdx();
+		glb_gm.enforce_scheduling();
+	}
+		
 	
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);

@@ -129,15 +129,15 @@ void GridManager::enforce_scheduling(){
     double ly = this->glbGridCell[i].ly;
     double hy = this->glbGridCell[i].hy;
     int numa_id = this->glbGridCell[i].idNUMA;
-  #if LINUX != 0
-		#if STORAGE == 0
-			MigrateNodes(this->idx, lx, hx, ly, hy, numa_id);    
-		#elif STORAGE == 1
-			MigrateNodesQuad(this->idx_quadtree, lx, hx, ly, hy, numa_id);    
-		#elif STORAGE == 2
-			this->idx_btree->migrate_(lx, this->DataDist[i], numa_id);
-		#endif
-	#endif
+  
+    #if STORAGE == 0
+        MigrateNodes(this->idx, lx, hx, ly, hy, numa_id);    
+    #elif STORAGE == 1
+        MigrateNodesQuad(this->idx_quadtree, lx, hx, ly, hy, numa_id);    
+    #elif STORAGE == 2
+        this->idx_btree->migrate_(lx, this->DataDist[i], numa_id);
+    #endif
+
   }
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;

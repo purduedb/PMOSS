@@ -25,7 +25,7 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define MULTIDIM 0 
 #define STORAGE 2   // RTree(0), QTree(1), BTree
-#define MACHINE 0   // 0 (BIGDATA), 1(DBSERVER), 2 (AMD 1NPS)
+#define MACHINE 1   // 0 (BIGDATA), 1(DBSERVER), 2 (AMD 1NPS)
 #define LINUX 0     // 0 (SE 0, SE-NUMA 1, SN-NUMA 2)
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------

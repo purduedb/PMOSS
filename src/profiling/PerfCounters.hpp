@@ -1,5 +1,4 @@
 #pragma once
-#include <immintrin.h>
 // -------------------------------------------------------------------------------------
 #include "shared-headers/PerfEvent.hpp"
 // #include "PCMMem.hpp"

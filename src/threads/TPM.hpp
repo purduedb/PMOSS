@@ -9,7 +9,6 @@
 #include <random>
 // -------------------------------------------------------------------------------------
 #include <bits/stdc++.h>
-#include <immintrin.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 // -------------------------------------------------------------------------------------
@@ -74,6 +73,12 @@ class TPManager{
     static const int CURR_MEGAMIND_THREADS = 0;
     static const int CURR_ROUTER_THREADS = 8;
 	  static const int CURR_WORKER_THREADS = 48;
+  #elif MACHINE == 4
+    static const int CURR_NCORE_SWEEPER_THREADS = 1;
+    static const int CURR_SYS_SWEEPER_THREADS = 1;
+    static const int CURR_MEGAMIND_THREADS = 1;
+    static const int CURR_ROUTER_THREADS = 1;
+	  static const int CURR_WORKER_THREADS = 56;
 #else
 	  static const int CURR_WORKER_THREADS = 56;
 #endif

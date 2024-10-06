@@ -172,7 +172,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
 	  
 	if (ds == YCSB) {
-		init_file += "dataset/loade_zipf_int_100M.dat";
+		init_file += "dataset/loade_zipf_int_200M.dat";
   } 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
@@ -361,14 +361,14 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 int main(int argc, char* argv[])
 {	
 
-	int cfgIdx = 90;
+	int cfgIdx = 0;
 	
 	if (argc > 1) cfgIdx = std::atoi(argv[1]);
 	
 	cout << cfgIdx << endl;
 	
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADC;
+	int wl = SD_YCSB_WKLOADH;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -439,6 +439,8 @@ int main(int argc, char* argv[])
 		mm_cpuids.push_back(63);
 	#elif MACHINE == 3
 		num_workers = 6;  // Change the CURR_WORKER_THREADS in TPM.hpp
+	#elif MACHINE == 4
+		num_workers = 56;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#else
 		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#endif
@@ -470,6 +472,19 @@ int main(int argc, char* argv[])
 				if (cnt == num_workers) break;
 			}
 		}
+	#elif MACHINE==4
+		
+		for(auto n=0; n < 1; n++){
+			rt_cpuids.push_back(cPool[n][0]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
+			ncore_cpuids.push_back(cPool[n][1]);
+			int cnt = 1;
+			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
+		}
 	#endif 
 	
 	erebus::scheduler::ResourceManager glb_rm;  
@@ -492,6 +507,8 @@ int main(int argc, char* argv[])
 	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
 	#elif MACHINE==3
 	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + ".txt";
+	#elif MACHINE==4
+	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/nvidia_gh_1s_1n/c_" + std::to_string(cfgIdx) + ".txt";
 	#endif
 
 	glb_gm.register_grid_cells(config_file);
@@ -525,7 +542,7 @@ int main(int argc, char* argv[])
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 
 	glb_tpool.init_worker_threads();
-	glb_tpool.init_megamind_threads();
+	// glb_tpool.init_megamind_threads();
 	glb_tpool.init_ncoresweeper_threads();
 	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	

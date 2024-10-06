@@ -936,6 +936,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_2n/";
       #elif MACHINE==3
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_8n/";
+      #elif MACHINE==4
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/1s_1n/";
       #endif
       
       if (wl == SD_YCSB_WKLOADA){

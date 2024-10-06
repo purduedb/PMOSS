@@ -8,11 +8,7 @@
 #include "scheduling/RM.hpp"
 #include "scheduling/GM.hpp"
 // -------------------------------------------------------------------------------------
-#if defined(__GNUC__) || defined(__clang__)
-    #include <cpuid.h>  // For __get_cpuid function
-#elif defined(_MSC_VER)
-    #include <intrin.h> // For __cpuid on MSVC
-#endif
+
 
 
 namespace erebus

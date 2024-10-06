@@ -7,7 +7,6 @@
 #include <atomic>
 #include <iostream>
 // -------------------------------------------------------------------------------------
-#include <immintrin.h>
 #include <sched.h>
 #include <numa.h> 
 #include <numaif.h>
@@ -36,7 +35,9 @@ struct OptLock {
     uint64_t version;
     version = typeVersionLockObsolete.load();
     if (isLocked(version) || isObsolete(version)) {
-      _mm_pause();
+      // _mm_pause();
+      // sched_yield();
+      asm volatile("yield");
       needRestart = true;
     }
     return version;
@@ -55,7 +56,8 @@ struct OptLock {
     if (typeVersionLockObsolete.compare_exchange_strong(version, version + 0b10)) {
       version = version + 0b10;
     } else {
-      _mm_pause();
+      // _mm_pause();
+      asm volatile("yield");
       needRestart = true;
     }
   }
@@ -256,7 +258,9 @@ struct BTree {
     if (count>3)
       sched_yield();
     else
-      _mm_pause();
+      // _mm_pause();
+      // sched_yield();
+      asm volatile("yield");
   }
 
   void insert(Key k, Value v) {

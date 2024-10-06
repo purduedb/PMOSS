@@ -127,6 +127,12 @@ enum {
   WIKI_WKLOADA1,
   WIKI_WKLOADA2,
   WIKI_WKLOADA3,
+  OSM_WKLOADA,
+  OSM_WKLOADC,
+  OSM_WKLOADE,
+  OSM_WKLOADH,
+  SD_YCSB_WKLOADA1,
+  SD_YCSB_WKLOADH1,
 };
 
 enum {
@@ -136,6 +142,8 @@ enum {
   YCSB,
   WIKI,
   FB,
+  OSM_CELLIDS,
+
 };
 
 enum {

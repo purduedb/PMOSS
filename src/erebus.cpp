@@ -405,6 +405,9 @@ int main(int argc, char* argv[])
 	#elif MACHINE == 3
 		num_workers = 6;  // Change the CURR_WORKER_THREADS in TPM.hpp	
 		machine_name = "amd_epyc7543_2s_8n";
+	#elif MACHINE == 4
+		num_workers = 56;  // Change the CURR_WORKER_THREADS in TPM.hpp	
+		machine_name = "nvidia_gh_1s_1n";
 	#endif
 	
 	#if MACHINE==3
@@ -421,6 +424,18 @@ int main(int argc, char* argv[])
 			if (cnt == num_workers) break;
 		}
 	}
+	#elif MACHINE==4
+		for(auto n=0; n < 1; n++){
+			rt_cpuids.push_back(cPool[n][0]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
+			ncore_cpuids.push_back(cPool[n][1]);
+			int cnt = 1;
+			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
+		}
 	#else
 		for(auto n=0; n < num_NUMA_nodes; n++){
 		rt_cpuids.push_back(cPool[n][1]);

@@ -145,6 +145,10 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	else if (ds == FB){
 		init_file += "dataset/fb_200M_uint64.dat";
 	}
+	else if (ds == OSM_CELLIDS){
+		// init_file += "dataset/osm_cellids_200M_uint64.dat";
+		init_file += "osm_cellids_100M_uint64.dat";
+	}
 	else {
     fprintf(stderr, "Unknown workload type or key type: %d, %d\n", ds, kt);
     exit(1);
@@ -330,8 +334,8 @@ int main(int argc, char* argv[])
 	if (argc > 1) cfgIdx = std::atoi(argv[1]);
 	cout << "CONFIG=" << cfgIdx << endl;
 	
-	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADC;
+	int ds = OSM_CELLIDS;
+	int wl = OSM_WKLOADH;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -362,6 +366,13 @@ int main(int argc, char* argv[])
 	else if (ds == FB){
 		min_x = 1; max_x = 18446744073709551615; min_y = -1; max_y = -1; 
 	}
+	else if (ds == OSM_CELLIDS){
+		// min_x = 33246697004540789; max_x = 13748549577969753901; min_y = -1; max_y = -1;  	//100M points
+		min_x = 33246697004540789; max_x = 5170332552548576529; min_y = -1; max_y = -1;  			//200M points
+		// min_x = 33246697004540789; max_x = 13748551737189149045; min_y = -1; max_y = -1;  	//800M points
+		// min_x = 33246697004540789; max_x = 13748550930623082253; min_y = -1; max_y = -1;  	//200M points
+	}
+	
 	
 #if MULTIDIM == 1
 	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, 10, 10, min_x, max_x, min_y, max_y);
@@ -474,7 +485,7 @@ int main(int argc, char* argv[])
 	cout << config_file << endl;
 
 	glb_gm.register_grid_cells(config_file);
-	if (cfgIdx != 500){
+	if (cfgIdx > 505){
 		glb_gm.buildDataDistIdx(iam, init_keys);
 		glb_gm.printDataDistIdx();
 		glb_gm.enforce_scheduling();

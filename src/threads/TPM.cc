@@ -157,11 +157,11 @@ void TPManager::dump_ncoresweeper_threads(){
 
   string dirName = std::string(PROJECT_SOURCE_DIR);
   #if STORAGE == 0
-      dirName += "/kb/" + std::to_string(key);
+      dirName += "/kb_r_linux/" + std::to_string(key);
   #elif STORAGE == 1
-      dirName += "/kb_quad/" + std::to_string(key);
+      dirName += "/kb_quad_linux/" + std::to_string(key);
   #elif STORAGE == 2
-      dirName += "/kb_b/" + std::to_string(key);
+      dirName += "/kb_b_linux/" + std::to_string(key);
   #endif
   
   mkdir(dirName.c_str(), 0777);
@@ -576,9 +576,10 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     else if (
       wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
       wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADE1 || wl == SD_YCSB_WKLOADH || 
-      wl == SD_YCSB_WKLOADI ||
+      wl == SD_YCSB_WKLOADI || wl == SD_YCSB_WKLOADA1 || wl == SD_YCSB_WKLOADH1 || 
       wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE || wl == WIKI_WKLOADI || 
-      wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3
+      wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3 ||
+      wl == OSM_WKLOADA || wl == OSM_WKLOADC || wl == OSM_WKLOADE || wl == OSM_WKLOADH || wl == OSM_WKLOADA0
     ){
       // for inserts open different keyrange config for different router
       // or use a single router
@@ -643,6 +644,26 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       }
       else if(wl == WIKI_WKLOADH){
         wl_config += "wiki_workloadh";
+        input.open(wl_config);
+      }
+      else if(wl == OSM_WKLOADA){
+        wl_config += "osm_workloada_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if(wl == OSM_WKLOADA0){
+        wl_config += "osm_workloada0_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if(wl == OSM_WKLOADC){
+        wl_config += "osm_workloadc";
+        input.open(wl_config);
+      }
+      else if(wl == OSM_WKLOADE){
+        wl_config += "osm_workloade_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if(wl == OSM_WKLOADH){
+        wl_config += "osm_workloadh";
         input.open(wl_config);
       }
       else{
@@ -822,9 +843,11 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     }
     else if (
       wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
-      wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADE1 || wl == SD_YCSB_WKLOADH || wl == SD_YCSB_WKLOADI ||
+      wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADE1 || wl == SD_YCSB_WKLOADH || 
+      wl == SD_YCSB_WKLOADI || wl == SD_YCSB_WKLOADA1 || wl == SD_YCSB_WKLOADH1 || 
       wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE || wl == WIKI_WKLOADI || 
-      wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3
+      wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3 ||
+      wl == OSM_WKLOADA || wl == OSM_WKLOADC || wl == OSM_WKLOADE || wl == OSM_WKLOADH || wl == OSM_WKLOADA0
       ){
       ycsb_wl.DoTransaction(tx_keys);  
       uint64_t value = -1;
@@ -873,7 +896,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
           }
       }
 
-      if(this->gm->config == 500 || this->gm->config == 501){
+      if(this->gm->config >= 500 && this->gm->config <= 505){
         valid_gcells ={
           0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 
           31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 
@@ -881,7 +904,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
           91, 92, 93, 94, 95, 96, 97, 98, 99
         };
       }
-      else if(this->gm->config == 503){
+      else if(this->gm->config == 506){
         std::vector<std::vector<int>> sn_numa;
         #if MACHINE==0
           sn_numa={{0, 15},{16, 27},{28, 39},{40, 51},{52, 63},{64, 75},{76, 87},{88, 99}};

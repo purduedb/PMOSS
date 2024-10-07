@@ -7,7 +7,17 @@
 #include <atomic>
 #include <iostream>
 // -------------------------------------------------------------------------------------
-#include <immintrin.h>
+#ifdef __x86_64__  // Check if it's x86-64 architecture
+    #include <immintrin.h>  // Include SIMD intrinsics for x86
+#elif defined(__i386__)  // Check if it's 32-bit x86
+    #include <immintrin.h>  // Include SIMD intrinsics for x86
+#else
+    // It's likely ARM (32-bit or 64-bit)
+    // Do nothing or include ARM-specific headers if needed
+#endif
+
+
+
 #include <sched.h>
 #include <numa.h> 
 #include <numaif.h>
@@ -36,7 +46,11 @@ struct OptLock {
     uint64_t version;
     version = typeVersionLockObsolete.load();
     if (isLocked(version) || isObsolete(version)) {
-      _mm_pause();
+      #if MACHINE==4
+        asm volatile("yield");
+      #else
+        _mm_pause();
+      #endif
       needRestart = true;
     }
     return version;
@@ -55,7 +69,12 @@ struct OptLock {
     if (typeVersionLockObsolete.compare_exchange_strong(version, version + 0b10)) {
       version = version + 0b10;
     } else {
-      _mm_pause();
+      #if MACHINE==4
+        asm volatile("yield");
+      #else
+        _mm_pause();
+      #endif
+      
       needRestart = true;
     }
   }
@@ -255,8 +274,13 @@ struct BTree {
   void yield(int count) {
     if (count>3)
       sched_yield();
-    else
-      _mm_pause();
+    else{
+      #if MACHINE==4
+        asm volatile("yield");
+      #else
+        _mm_pause();
+      #endif
+    }
   }
 
   void insert(Key k, Value v) {

@@ -180,7 +180,8 @@ void CoreWorkload::Init(const utils::Properties &p) {
       key_chooser_ = new ScrambledZipfianGenerator(record_count_ + new_keys);
     }
   } else if (request_dist == "latest") {
-    key_chooser_ = new SkewedLatestGenerator(*transaction_insert_key_sequence_);
+    // key_chooser_ = new SkewedLatestGenerator(*transaction_insert_key_sequence_);
+    key_chooser_ = new SkewedLatestGenerator(*insert_key_sequence_);
   } else {
     throw utils::Exception("Unknown request distribution: " + request_dist);
   }

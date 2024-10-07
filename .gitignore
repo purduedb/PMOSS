@@ -1,10 +1,10 @@
 build/*
 .vscode/*
 src/dataset/*.dat
-src/workloads/loade_zipf_int_100M.dat
 src/interference/*
 kb/*
 kb_quad/*
 kb_b/*
 src/profiling/PCMMem.cpp
 learned/*
+src/dataset/osm_cellids_800M_uint64

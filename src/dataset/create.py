@@ -1,6 +1,10 @@
 import numpy as np
 
-files = ["wiki_ts_200M_uint64", "fb_200M_uint64"]
+files = [
+#   "wiki_ts_200M_uint64", 
+# "fb_200M_uint64",
+"osm_cellids_100M_uint64"
+]
 
 # for _ in files:
 #   fname = "/users/yrayhan/works/erebus/src/dataset/" + _  

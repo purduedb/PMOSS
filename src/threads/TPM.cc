@@ -925,9 +925,10 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     else if (
       wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
       wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADE1 || wl == SD_YCSB_WKLOADH || 
-      wl == SD_YCSB_WKLOADI ||
+      wl == SD_YCSB_WKLOADI || wl == SD_YCSB_WKLOADA1 || wl == SD_YCSB_WKLOADH1 || 
       wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE || wl == WIKI_WKLOADI || 
-      wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3
+      wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3 ||
+      wl == OSM_WKLOADA || wl == OSM_WKLOADC || wl == OSM_WKLOADE || wl == OSM_WKLOADH || wl == OSM_WKLOADA0
     ){
       // for inserts open different keyrange config for different router
       // or use a single router
@@ -998,6 +999,26 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       }
       else if(wl == WIKI_WKLOADH){
         wl_config += "wiki_workloadh";
+        input.open(wl_config);
+      }
+      else if(wl == OSM_WKLOADA){
+        wl_config += "osm_workloada_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if(wl == OSM_WKLOADA0){
+        wl_config += "osm_workloada0_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if(wl == OSM_WKLOADC){
+        wl_config += "osm_workloadc";
+        input.open(wl_config);
+      }
+      else if(wl == OSM_WKLOADE){
+        wl_config += "osm_workloade_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if(wl == OSM_WKLOADH){
+        wl_config += "osm_workloadh";
         input.open(wl_config);
       }
       else{
@@ -1178,8 +1199,10 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     else if (
       wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
       wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADE1 || wl == SD_YCSB_WKLOADH || wl == SD_YCSB_WKLOADI ||
+      wl == SD_YCSB_WKLOADA1 || wl == SD_YCSB_WKLOADH1 || 
       wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE || wl == WIKI_WKLOADI || 
-      wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3
+      wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3 ||
+      wl == OSM_WKLOADA || wl == OSM_WKLOADC || wl == OSM_WKLOADE || wl == OSM_WKLOADH || wl == OSM_WKLOADA0
       ){
       ycsb_wl.DoTransaction(tx_keys);  
       uint64_t value = -1;

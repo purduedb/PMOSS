@@ -133,6 +133,7 @@ enum {
   OSM_WKLOADH,
   SD_YCSB_WKLOADA1,
   SD_YCSB_WKLOADH1,
+  OSM_WKLOADA0,
 };
 
 enum {

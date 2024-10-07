@@ -9,7 +9,14 @@
 #include <random>
 // -------------------------------------------------------------------------------------
 #include <bits/stdc++.h>
-#include <immintrin.h>
+#ifdef __x86_64__  // Check if it's x86-64 architecture
+    #include <immintrin.h>  // Include SIMD intrinsics for x86
+#elif defined(__i386__)  // Check if it's 32-bit x86
+    #include <immintrin.h>  // Include SIMD intrinsics for x86
+#else
+    // It's likely ARM (32-bit or 64-bit)
+    // Do nothing or include ARM-specific headers if needed
+#endif
 #include <sys/stat.h>
 #include <sys/types.h>
 // -------------------------------------------------------------------------------------

@@ -1,6 +1,8 @@
 build/*
 .vscode/*
 src/dataset/*.dat
+src/dataset/osm_cellids_200M_uint64
+src/dataset/osm_cellids_800M_uint64
 src/workloads/loade_zipf_int_100M.dat
 src/interference/*
 kb/*

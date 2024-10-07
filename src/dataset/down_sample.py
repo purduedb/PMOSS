@@ -19,15 +19,15 @@ def downsample(fn):
     #     f.write(struct.pack("Q", len(nd)))
     #     nd.tofile(f)
 
-    # nd = d[::4]
-    # with open("/scratch1/yrayhan/" + fn + "_200M_uint64", "wb") as f:
-    #     f.write(struct.pack("Q", len(nd)))
-    #     nd.tofile(f)
-    
-    nd = d[::8]
-    with open("/users/yrayhan/works/erebus/src/dataset/" + fn + "_100M_uint64", "wb") as f:
+    nd = d[::4]
+    with open("/users/yrayhan/works/erebus/src/dataset/" + fn + "_200M_uint64", "wb") as f:
         f.write(struct.pack("Q", len(nd)))
         nd.tofile(f)
+    
+    # nd = d[::8]
+    # with open("/users/yrayhan/works/erebus/src/dataset/" + fn + "_100M_uint64", "wb") as f:
+    #     f.write(struct.pack("Q", len(nd)))
+    #     nd.tofile(f)
     
     
 

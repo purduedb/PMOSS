@@ -181,7 +181,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 		init_file += "dataset/fb_200M_uint64.dat";
 	}
 	else if (ds == OSM_CELLIDS){
-		init_file += "dataset/osm_cellids_200M_uint64.dat";
+		init_file += "dataset/osm_cellids_100M_uint64.dat";
 	}
 	else {
     fprintf(stderr, "Unknown workload type or key type: %d, %d\n", ds, kt);
@@ -370,8 +370,8 @@ int main(int argc, char* argv[])
 	
 	cout << cfgIdx << endl;
 	
-	int ds = OSM_CELLIDS;
-	int wl = OSM_WKLOADA0;
+	int ds = YCSB;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -394,6 +394,7 @@ int main(int argc, char* argv[])
 	}	
 	else if (ds == YCSB){
 		min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
+		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points
 	}
 	else if (ds == WIKI){
 		// min_x = 979672113; max_x = 1216240436; min_y = -1; max_y = -1; // 200M points
@@ -403,8 +404,8 @@ int main(int argc, char* argv[])
 		min_x = 1; max_x = 18446744073709551615; min_y = -1; max_y = -1; 
 	}
 	else if (ds == OSM_CELLIDS){
-		// min_x = 33246697004540789; max_x = 13748549577969753901; min_y = -1; max_y = -1;  //100M points
-		min_x = 33246697004540789; max_x = 5170332552548576529; min_y = -1; max_y = -1;  //200M points
+		min_x = 33246697004540789; max_x = 13748549577969753901; min_y = -1; max_y = -1;  //100M points
+		// min_x = 33246697004540789; max_x = 5170332552548576529; min_y = -1; max_y = -1;  //200M points
 		// min_x = 33246697004540789; max_x = 13748551737189149045; min_y = -1; max_y = -1;  //800M points
 		// min_x = 33246697004540789; max_x = 13748550930623082253; min_y = -1; max_y = -1;  //200M points
 	}

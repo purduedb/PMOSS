@@ -19,8 +19,7 @@ insertproportion=0
 
 requestdistribution=zipfian
 
-minscanlength=3000
-maxscanlength=30000
+maxscanlength=300000
 
 scanlengthdistribution=uniform
 

@@ -390,7 +390,7 @@ int main(int argc, char* argv[])
 	cout << cfgIdx << endl;
 	
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADC1;
+	int wl = SD_YCSB_WKLOADH3;
 	int iam = BTREE;
 
 	// Keys in database 

@@ -953,7 +953,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         #elif MACHINE==2
           sn_numa={{0,49},{50,99}};
         #elif MACHINE==3
-          sn_numa={{0, 15},{16, 27},{28, 39},{40, 51},{52, 63},{64, 75},{76 87},{88, 99}};
+          sn_numa={{0, 15},{16, 27},{28, 39},{40, 51},{52, 63},{64, 75},{76, 87},{88, 99}};
         #endif 
         std::uniform_int_distribution<int> dqt(0, valid_gcells.size()-1);
         int choose_numa = dqt(gen);

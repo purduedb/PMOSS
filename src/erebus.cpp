@@ -335,7 +335,7 @@ int main(int argc, char* argv[])
 	cout << "CONFIG=" << cfgIdx << endl;
 	
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADH;
+	int wl = SD_YCSB_WKLOADA01;
 	int iam = BTREE;
 
 	// Keys in database 
@@ -357,8 +357,8 @@ int main(int argc, char* argv[])
 		min_x = 1308; max_x = 12785; min_y = 1308; max_y = 12785; 
 	}	
 	else if (ds == YCSB){
-		min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
-		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
+		// min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
+		min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
 	}
 	else if (ds == WIKI){
 		// min_x = 979672113; max_x = 1216240436; min_y = -1; max_y = -1; // 200M points

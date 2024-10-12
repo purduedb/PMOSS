@@ -113,7 +113,7 @@ class TPManager{
        * */ 
       // 
       vector <DataDistSnap> dataDistReel;
-      vector<QueryViewSnap> queryViewReel;
+      // vector<QueryViewSnap> queryViewReel;
       // vector<IntelPCMCounter> DRAMResUsageReel;
       vector<QueryExecSnap> queryExecReel; 
       

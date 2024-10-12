@@ -365,14 +365,18 @@ int main(int argc, char* argv[])
 {	
 
 	int cfgIdx = 90;
-	
-	if (argc > 1) cfgIdx = std::atoi(argv[1]);
-	
-	cout << cfgIdx << endl;
-	
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADH3;
+	int wl = SD_YCSB_WKLOADH;
 	int iam = BTREE;
+
+	if (argc > 1) {
+		cfgIdx = std::atoi(argv[1]);
+		wl = std::atoi(argv[2]);
+	}
+	
+	cout << "CONFIG=" << cfgIdx << endl;
+	cout << "WKLOAD="  << wl << endl;
+	
 
 	// Keys in database 
 	std::vector<keytype> init_keys;
@@ -393,8 +397,8 @@ int main(int argc, char* argv[])
 		min_x = 1308; max_x = 12785; min_y = 1308; max_y = 12785; 
 	}	
 	else if (ds == YCSB){
-		min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
-		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
+		// min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
+		min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
 	}
 	else if (ds == WIKI){
 		// min_x = 979672113; max_x = 1216240436; min_y = -1; max_y = -1; // 200M points
@@ -413,7 +417,7 @@ int main(int argc, char* argv[])
 #if MULTIDIM == 1
 	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, 10, 10, min_x, max_x, min_y, max_y);
 #else 
-	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, 100, 1, min_x, max_x, min_y, max_y);
+	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, MAX_GRID_CELL, 1, min_x, max_x, min_y, max_y);
 #endif
 
 	// -------------------------------------------------------------------------------------
@@ -499,9 +503,19 @@ int main(int argc, char* argv[])
 	#endif
 	
 	#if MACHINE == 2
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
+		#endif 
 	#elif MACHINE==3
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + ".txt";
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
+		#endif 
 	#endif
 
 	glb_gm.register_grid_cells(config_file);

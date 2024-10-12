@@ -465,6 +465,10 @@ int main(int argc, char* argv[])
 		num_workers = 28;  
 		ss_cpuids.push_back(31);
 		mm_cpuids.push_back(63);
+	#elif MACHINE == 5
+		num_workers = 14;  
+		ss_cpuids.push_back(74);
+		mm_cpuids.push_back(75);
 	#else
 		num_workers = 7;  
 	#endif
@@ -498,11 +502,15 @@ int main(int argc, char* argv[])
 		db.build_btree(ds, kt, init_keys, values);
 		glb_gm.register_index(db.idx_btree);
 	#endif
+	
 	#if MACHINE==0
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_8n/c_" + std::to_string(cfgIdx) + ".txt";
 	#elif MACHINE==1
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ice_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
+	#elif MACHINE==5
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/sb_4s_4n/c_" + std::to_string(cfgIdx) + ".txt";
 	#endif
+	
 	glb_gm.register_grid_cells(config_file);
 	glb_gm.buildDataDistIdx(iam, init_keys);
 	glb_gm.printDataDistIdx();

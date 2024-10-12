@@ -171,8 +171,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   
 	if (ds == YCSB) {
-		init_file = "/scratch1/yrayhan/loade_zipf_int_200M.dat";
-		// txn_file += "workloads/txnse_zipf_int_100M.dat";
+		init_file += "dataset/loade_zipf_int_200M.dat";
   } else if (ds == WIKI) {
     init_file = "/scratch1/yrayhan/wiki_ts_200M_uint64.dat";
   } else if (ds == OSM_CELLIDS) {
@@ -469,9 +468,9 @@ int main(int argc, char* argv[])
 		ss_cpuids.push_back(31);
 		mm_cpuids.push_back(63);
 	#elif MACHINE == 5
-		num_workers = 14;  
-		ss_cpuids.push_back(74);
-		mm_cpuids.push_back(75);
+		num_workers = 10;  
+		ss_cpuids.push_back(62);
+		mm_cpuids.push_back(63);
 	#else
 		num_workers = 7;  
 	#endif
@@ -517,10 +516,15 @@ int main(int argc, char* argv[])
 	#elif MACHINE==1
 		#if MAX_GRID_CELL == 100
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ice_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
-	#elif MACHINE==5
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/sb_4s_4n/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ice_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
+			std::to_string(MAX_GRID_CELL) + ".txt";
+		#endif 
+	#elif MACHINE==5
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/sb_4s_4n/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/sb_4s_4n/c_" + std::to_string(cfgIdx) + "_" + 
 			std::to_string(MAX_GRID_CELL) + ".txt";
 		#endif 
 	#endif

@@ -99,16 +99,23 @@ struct PerfEvent {
       registerCounter("memory-write-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_NODE|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       // For dbserver, L1D write misses donot seem to work
       // registerCounter("L1D-writes-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
-      registerCounter("MEM_LOAD_L3_MISS_RETIRED:LOCAL_DRAM", PERF_TYPE_RAW, 0x5301d3);
-      registerCounter("MEM_LOAD_L3_MISS_RETIRED:REMOTE_DRAM", PERF_TYPE_RAW, 0x5302d3);
+      // registerCounter("MEM_LOAD_L3_MISS_RETIRED:LOCAL_DRAM", PERF_TYPE_RAW, 0x5301d3);
+      // registerCounter("MEM_LOAD_L3_MISS_RETIRED:REMOTE_DRAM", PERF_TYPE_RAW, 0x5302d3);
+      registerCounter("OFFCORE_RESPONSE_0:LLC_MISS_LOCAL_DRAM", PERF_TYPE_RAW, 0x3f80408fff);
+      registerCounter("OFFCORE_RESPONSE_0:LLC_MISS_REMOTE_DRAM", PERF_TYPE_RAW,0x3fff808fff);
+      
       // registerCounter("UNC_UPI_TXL_FLITS.ALL_DATA.L0", 368, 0xf02);
       // registerCounter("UNC_UPI_TXL_FLITS.ALL_DATA.L1", 19, 0xf02);
       // registerCounter("UNC_UPI_TXL_FLITS.ALL_DATA.L2", 20, 0xf02);
       // registerCounter("L1D_PEND_MISS.PENDING_CYCLES", PERF_TYPE_RAW, 0x1530148);
       // registerCounter("CYCLE_ACTIVITY.CYCLES_L1D_MISS", PERF_TYPE_RAW, 0x85308a3);
       // registerCounter("CYCLE_ACTIVITY.CYCLES_L2_MISS", PERF_TYPE_RAW, 0x15301a3);
-      registerCounter("CYCLE_ACTIVITY.CYCLES_L3_MISS", PERF_TYPE_RAW, 0x25302a3);
-      registerCounter("CYCLE_ACTIVITY.CYCLES_MEM_ANY", PERF_TYPE_RAW, 0x105310a3);
+      // registerCounter("CYCLE_ACTIVITY.CYCLES_L3_MISS", PERF_TYPE_RAW, 0x25302a3);
+      // registerCounter("CYCLE_ACTIVITY.CYCLES_MEM_ANY", PERF_TYPE_RAW, 0x105310a3);
+      registerCounter("UNC_Q_RXL_FLITS_G0.DATA", PERF_TYPE_RAW, 0x201);
+      registerCounter("UNC_Q_TXL_FLITS_G0:DATA", PERF_TYPE_RAW, 0x200);
+
+      
       // registerCounter("Stalled cycles fend", PERF_TYPE_HARDWARE, PERF_COUNT_HW_STALLED_CYCLES_FRONTEND);
       // registerCounter("Stalled cycles bkend", PERF_TYPE_HARDWARE, PERF_COUNT_HW_STALLED_CYCLES_BACKEND);
       registerCounter("task-clock", PERF_TYPE_SOFTWARE, PERF_COUNT_SW_TASK_CLOCK);

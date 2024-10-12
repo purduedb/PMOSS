@@ -326,19 +326,25 @@ void TPManager::init_ncoresweeper_threads(){
                     break;
                 }
                 
-                // Use SIMD to compute the DataView
                 ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
-                __m512d rawQCounter[nQCounterCline];
-                __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
-                for (auto vCline = 0; vCline < nQCounterCline; vCline++){
-                  rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
-                  rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
-                  rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
-                  if (vCline == 0){
-                    rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
-                  }
-                  ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
-                }      
+                for(auto ex = 0; ex < PERF_EVENT_CNT; ex++){
+                  ddSnap.rawQCounter[pc.gIdx][ex] += (pc.raw_counter_values[ex] / pc.raw_counter_values[1])*1000;
+                }
+                ddSnap.rawQCounter[pc.gIdx][1] = pc.raw_counter_values[1];
+                
+                // Use SIMD to compute the DataView
+                // ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
+                // __m512d rawQCounter[nQCounterCline];
+                // __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
+                // for (auto vCline = 0; vCline < nQCounterCline; vCline++){
+                //   rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
+                //   rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
+                //   rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
+                //   if (vCline == 0){
+                //     rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
+                //   }
+                //   ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
+                // }      
                 
 
             }
@@ -479,7 +485,8 @@ void TPManager::dump_ncoresweeper_threads(){
     // -------------------------------------------------------------------------------------
     ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
     const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
-    const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
+    // const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
+    const int scalarDumpSize = MAX_GRID_CELL * PERF_EVENT_CNT;
     
     alignas(64) double dataViewScalarDump[scalarDumpSize] = {};
         
@@ -492,12 +499,16 @@ void TPManager::dump_ncoresweeper_threads(){
         dataView << this->gm->wkload << " ";
         dataView << this->gm->iam << " ";
 
-        // Load the SIMD values in a memory address
         for (auto g = 0; g < MAX_GRID_CELL; g++){
-            for (auto cLine = 0; cLine < nQCounterCline; cLine++){
-                _mm512_store_pd(dataViewScalarDump + (g*nQCounterCline*8)+(cLine*8), dd.rawQCounter[g][cLine]);
-            }     
+          memcpy(dataViewScalarDump+g*PERF_EVENT_CNT, dd.rawQCounter[g], sizeof(dd.rawQCounter[g]));
         }
+
+        // Load the SIMD values in a memory address
+        // for (auto g = 0; g < MAX_GRID_CELL; g++){
+        //     for (auto cLine = 0; cLine < nQCounterCline; cLine++){
+        //         _mm512_store_pd(dataViewScalarDump + (g*nQCounterCline*8)+(cLine*8), dd.rawQCounter[g][cLine]);
+        //     }     
+        // }
         
         //Dump the perf counters
         for (auto aSize = 0; aSize < scalarDumpSize; aSize++){

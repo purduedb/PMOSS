@@ -379,15 +379,15 @@ void TPManager::init_ncoresweeper_threads(){
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the QueryFreq and QueryFreqView and Correlation Matrix from the router threads
         // For now let's assume we have only one router threads/NUMA node
-        for (auto[itr, rangeEnd] = this->gm->NUMAToRoutingCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
-        {
-            struct QueryViewSnap qViewSnap;
-            int rtCPUID = itr->second;
-            // memcpy(glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
-            memcpy(qViewSnap.corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
-            memset(glb_router_thrds[rtCPUID].qCorrMatrix, 0, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
-            glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].queryViewReel.push_back(qViewSnap);
-        }
+        // for (auto[itr, rangeEnd] = this->gm->NUMAToRoutingCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
+        // {
+        //     struct QueryViewSnap qViewSnap;
+        //     int rtCPUID = itr->second;
+        //     // memcpy(glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
+        //     memcpy(qViewSnap.corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
+        //     memset(glb_router_thrds[rtCPUID].qCorrMatrix, 0, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
+        //     glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].queryViewReel.push_back(qViewSnap);
+        // }
         
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the System View (Memory Channel View)
@@ -430,8 +430,8 @@ void TPManager::dump_ncoresweeper_threads(){
   #elif STORAGE == 1
       dirName += "/kb_quad/" + std::to_string(key);
   #elif STORAGE == 2
-      dirName += "/kb_b/" + std::to_string(key);
-      // dirName += "/kb_b_/" + std::to_string(key);
+      // dirName += "/kb_b/" + std::to_string(key);
+      dirName += "/kb_b_/" + std::to_string(key);
   #endif
   
   mkdir(dirName.c_str(), 0777);
@@ -513,20 +513,20 @@ void TPManager::dump_ncoresweeper_threads(){
     }
 
     // -------------------------------------------------------------------------------------
-    ofstream queryView(dirName + "/query_view.txt", std::ifstream::app);
-    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].queryViewReel.size(); i++){
-        int tReel = i;
-        queryView << this->gm->config  << " ";
-        queryView << tReel << " ";
-        queryView << this->gm->wkload << " ";
-        queryView << this->gm->iam << " ";
-        for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
-            for(auto aSize2 = 0; aSize2 < MAX_GRID_CELL; aSize2++){
-                queryView << glb_ncore_sweeper_thrds[key].queryViewReel[i].corrQueryReel[aSize1][aSize2] << " ";
-            }
-        }
-        queryView << endl;
-    }
+    // ofstream queryView(dirName + "/query_view.txt", std::ifstream::app);
+    // for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].queryViewReel.size(); i++){
+    //     int tReel = i;
+    //     queryView << this->gm->config  << " ";
+    //     queryView << tReel << " ";
+    //     queryView << this->gm->wkload << " ";
+    //     queryView << this->gm->iam << " ";
+    //     for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
+    //         for(auto aSize2 = 0; aSize2 < MAX_GRID_CELL; aSize2++){
+    //             queryView << glb_ncore_sweeper_thrds[key].queryViewReel[i].corrQueryReel[aSize1][aSize2] << " ";
+    //         }
+    //     }
+    //     queryView << endl;
+    // }
 
     // -------------------------------------------------------------------------------------
     ofstream queryExecView(dirName + "/query-exec_view.txt", std::ifstream::app);
@@ -693,7 +693,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys, &values] {
     
     erebus::utils::PinThisThread(router_cpuids[i]);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
     
     

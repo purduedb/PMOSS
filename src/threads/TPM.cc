@@ -281,6 +281,7 @@ void TPManager::init_ncoresweeper_threads(){
   for (unsigned i = 0; i < CURR_NCORE_SWEEPER_THREADS; ++i) {
     glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].th = std::thread([i, this] {
       erebus::utils::PinThisThread(ncore_sweeper_cpuids[i]);
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
       glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].cpuid=ncore_sweeper_cpuids[i];
       int numaID = numa_node_of_cpu(ncore_sweeper_cpuids[i]);
       while (1) 
@@ -437,7 +438,8 @@ void TPManager::dump_ncoresweeper_threads(){
   #elif STORAGE == 1
       dirName += "/kb_quad/" + std::to_string(key);
   #elif STORAGE == 2
-      dirName += "/kb_b/" + std::to_string(key);
+      // dirName += "/kb_b/" + std::to_string(key);
+      dirName += "/kb_b__/" + std::to_string(key);
       // dirName += "/kb_b_/" + std::to_string(key);
       // dirName += "/kb_b_test/" + std::to_string(key);
   #endif

@@ -1,28 +1,19 @@
 #!/bin/bash
 ulimit -s unlimited
 
-for cfg in {2..79..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 12
+
+for cfg in {0..29..1}; do
+  /users/yrayhan/works/erebus/build/bin/erebus $cfg 11
 done
 
-for cfg in {2..79..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 16
+for cfg in {0..29..1}; do
+  /users/yrayhan/works/erebus/build/bin/erebus $cfg 39
 done
 
-for cfg in {2..79..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 32
+for cfg in {0..29..1}; do
+  /users/yrayhan/works/erebus/build/bin/erebus $cfg 40
 done
 
-for cfg in {2..79..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 41
-done
-
-
-
-
-# for cfg in {3..49..3}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 35
-# done
 
 
 

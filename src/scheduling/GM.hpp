@@ -13,13 +13,13 @@
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
-#define SINGLE_DIMENSION_KEY_LIMIT 200000000       
+#define SINGLE_DIMENSION_KEY_LIMIT 100000000       
 #define BTREE_INIT_LIMIT 30000000           
 #define LIMIT 1000                  // test btree workload
 
-#define MAX_GRID_CELL 100           // 100, changed it here:Oct 11, 24
-#define MAX_XPAR 10                // 10, changed it here:Oct 11, 24
-#define MAX_YPAR 10                 // 10, changed it here:Oct 11, 24
+#define MAX_GRID_CELL 256           // 100, changed it here:Oct 11, 24
+#define MAX_XPAR 16                // 10, changed it here:Oct 11, 24
+#define MAX_YPAR 16                 // 10, changed it here:Oct 11, 24
 
 #define STAMP_LR_PARAM 4            // For now think of the query MBR as only output
 

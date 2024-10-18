@@ -431,7 +431,8 @@ void TPManager::dump_ncoresweeper_threads(){
       dirName += "/kb_quad/" + std::to_string(key);
   #elif STORAGE == 2
       // dirName += "/kb_b/" + std::to_string(key);
-      dirName += "/kb_b_/" + std::to_string(key);
+      // dirName += "/kb_b_/" + std::to_string(key);
+      dirName += "/kb_b__/" + std::to_string(key);
   #endif
   
   mkdir(dirName.c_str(), 0777);

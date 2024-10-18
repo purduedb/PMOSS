@@ -386,15 +386,15 @@ void TPManager::init_ncoresweeper_threads(){
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the QueryFreq and QueryFreqView and Correlation Matrix from the router threads
         // For now let's assume we have only one router threads/NUMA node
-        for (auto[itr, rangeEnd] = this->gm->NUMAToRoutingCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
-        {
-            struct QueryViewSnap qViewSnap;
-            int rtCPUID = itr->second;
-            // memcpy(glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
-            memcpy(qViewSnap.corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
-            memset(glb_router_thrds[rtCPUID].qCorrMatrix, 0, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
-            glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].queryViewReel.push_back(qViewSnap);
-        }
+        // for (auto[itr, rangeEnd] = this->gm->NUMAToRoutingCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
+        // {
+        //     struct QueryViewSnap qViewSnap;
+        //     int rtCPUID = itr->second;
+        //     // memcpy(glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
+        //     memcpy(qViewSnap.corrQueryReel, glb_router_thrds[rtCPUID].qCorrMatrix, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
+        //     memset(glb_router_thrds[rtCPUID].qCorrMatrix, 0, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
+        //     glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].queryViewReel.push_back(qViewSnap);
+        // }
         
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the System View (Memory Channel View)
@@ -437,7 +437,8 @@ void TPManager::dump_ncoresweeper_threads(){
   #elif STORAGE == 1
       dirName += "/kb_quad/" + std::to_string(key);
   #elif STORAGE == 2
-      dirName += "/kb_b/" + std::to_string(key);
+      // dirName += "/kb_b/" + std::to_string(key);
+      dirName += "/kb_b__/" + std::to_string(key);
   #endif
   
   mkdir(dirName.c_str(), 0777);
@@ -1301,8 +1302,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
           int pCell = valid_gcells[qc1];
           for(size_t qc2 = qc1; qc2 < valid_gcells.size(); qc2++){
               int cCell = valid_gcells[qc2];
-              glb_router_thrds[router_cpuids[i]].qCorrMatrix[pCell][cCell] ++;
-              glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
+              // glb_router_thrds[router_cpuids[i]].qCorrMatrix[pCell][cCell] ++;
+              // glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
           }
       }
       // -------------------------------------------------------------------------------------

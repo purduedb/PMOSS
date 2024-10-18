@@ -162,7 +162,7 @@ class TPManager{
       std::thread th;
       u64 cpuid;
       
-      int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  //It needs to be thread-safe
+      // int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  //It needs to be thread-safe
       
       bool running = true;
       bool job_set = false;   // Has job

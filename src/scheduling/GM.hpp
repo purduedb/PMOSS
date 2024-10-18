@@ -16,10 +16,10 @@ using std::ofstream;
 #define SINGLE_DIMENSION_KEY_LIMIT 100000000      
 #define BTREE_INIT_LIMIT 30000000
 #define LIMIT 1000                  // test btree workload
-#define MAX_GRID_CELL 100
+#define MAX_GRID_CELL 256
 #define STAMP_LR_PARAM 4            // For now think of the query MBR as only output
-#define MAX_XPAR 10
-#define MAX_YPAR 10
+#define MAX_XPAR 16
+#define MAX_YPAR 16
 // -------------------------------------------------------------------------------------
 # define USE_MODEL 0 
 // -------------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ class GridManager
     // -------------------------------------------------------------------------------------
     // Correlation Query Matrix of the grid cells [NUM_GRID_CELLS x NUM_GRID_CELLS]
     // Update: Now each router thread has this
-    int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  //It needs to be thread-safe
+    // int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  //It needs to be thread-safe
     // -------------------------------------------------------------------------------------
     
     int freqQueryDistPushed[MAX_GRID_CELL] = {0};  // TODO: this needs to be thread-safe

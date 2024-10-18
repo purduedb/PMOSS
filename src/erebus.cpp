@@ -173,7 +173,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	  
 	if (ds == YCSB) {
 		init_file += "dataset/loade_zipf_int_200M.dat";
-  } 
+  	} 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
 	}
@@ -364,15 +364,18 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 int main(int argc, char* argv[])
 {	
 
-	int cfgIdx = 0;
-	
-	if (argc > 1) cfgIdx = std::atoi(argv[1]);
-	
-	cout << cfgIdx << endl;
-	
+	int cfgIdx = 30;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADH11;
+	int wl = SD_YCSB_WKLOADH;
 	int iam = BTREE;
+	
+	if (argc > 1) {
+		cfgIdx = std::atoi(argv[1]);
+		wl = std::atoi(argv[2]);
+	}
+	
+	cout << "CONFIG=" << cfgIdx << endl;
+	cout << "WKLOAD="  << wl << endl;
 
 	// Keys in database 
 	std::vector<keytype> init_keys;
@@ -513,12 +516,14 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 	
-	#if MACHINE == 2
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
-	#elif MACHINE==3
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + ".txt";
-	#elif MACHINE==4
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/nvidia_gh_1s_1n/c_" + std::to_string(cfgIdx) + ".txt";
+	
+	#if MACHINE==4
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/nvidia_gh_1s_1n/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/nvidia_gh_1s_1n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
+		#endif
 	#endif
 
 	glb_gm.register_grid_cells(config_file);

@@ -416,7 +416,7 @@ int main(int argc, char* argv[])
 #if MULTIDIM == 1
 	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, 10, 10, min_x, max_x, min_y, max_y);
 #else 
-	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, 100, 1, min_x, max_x, min_y, max_y);
+	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, MAX_GRID_CELL, 1, min_x, max_x, min_y, max_y);
 #endif
 
 	// -------------------------------------------------------------------------------------
@@ -523,6 +523,7 @@ int main(int argc, char* argv[])
 		#else 
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/nvidia_gh_1s_1n/c_" + std::to_string(cfgIdx) + "_" + 
 		std::to_string(MAX_GRID_CELL) + ".txt";	
+		
 		#endif
 	#endif
 

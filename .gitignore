@@ -8,6 +8,7 @@ src/workloads/txnse_zipf_int_100M.dat
 src/interference/*
 kb/*
 kb_b_/*
+kb_b__/*
 kb_quad/*
 kb_b/*
 src/profiling/PCMMem.cpp

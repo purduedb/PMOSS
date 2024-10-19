@@ -6,11 +6,11 @@ export PCM_NO_MSR=1
 export PCM_NMI_WATCHDOG=1
 
 
-for cfg in {1..29..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 12
-done
+# for cfg in {1..29..1}; do
+#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 12
+# done
 
-for cfg in {1..29..1}; do
+for cfg in {3..29..1}; do
   /users/yrayhan/works/erebus/build/bin/erebus $cfg 16
 done
 

@@ -329,15 +329,20 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 
 int main(int argc, char* argv[])
 {	
-
-	int cfgIdx = 503;
-	if (argc > 1) cfgIdx = std::atoi(argv[1]);
-	cout << "CONFIG=" << cfgIdx << endl;
-	
+	int cfgIdx = 90;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADA01;
+	int wl = SD_YCSB_WKLOADH;
 	int iam = BTREE;
 
+	if (argc > 1) {
+		cfgIdx = std::atoi(argv[1]);
+		wl = std::atoi(argv[2]);
+	}
+	
+	cout << "CONFIG=" << cfgIdx << endl;
+	cout << "WKLOAD="  << wl << endl;
+
+	
 	// Keys in database 
 	std::vector<keytype> init_keys;
 	init_keys.reserve(SINGLE_DIMENSION_KEY_LIMIT);
@@ -378,7 +383,7 @@ int main(int argc, char* argv[])
 #if MULTIDIM == 1
 	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, 10, 10, min_x, max_x, min_y, max_y);
 #else 
-	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, 100, 1, min_x, max_x, min_y, max_y);
+	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, MAX_GRID_CELL, 1, min_x, max_x, min_y, max_y);
 #endif
 
 	// -------------------------------------------------------------------------------------
@@ -420,6 +425,9 @@ int main(int argc, char* argv[])
 	#elif MACHINE == 4
 		num_workers = 56;  // Change the CURR_WORKER_THREADS in TPM.hpp	
 		machine_name = "nvidia_gh_1s_1n";
+	#elif MACHINE == 5
+		num_workers = 10;  
+		machine_name = "intel_sb_4s_4n";
 	#endif
 	
 	#if MACHINE==3
@@ -486,7 +494,7 @@ int main(int argc, char* argv[])
 	cout << config_file << endl;
 
 	glb_gm.register_grid_cells(config_file);
-	if (cfgIdx > 505){
+	if (cfgIdx > 501){
 		glb_gm.buildDataDistIdx(iam, init_keys);
 		glb_gm.printDataDistIdx();
 		glb_gm.enforce_scheduling();

@@ -18,6 +18,7 @@ scanproportion=1
 insertproportion=0
 
 requestdistribution=zipfian
+zipfian_const=1.2
 
 maxscanlength=30000
 

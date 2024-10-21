@@ -2,7 +2,6 @@
 ulimit -s unlimited
 
 
-
 for wl in 12 16 32 41 34 35 36; do
   for cfg in 100 101 102 103; do
     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl

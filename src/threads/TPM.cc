@@ -104,6 +104,7 @@ void TPManager::init_ncoresweeper_threads(){
   for (unsigned i = 0; i < CURR_NCORE_SWEEPER_THREADS; ++i) {
     glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].th = std::thread([i, this] {
       erebus::utils::PinThisThread(ncore_sweeper_cpuids[i]);
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
       glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].cpuid=ncore_sweeper_cpuids[i];
       int numaID = numa_node_of_cpu(ncore_sweeper_cpuids[i]);
       while (1) 

@@ -132,13 +132,20 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 		init_file;
 	#elif MACHINE==3
 		init_file;
+	#elif MACHINE==4
+		init_file;
+	#elif MACHINE==5
+		init_file;
 	#endif 
 	
 	  
 	if (ds == YCSB) {
-		// init_file += "dataset/loade_zipf_int_100M.dat";
+		#if MACHINE==0
 		init_file += "loade_zipf_int_200M.dat";
-  } 
+		#else
+		init_file += "dataset/loade_zipf_int_200M.dat";
+		#endif		
+  	}  
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
 	}
@@ -329,7 +336,7 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 
 int main(int argc, char* argv[])
 {	
-	int cfgIdx = 90;
+	int cfgIdx = 506;
 	int ds = YCSB;
 	int wl = SD_YCSB_WKLOADH;
 	int iam = BTREE;
@@ -362,8 +369,8 @@ int main(int argc, char* argv[])
 		min_x = 1308; max_x = 12785; min_y = 1308; max_y = 12785; 
 	}	
 	else if (ds == YCSB){
-		// min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
-		min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
+		min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
+		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
 	}
 	else if (ds == WIKI){
 		// min_x = 979672113; max_x = 1216240436; min_y = -1; max_y = -1; // 200M points
@@ -488,9 +495,17 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
+	#if MAX_GRID_CELL == 100
 	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/";
 	config_file += machine_name;
 	config_file += "/c_" + std::to_string(cfgIdx) + ".txt";
+	#else
+	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/";
+	config_file += machine_name;
+	config_file += "/c_" + std::to_string(cfgIdx) + "_";
+	config_file += std::to_string(MAX_GRID_CELL) + 
+	".txt";
+	#endif
 	cout << config_file << endl;
 
 	glb_gm.register_grid_cells(config_file);
@@ -506,9 +521,6 @@ int main(int argc, char* argv[])
 	#endif
 	glb_gm.printGM();
 
-	
-	
-	
 
 	// WHICH INDEX?
 	// -------------------------------------------------------------------------------------

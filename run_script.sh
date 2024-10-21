@@ -5,19 +5,31 @@ ulimit -s unlimited
 export PCM_NO_MSR=1
 export PCM_NMI_WATCHDOG=1
 
+for cfg in {1..59..3}; do
+  /users/yrayhan/works/erebus/build/bin/erebus $cfg 34
+done
 
-# for cfg in {1..29..1}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 12
+for cfg in {1..59..3}; do
+  /users/yrayhan/works/erebus/build/bin/erebus $cfg 35
+done
+
+for cfg in {1..59..3}; do
+  /users/yrayhan/works/erebus/build/bin/erebus $cfg 36
+done
+
+
+# for cfg in {31..59..1}; do
+#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 11
 # done
 
-for cfg in {3..29..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 16
-done
+# for cfg in {31..59..1}; do
+#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 13
+# done
 
-for cfg in {1..29..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 32
-done
+# for cfg in {31..59..1}; do
+#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 39
+# done
 
-for cfg in {1..29..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 41
-done
+# for cfg in {31..59..1}; do
+#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 40
+# done

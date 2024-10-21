@@ -9,6 +9,7 @@ kb_quad/*
 kb_b/*
 kb_b_/*
 kb_b__/*
+kb_b_linux_old/*
 src/profiling/PCMMem.cpp
 learned/*
 src/scheduling/GM.hpp

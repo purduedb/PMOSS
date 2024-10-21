@@ -3,44 +3,23 @@ ulimit -s unlimited
 
 
 
-for cfg in {50..69..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 12
+for wl in 12 16 32 41 34 35 36; do
+  for cfg in 100 101 102 103; do
+    /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+  done
 done
-for cfg in {50..69..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 16
-done
-for cfg in {50..69..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 32
-done
-for cfg in {50..69..1}; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg 41
-done
+# 101 41
 
-# for cfg in {30..49..1}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 12
+# # for cfg in {1..59..2}; do
+# #   /users/yrayhan/works/erebus/build/bin/erebus $cfg 11
+# # done
+# for cfg in {27..59..2}; do
+#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 13
 # done
-# for cfg in {30..49..1}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 16
+# for cfg in {1..59..2}; do
+#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 39
 # done
-# for cfg in {30..49..1}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 32
+# for cfg in {1..59..2}; do
+#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 40
 # done
-# for cfg in {30..49..1}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 41
-# done
-
-# for cfg in {30..49..1}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 34
-# done
-
-# for cfg in {30..49..1}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 35
-# done
-
-# for cfg in {30..49..1}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 36
-# done
-
-
-
 

@@ -40,22 +40,22 @@ exec="$current_dir/build/bin/erebus"
 #   "$exec" $cfg 36
 # done
 
-numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 11
-for cfg in 500 502 506; do
-  "$exec" $cfg 11
-done
+# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 11
+# for cfg in 500 502 506; do
+#   "$exec" $cfg 11
+# done
 
-numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 13
-for cfg in 500 502 506; do
-  "$exec" $cfg 13 
-done
+# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 13
+# for cfg in 500 502 506; do
+#   "$exec" $cfg 13 
+# done
 
-numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 39
-for cfg in 500 502 506; do
-  "$exec" $cfg 39
-done
+# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 39
+# for cfg in 500 502 506; do
+#   "$exec" $cfg 39
+# done
 
-numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 40
-for cfg in 500 502 506; do
-  "$exec" $cfg 40
-done
+# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 40
+# for cfg in 500 502 506; do
+#   "$exec" $cfg 40
+# done

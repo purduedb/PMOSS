@@ -5,57 +5,16 @@ current_dir=$(pwd)
 echo "Current directory: $current_dir"
 exec="$current_dir/build/bin/erebus"
 
-# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 12
-# for cfg in 500 502 506; do
-#   "$exec" $cfg 12
+# for wl in 12 16 32 41 34 35 36; do
+#   numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 $wl
+#   for cfg in 500 502 506; do
+#     "$exec" $cfg $wl
+#   done
 # done
 
-# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 16
-# for cfg in 500 502 506; do
-#   "$exec" $cfg 16 
-# done
-
-# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 32
-# for cfg in 500 502 506; do
-#   "$exec" $cfg 32
-# done
-
-# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 34
-# for cfg in 500 502 506; do
-#   "$exec" $cfg 34
-# done
-
-# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 35
-# for cfg in 500 502 506; do
-#   "$exec" $cfg 35 
-# done
-
-# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 36
-# for cfg in 500 502 506; do
-#   "$exec" $cfg 36
-# done
-
-# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 41
-# for cfg in 500 502 506; do
-#   "$exec" $cfg 36
-# done
-
-# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 11
-# for cfg in 500 502 506; do
-#   "$exec" $cfg 11
-# done
-
-# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 13
-# for cfg in 500 502 506; do
-#   "$exec" $cfg 13 
-# done
-
-# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 39
-# for cfg in 500 502 506; do
-#   "$exec" $cfg 39
-# done
-
-# numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 40
-# for cfg in 500 502 506; do
-#   "$exec" $cfg 40
-# done
+for wl in 11 39 40 13; do
+  numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 $wl
+  for cfg in 500 502 506; do
+    "$exec" $cfg $wl
+  done
+done

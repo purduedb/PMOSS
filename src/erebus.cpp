@@ -364,10 +364,12 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 int main(int argc, char* argv[])
 {	
 
+	int eval_pmoss = 1;
 	int cfgIdx = 90;
 	int ds = YCSB;
 	int wl = SD_YCSB_WKLOADH;
 	int iam = BTREE;
+	
 
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
@@ -501,7 +503,7 @@ int main(int argc, char* argv[])
 		db.build_btree(ds, kt, init_keys, values);
 		glb_gm.register_index(db.idx_btree);
 	#endif
-	
+	#if EVAL_PMOSS == 0
 	#if MACHINE == 2
 		#if MAX_GRID_CELL == 100
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
@@ -516,6 +518,26 @@ int main(int argc, char* argv[])
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + "_" + 
 		std::to_string(MAX_GRID_CELL) + ".txt";	
 		#endif 
+	#endif
+	#else
+	
+	#if MACHINE == 2
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_2n/" + std::to_string(wl)
+			+ "/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_2n/" + std::to_string(wl) 
+			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
+		#endif 
+	#elif MACHINE==3
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_8n/" + std::to_string(wl)
+			+ "/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_8n/" + std::to_string(wl) 
+			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
+		#endif 
+	#endif
 	#endif
 
 	glb_gm.register_grid_cells(config_file);

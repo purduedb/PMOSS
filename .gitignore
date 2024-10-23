@@ -13,4 +13,5 @@ kb_b/*
 src/profiling/PCMMem.cpp
 learned/*
 kb_b_linux/*
+kb_b_linux_old/*
 kb_b_test/*

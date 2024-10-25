@@ -22,17 +22,32 @@ ulimit -s unlimited
 #   done
 # done
 
-for wl in 13; do
-  for cfg in 207 208 209 210; do
+# for wl in 12; do
+#   for cfg in {212..219..1}; do
+#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+#   done
+# done
+
+# for wl in 39, 40; do
+#   for cfg in {200..203..1}; do
+#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+#   done
+# done
+for wl in 12; do
+  for cfg in {220..227..1}; do
     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
   done
 done
+
 
 # for wl in 32; do
 #   for cfg in 208 209 210 211; do
 #     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
 #   done
 # done
+
+
+
 
 # for wl in 11 13; do
 #   for cfg in {2..69..3}; do

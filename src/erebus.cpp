@@ -415,8 +415,8 @@ int main(int argc, char* argv[])
 		min_x = 1308; max_x = 12785; min_y = 1308; max_y = 12785; 
 	}	
 	else if (ds == YCSB){
-		min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
-		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
+		// min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
+		min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
 	}
 	else if (ds == WIKI){
 		// min_x = 979672113; max_x = 1216240436; min_y = -1; max_y = -1; // 200M points
@@ -506,7 +506,7 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 	
-
+	#if EVAL_PMOSS == 0
 	#if MACHINE==0
 		#if MAX_GRID_CELL == 100
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_8n/c_" + std::to_string(cfgIdx) + ".txt";
@@ -524,9 +524,24 @@ int main(int argc, char* argv[])
 			std::to_string(MAX_GRID_CELL) + ".txt";
 		#endif 
 	#endif
-	
+	#else 
+	#if MACHINE==0
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(wl)
+			+ "/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(wl)
+			+ "/c_" + std::to_string(cfgIdx)+ "_" + std::to_string(MAX_GRID_CELL) + ".txt";
+		#endif 
+	#elif MACHINE==1
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_ice_2s_2n/" + std::to_string(wl)
+			+ "/c_" + std::to_string(cfgIdx) + ".txt";
+		#endif
+	#endif
+	#endif
 
-
+	cout << config_file << endl;
 	glb_gm.register_grid_cells(config_file);
 	glb_gm.buildDataDistIdx(iam, init_keys);
 	glb_gm.printDataDistIdx();

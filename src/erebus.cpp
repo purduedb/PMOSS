@@ -365,9 +365,9 @@ int main(int argc, char* argv[])
 {	
 
 	int eval_pmoss = 1;
-	int cfgIdx = 90;
+	int cfgIdx = 1;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADH;
+	int wl = SD_YCSB_WKLOADX2;
 	int iam = BTREE;
 	
 

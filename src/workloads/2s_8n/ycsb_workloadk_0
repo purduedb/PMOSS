@@ -17,7 +17,7 @@ readproportion=0.25
 updateproportion=0
 scanproportion=0.5
 insertproportion=0.25
-maxscanlength=300000
+maxscanlength=30000
 scanlengthdistribution=uniform
 
 requestdistribution=zipfian

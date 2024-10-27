@@ -15,3 +15,4 @@ src/profiling/PCMMem.cpp
 learned/*
 run_script.sh
 kb_b_linux/*
+kb_b_linux_old/*

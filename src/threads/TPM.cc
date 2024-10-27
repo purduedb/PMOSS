@@ -725,6 +725,13 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     
 
     // btree experiments
+    // b tree experiments: hotspot wkload
+    std::array<normal_dist, 16> b_GX;
+    std::uniform_int_distribution<int> dslength_uint64;  
+    std::uniform_int_distribution<int> coin_toss_dist(0, 1);
+
+    std::uniform_int_distribution<uint64_t> dx_uint64; 
+
     ycsbc::utils::Properties props;
     ycsbc::CoreWorkload ycsb_wl;
     
@@ -1063,6 +1070,34 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       input.close();
       ycsb_wl.Init(props);
     }
+    else if (wl == SD_YCSB_WKLOADX1){
+      const int num_hspots = 8;
+      std::vector<int> x_list = utils::linspace<int>(0, BTREE_INIT_LIMIT, num_hspots+1);
+      int std_dev = 300000;
+      
+      for (int spIdx = 0; spIdx < num_hspots; spIdx++){
+          int mean_x = int((x_list[spIdx] + x_list[spIdx+1])/2);
+          b_GX[spIdx] = normal_dist{static_cast<double>(mean_x), static_cast<double>(std_dev)};
+          
+      }
+      w = discrete_dist{0.12, 0.12, 0.12, 0.16, 0.12, 0.12, 0.12, 0.12};
+      dslength_uint64 = std::uniform_int_distribution<> (1, 30000); //default ycsb value
+      
+    } 
+    else if (wl == SD_YCSB_WKLOADX2){
+      const int num_hspots = 8;
+      std::vector<double> x_list = utils::linspace<double>(min_x, max_x, num_hspots+1);
+      int std_dev = 36028796474878160;
+      
+      for (int spIdx = 0; spIdx < num_hspots; spIdx++){
+          double mean_x = (x_list[spIdx] + x_list[spIdx+1])/2;
+          b_GX[spIdx] = normal_dist{static_cast<double>(mean_x), static_cast<double>(std_dev)};
+          
+      }
+      w = discrete_dist{0.12, 0.12, 0.12, 0.16, 0.12, 0.12, 0.12, 0.12};
+      dslength_uint64 = std::uniform_int_distribution<> (1, 30000); //default ycsb value
+      
+    } 
 
     // -------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------
@@ -1245,6 +1280,32 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       query = Rectangle(lx, length, value, -1);
       query.op = tx_keys[2];
       // cout << tx_keys[0] << ' ' << tx_keys[2] << endl;
+    }
+    else if (wl == SD_YCSB_WKLOADX1){
+      const int num_hspots = 8;
+      auto nd = w(genTem); 
+      int key_to_search = static_cast<uint64_t>(std::round(b_GX[nd](genTem)));
+      
+      lx = init_keys[key_to_search]; // The key to insert/search/update
+      length = dslength_uint64(gen);
+      uint64_t value = -1;
+      query = Rectangle(lx, length, value, -1);
+      query.op = ycsbc::Operation::SCAN;
+    }
+    else if (wl == SD_YCSB_WKLOADX2){
+      const int num_hspots = 8;
+      auto nd = w(genTem); 
+      uint64_t key_to_search = static_cast<uint64_t>(std::round(b_GX[nd](genTem)));
+      
+      lx = key_to_search; // The key to insert/search/update
+      length = dslength_uint64(gen);
+      uint64_t value = -1;
+      query = Rectangle(lx, length, value, -1);
+      // int coin_toss = coin_toss_dist(gen);
+      // if (coin_toss == 0) 
+      query.op = ycsbc::Operation::SCAN;
+      // else query.op = ycsbc::Operation::READ;
+      
     }
 
       // -------------------------------------------------------------------------------------

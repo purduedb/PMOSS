@@ -570,6 +570,118 @@ TPManager::~TPManager(){
     }
 }
 
+
+void TPManager::init_syssweeper_threads(){
+  // -------------------------------------------------------------------------------------
+  for (unsigned i = 0; i < CURR_SYS_SWEEPER_THREADS; ++i) {
+    glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].th = std::thread([i, this] {
+      erebus::utils::PinThisThread(sys_sweeper_cpuids[i]);
+      glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].cpuid=sys_sweeper_cpuids[i];
+            
+        // -------------------------------------------------------------------------------------
+        // Params for DRAM Throughput
+        double delay = 30000;
+        bool csv = false, csvheader = false, show_channel_output = true, print_update = false;
+        uint32 no_columns = DEFAULT_DISPLAY_COLUMNS; // Default number of columns is 2
+        
+        ServerUncoreMemoryMetrics metrics = PartialWrites;
+        int rankA = -1, rankB = -1;
+        // -------------------------------------------------------------------------------------
+        // Params for UPI links
+        std::vector<CoreCounterState> cstates1, cstates2;
+        std::vector<SocketCounterState> sktstate1, sktstate2;
+        SystemCounterState sstate1, sstate2;
+        // -------------------------------------------------------------------------------------
+            
+            
+        PCM * m = PCM::getInstance();
+        PCM::ErrorCode status2 = m->programServerUncoreMemoryMetrics(metrics, rankA, rankB);
+        m->checkError(status2);
+        
+        
+        const uint32 qpiLinks = (uint32)m->getQPILinksPerSocket();
+        uint32 imc_channels = (pcm::uint32)m->getMCChannelsPerSocket();
+        uint32 numSockets = m->getNumSockets();
+
+        m->getUncoreCounterStates(sstate1, sktstate1);
+        // m->getAllCounterStates(sstate1, sktstate1, cstates1);
+        
+        // -------------------------------------------------------------------------------------
+        // Params for DRAM Throughput
+            
+        uint64 SPR_CHA_CXL_Event_Count = 0;
+        rankA = 0;
+        rankB = 1;
+        std::vector<ServerUncoreCounterState> BeforeState(m->getNumSockets());
+        std::vector<ServerUncoreCounterState> AfterState(m->getNumSockets());
+        // -------------------------------------------------------------------------------------
+
+        memdata_t mDataCh;
+        uint64 BeforeTime = 0, AfterTime = 0;            
+        while (1) {
+          if(!glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].running) {
+              break;
+          }
+            
+          IntelPCMCounter iPCMCnt;
+          readState(BeforeState);            
+          BeforeTime = m->getTickCount();
+          MySleepMs(delay);
+          AfterTime = m->getTickCount();
+          readState(AfterState);
+          m->getUncoreCounterStates(sstate2, sktstate2);          
+          // m->getAllCounterStates(sstate1, sktstate1, cstates1);
+
+          mDataCh = calculate_bandwidth(m,BeforeState,AfterState,AfterTime-BeforeTime,csv,csvheader, no_columns, metrics,
+            show_channel_output, print_update, SPR_CHA_CXL_Event_Count);
+
+          
+          if (m->getNumSockets() > 1 && m->incomingQPITrafficMetricsAvailable()){
+            for (uint32 skt = 0; skt < m->getNumSockets(); ++skt){
+              for (uint32 l = 0; l < qpiLinks; ++l){
+                iPCMCnt.upi_incoming[skt][l] = getIncomingQPILinkBytes(skt, l, sstate1, sstate2);
+              }
+              // TODO: the getQPILinkSpeed returns 0, hence all the methods that use this function return bad result.
+            }
+            iPCMCnt.upi_system[0] = getAllIncomingQPILinkBytes(sstate1, sstate2);
+            iPCMCnt.upi_system[1] = getQPItoMCTrafficRatio(sstate1, sstate2);
+          } 
+              
+          if (m->getNumSockets() > 1 && (m->outgoingQPITrafficMetricsAvailable())){ // QPI info only for multi socket systems
+            for (uint32 skt = 0; skt < m->getNumSockets(); ++skt){
+                for (uint32 l = 0; l < qpiLinks; ++l){
+                  iPCMCnt.upi_outgoing[skt][l] = getMyOutgoingQPILinkBytes(skt, l, sstate1, sstate2);
+                }
+            }
+            iPCMCnt.upi_system[2] = getAllOutgoingQPILinkBytes(sstate1, sstate2);
+          }
+          
+          // TODO: For now skipping the ranks stuff
+          // calculate_bandwidth_rank(m, BeforeState, AfterState, AfterTime - BeforeTime, csv, csvheader, 
+          //     no_columns, rankA, rankB);
+            
+          iPCMCnt.sysParams = mDataCh;
+          glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].pcmCounters.push(iPCMCnt);
+              
+
+            
+          swap(BeforeTime, AfterTime);
+          swap(BeforeState, AfterState);
+          std::swap(sstate1, sstate2);
+          std::swap(sktstate1, sktstate2);
+        
+          if(rankA == 6) rankA = 0;
+          else rankA += 2;
+          
+          if(rankB == 7) rankB = 1;
+          else rankB += 2;      
+
+        }
+        });
+  }
+}
+
+
 void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y,
     std::vector<keytype> &init_keys, std::vector<uint64_t> &values, std::string machine_name){
   

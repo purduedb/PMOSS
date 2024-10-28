@@ -26,7 +26,23 @@
 #include "shared-headers/Units.hpp"
 #include "scheduling/RM.hpp"
 #include "scheduling/GM.hpp"
-#include "shared-headers/PerfEvent.hpp"
+
+#if MACHINE == 0
+#include "shared-headers/PerfEvent_intel.hpp"
+#elif MACHINE == 2
+#include "shared-headers/PerfEvent_amd.hpp"
+#elif MACHINE == 3
+#include "shared-headers/PerfEvent_amd.hpp"
+#elif MACHINE == 4
+#include "shared-headers/PerfEvent_arm.hpp"
+#elif MACHINE == 5
+#include "shared-headers/PerfEvent_intel.hpp"
+#elif MACHINE == 6
+#include "shared-headers/PerfEvent_intel.hpp"
+#endif
+
+
+
 #include "profiling/PerfCounters.hpp"
 #include "utils/ScrambledZipfGenerator.hpp"
 #include "utils/ZipfDist.hpp"

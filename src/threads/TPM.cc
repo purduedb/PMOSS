@@ -427,13 +427,14 @@ void TPManager::dump_ncoresweeper_threads(){
 
   string dirName = std::string(PROJECT_SOURCE_DIR);
   #if STORAGE == 0
-      dirName += "/kb/" + std::to_string(key);
+      dirName += "/kb_r__/" + std::to_string(key);
   #elif STORAGE == 1
       dirName += "/kb_quad/" + std::to_string(key);
   #elif STORAGE == 2
       // dirName += "/kb_b/" + std::to_string(key);
       // dirName += "/kb_b_/" + std::to_string(key);
-      dirName += "/kb_b__/" + std::to_string(key);
+      // dirName += "/kb_b__/" + std::to_string(key);
+      dirName += "/kb_bs__/" + std::to_string(key);
   #endif
   
   mkdir(dirName.c_str(), 0777);
@@ -695,7 +696,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys, &values] {
     
     erebus::utils::PinThisThread(router_cpuids[i]);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(40));
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
     
     
@@ -939,7 +940,9 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       #elif MACHINE==1
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/ice_2s_2n/";
       #elif MACHINE==5
-      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/sb_4s_4n/";
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/sb_4s_4n/";  // this should be nvidia
+      #elif MACHINE==6
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/skx_4s_4n/";
       #endif
 
       if (wl == SD_YCSB_WKLOADA){

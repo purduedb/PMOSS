@@ -6,10 +6,15 @@ export PCM_NMI_WATCHDOG=1
 
 
 for wl in 0; do
-  for cfg in {0..49..3}; do
+  for cfg in {30..49..1}; do
     /homes/yrayhan/works/erebus/build/bin/erebus $cfg $wl
   done
 done
+# for wl in 0; do
+#   for cfg in {100..102..1}; do
+#     /homes/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+#   done
+# done
 
 # for wl in 11; do
 #   for cfg in 216 218; do

@@ -99,16 +99,17 @@ class TPManager{
     
     
     // -------------------------------------------------------------------------------------    
-    static const u64 PERF_STAT_COLLECTION_INTERVAL = 1;
+    static const u64 PERF_STAT_COLLECTION_INTERVAL = 100;
     // -------------------------------------------------------------------------------------
     
     struct SysSweeperThread {
       std::thread th;
       u64 cpuid;
       
+      #if MACHINE==0
+      oneapi::tbb::concurrent_queue<IntelPCMCounter> pcmCounters;
+      #endif
 
-      // oneapi::tbb::concurrent_queue<IntelPCMCounter> pcmCounters;
-      
       bool running = true;
       bool job_set = false;   // Has job
       bool job_done = false;  // Job done
@@ -129,7 +130,11 @@ class TPManager{
       // 
       vector <DataDistSnap> dataDistReel;
       vector<QueryViewSnap> queryViewReel;
-      // vector<IntelPCMCounter> DRAMResUsageReel;
+      
+      #if MACHINE==0
+      vector<IntelPCMCounter> DRAMResUsageReel;
+      #endif
+      
       vector<QueryExecSnap> queryExecReel; 
       
       // int corrQueryReel[MAX_GRID_CELL][MAX_GRID_CELL] = {0};

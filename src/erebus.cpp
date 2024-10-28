@@ -30,8 +30,7 @@ erebus::storage::rtree::RTree* Erebus::build_rtree(int ds, int insert_strategy, 
 	
 	ifstream ifs;
 	int totPoints = 0;
-	std::string ds_file = std::string(PROJECT_SOURCE_DIR) + "/src/dataset/";
-
+	std::string ds_file = "/scratch1/yrayhan/dataset/";
 	if (ds == OSM_USNE){
 		ds_file += "us.txt";
 		ifs.open(ds_file, std::ifstream::in); // 100000000
@@ -383,11 +382,16 @@ std::string get_cpu_vendor() {
 int main(int argc, char* argv[])
 {	
 	
-	int cfgIdx = 1;
-	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADX2;
-	int iam = BTREE;
+	// int cfgIdx = 1;
+	// int ds = YCSB;
+	// int wl = SD_YCSB_WKLOADX2;
+	// int iam = BTREE;
 	
+	int cfgIdx = 1;
+	int ds = OSM_USNE;
+	int wl = MD_RS_HOT7;
+	int iam = RTREE;
+
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
 		wl = std::atoi(argv[2]);
@@ -430,7 +434,7 @@ int main(int argc, char* argv[])
 	}
 	
 #if MULTIDIM == 1
-	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, 10, 10, min_x, max_x, min_y, max_y);
+	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, MAX_XPAR, MAX_YPAR, min_x, max_x, min_y, max_y);
 #else 
 	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, MAX_GRID_CELL, 1, min_x, max_x, min_y, max_y);
 #endif
@@ -472,10 +476,29 @@ int main(int argc, char* argv[])
 		num_workers = 14;  
 		ss_cpuids.push_back(74);
 		mm_cpuids.push_back(75);
+	#elif MACHINE == 6
+		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		ss_cpuids.push_back(11);
+		mm_cpuids.push_back(23);
 	#else
 		num_workers = 7;  
 	#endif
 	
+	#if MACHINE == 6
+	for(auto n=0; n < num_NUMA_nodes; n+=2){
+		rt_cpuids.push_back(cPool[n][1]);
+		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+		
+		ncore_cpuids.push_back(cPool[n][2]);
+		
+		int cnt = 1;
+		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+			wrk_cpuids.push_back(cPool[n][j]);
+			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+			if (cnt == num_workers) break;
+		}
+	}
+	#else
 	for(auto n=0; n < num_NUMA_nodes; n++){
 		rt_cpuids.push_back(cPool[n][1]);
 		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
@@ -489,7 +512,8 @@ int main(int argc, char* argv[])
 			if (cnt == num_workers) break;
 		}
 	}
-	
+	#endif 
+
 	erebus::scheduler::ResourceManager glb_rm;  
 	erebus::Erebus db(&glb_gm, &glb_rm);
 	
@@ -506,40 +530,73 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 	
+	std::string config_file;
+	if(iam == BTREE){
 	#if EVAL_PMOSS == 0
 	#if MACHINE==0
 		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_8n/c_" + std::to_string(cfgIdx) + ".txt";
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_8n/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_8n/c_" + std::to_string(cfgIdx) + "_" + 
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_8n/c_" + std::to_string(cfgIdx) + "_" + 
 			std::to_string(MAX_GRID_CELL) + ".txt";
 		#endif 
 	#elif MACHINE==1
 		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ice_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ice_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
+		#endif
 	#elif MACHINE==5
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/sb_4s_4n/c_" + std::to_string(cfgIdx) + ".txt";
+		#if MAX_GRID_CELL == 100
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/sb_4s_4n/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ice_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ice_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
+			std::to_string(MAX_GRID_CELL) + ".txt";
+		#endif 
+	#elif MACHINE==6
+		#if MAX_GRID_CELL == 100
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_4n/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_4n/c_" + std::to_string(cfgIdx) + "_" + 
 			std::to_string(MAX_GRID_CELL) + ".txt";
 		#endif 
 	#endif
 	#else 
 	#if MACHINE==0
 		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(wl)
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(wl)
 			+ "/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(wl)
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(wl)
 			+ "/c_" + std::to_string(cfgIdx)+ "_" + std::to_string(MAX_GRID_CELL) + ".txt";
 		#endif 
 	#elif MACHINE==1
 		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_ice_2s_2n/" + std::to_string(wl)
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_ice_2s_2n/" + std::to_string(wl)
 			+ "/c_" + std::to_string(cfgIdx) + ".txt";
 		#endif
+	#elif MACHINE==6
+		#if MAX_GRID_CELL == 100
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_4n/" + std::to_string(wl)
+			+ "/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_4n/" + std::to_string(wl)
+			+ "/c_" + std::to_string(cfgIdx)+ "_" + std::to_string(MAX_GRID_CELL) + ".txt";
+		#endif 
 	#endif
 	#endif
+	}
+	else if (iam == RTREE){
+		#if EVAL_PMOSS == 0
+		#if MACHINE==0
+			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_8n/c_" + std::to_string(cfgIdx) + "_" + 
+				std::to_string(MAX_GRID_CELL) + "_r.txt";
+		#endif
+		#else 
+		#if MACHINE==0	
+			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(wl)
+				+ "/c_" + std::to_string(cfgIdx)+ "_" + std::to_string(MAX_GRID_CELL) + "_r.txt";
+		#endif
+		#endif
+	}
 
 	cout << config_file << endl;
 	glb_gm.register_grid_cells(config_file);
@@ -548,12 +605,14 @@ int main(int argc, char* argv[])
 	glb_gm.enforce_scheduling();
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
+	#elif STORAGE == 0
+		glb_gm.idx->NUMAStatus();
 	#endif
 	glb_gm.printGM();
 
 
 	
-	glb_gm.printGM();
+	// glb_gm.printGM();
 	
 
 	// WHICH INDEX?

@@ -13,7 +13,8 @@
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
-#define EVAL_PMOSS 1
+#define EVAL_PMOSS 0
+#define MACHINE 0 // 0 (BIGDATA), 1(DBSERVER)
 
 #define SINGLE_DIMENSION_KEY_LIMIT 200000000       
 #define BTREE_INIT_LIMIT 30000000           
@@ -28,9 +29,8 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 # define USE_MODEL 0 
 // -------------------------------------------------------------------------------------
-#define MULTIDIM 0 
-#define STORAGE 2  // RTree(0), QTree(1), BTree
-#define MACHINE 0 // 0 (BIGDATA), 1(DBSERVER)
+#define MULTIDIM 1 
+#define STORAGE 0  // RTree(0), QTree(1), BTree
 #define LINUX 3 // 0 (SE 0, SE-NUMA 1, SN-NUMA 2, OURS, 3)
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------

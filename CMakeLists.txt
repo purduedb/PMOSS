@@ -43,7 +43,7 @@ set(SOURCE_FILES
   src/ycsbc/generator.cpp
   src/ycsbc/core_workload.cpp
   src/ycsbc/acknowledged_counter_generator.cc
-  src/profiling/PCMMem.cpp
+  # src/profiling/PCMMem.cpp
 )
 
 add_definitions(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
@@ -52,6 +52,6 @@ add_definitions(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 add_executable(erebus ${SOURCE_FILES})
 target_link_libraries(erebus 
   TBB::tbb
-  ${CMAKE_SOURCE_DIR}/third-party/pcm/build/lib/libpcm.so
+  # ${CMAKE_SOURCE_DIR}/third-party/pcm/build/lib/libpcm.so
   -fsanitize=address
 )

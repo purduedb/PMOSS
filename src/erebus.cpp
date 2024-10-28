@@ -34,7 +34,7 @@ erebus::storage::rtree::RTree* Erebus::build_rtree(int ds, int insert_strategy, 
 	if (ds == OSM_USNE){
 		ds_file += "us.txt";
 		ifs.open(ds_file, std::ifstream::in); // 100000000
-		totPoints = 90000000;
+		totPoints = 50000000;
 	}
 	else if (ds == GEOLITE){
 		ds_file += "geo.txt";

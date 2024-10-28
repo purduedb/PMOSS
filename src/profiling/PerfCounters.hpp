@@ -22,9 +22,9 @@
 #include "shared-headers/PerfEvent_intel.hpp"
 #endif
 
-// #if MACHINE == 0
+#if MACHINE == 0
 #include "PCMMem.hpp"
-// #endif
+#endif
 // -------------------------------------------------------------------------------------
 #define QUERY_THRESHOLD_INS 9
 #define QUERY_THRESHOLD_ACC 9

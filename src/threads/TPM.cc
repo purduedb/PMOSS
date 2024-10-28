@@ -36,12 +36,17 @@ void TPManager::init_worker_threads(){
       glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
       // worker_mutex.unlock();
 
+      #if PROFILE==1
+      PerfEvent e;
+      int cnt = 0;  
+      #endif
+
       while (1) {  
         // std::this_thread::sleep_for(std::chrono::milliseconds(50));
         if(!glb_worker_thrds[worker_cpuids[i]].running) {
             break;
         }
-                      
+        
         Rectangle rec_pop;
         int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
         
@@ -52,6 +57,11 @@ void TPManager::init_worker_threads(){
         if (size_jobqueue != 0){
           glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
           
+          #if PROFILE==1
+          if (cnt == 0) {
+            e.startCounters();
+          }
+          #endif
 
           int result=0;
           // -------------------------------------------------------------------------------------
@@ -82,7 +92,27 @@ void TPManager::init_worker_threads(){
             //   << static_cast<uint64_t>(rec_pop.bottom_) << endl;
           #endif
           
-          
+          #if PROFILE == 1
+          cnt +=1;
+          if (cnt == PERF_STAT_COLLECTION_INTERVAL){
+            e.stopCounters();
+            cnt=0;
+            PerfCounter perf_counter;
+            for(auto j=0; j < e.events.size(); j++){
+              if (isnan(e.events[j].readCounter()) || isinf(e.events[j].readCounter())) perf_counter.raw_counter_values[j] = 0;
+              else perf_counter.raw_counter_values[j] = e.events[j].readCounter();
+            }
+                              
+            perf_counter.normalizationConstant = PERF_STAT_COLLECTION_INTERVAL; 
+            perf_counter.rscan_query = rec_pop;
+            perf_counter.result = result;
+            perf_counter.gIdx = rec_pop.aGrid;
+                              
+            glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
+
+          }
+          #endif 
+
           gm->freqQueryDistCompleted[rec_pop.aGrid] += 1;
 
           auto itQExecMice = glb_worker_thrds[worker_cpuids[i]].qExecutedMice.find(rec_pop.aGrid);
@@ -113,6 +143,76 @@ void TPManager::init_ncoresweeper_threads(){
             break;
         std::this_thread::sleep_for(std::chrono::milliseconds(40000));  // 80000
         
+        #if PROFILE == 1
+        // First, push the token to the worker cpus to get the DataView
+        PerfCounter perf_counter;
+        perf_counter.qType = SYNC_TOKEN;
+        for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
+        {
+          int wkCPUID = itr->second;
+          glb_worker_thrds[wkCPUID].perf_stats.push(perf_counter);
+        }
+        
+        #if MACHINE==0
+        // Then, push the token to the system_sweeper cpu to get the System View (MemChannel)
+        if (i == 0){
+          IntelPCMCounter iPCMCnt;
+          iPCMCnt.qType = SYNC_TOKEN;
+          glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.push(iPCMCnt);
+        }
+        #endif
+        
+        // Take a snapshot of the DataView from the  threads
+        const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
+        /**
+         * It has to be a complete snap.
+         * Unless for all the cores you have got the token
+         * do not insert
+        */
+        DataDistSnap ddSnap;  // Snapshot for the current NUMA node
+                for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
+        {
+          int wkCPUID = itr->second;
+          bool token_found = false;                    
+          while(!token_found){
+            size_t size_stats = glb_worker_thrds[wkCPUID].perf_stats.unsafe_size();
+            PerfCounter pc;
+            if (size_stats != 0){
+                glb_worker_thrds[wkCPUID].perf_stats.try_pop(pc);
+                if (pc.qType == SYNC_TOKEN){
+                    break;
+                }
+                
+                
+                ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
+                for(auto ex = 0; ex < PERF_EVENT_CNT; ex++){
+                  ddSnap.rawQCounter[pc.gIdx][ex] += (pc.raw_counter_values[ex] / pc.raw_counter_values[1])*1000;
+                }
+                ddSnap.rawQCounter[pc.gIdx][1] = pc.raw_counter_values[1];
+
+                // Use SIMD to compute the DataView
+                // __m512d rawQCounter[nQCounterCline];
+                // __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
+                // for (auto vCline = 0; vCline < nQCounterCline; vCline++){
+                //   rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
+                //   rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
+                //   rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
+                //   if (vCline == 0){
+                //     rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
+                //   }
+                //   ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
+                // }      
+                
+
+            }
+            else break;
+          }   
+        }
+        
+        glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].dataDistReel.push_back(ddSnap);
+        
+        // -------------------------------------------------------------------------------------
+        #endif
 
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the QueryExecuted from the worker threads
@@ -145,6 +245,37 @@ void TPManager::init_ncoresweeper_threads(){
             memset(glb_router_thrds[rtCPUID].qCorrMatrix, 0, sizeof(glb_router_thrds[rtCPUID].qCorrMatrix));
             glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].queryViewReel.push_back(qViewSnap);
         }
+
+        #if PROFILE == 1
+        #if MACHINE == 0
+        // -------------------------------------------------------------------------------------
+        // Take a snapshot of the System View (Memory Channel View)
+        if (i == 0){
+            bool token_found = false;                    
+            // memdata_t DRAMResUsageSnap;
+            IntelPCMCounter DRAMResUsageSnap;
+            while(!token_found){
+                size_t size_stats = glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.unsafe_size();
+                IntelPCMCounter iPCMCnt;
+                if (size_stats != 0){
+                    glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.try_pop(iPCMCnt);
+                    if (iPCMCnt.qType == SYNC_TOKEN){
+                        break;
+                    }
+            
+                    // Use SIMD to compute the Memory Channel View
+                    // DRAMResUsageSnap = iPCMCnt.sysParams;
+                    DRAMResUsageSnap = iPCMCnt;
+                }
+                else
+                    break;
+            }
+            glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].DRAMResUsageReel.push_back(DRAMResUsageSnap);
+        }
+        #endif
+        #endif 
+
+
         
       }
       // glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].th.detach();
@@ -157,6 +288,7 @@ void TPManager::dump_ncoresweeper_threads(){
   for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
 
   string dirName = std::string(PROJECT_SOURCE_DIR);
+  #if PROFILE==0
   #if STORAGE == 0
       dirName += "/kb_r_linux/" + std::to_string(key);
   #elif STORAGE == 1
@@ -164,11 +296,105 @@ void TPManager::dump_ncoresweeper_threads(){
   #elif STORAGE == 2
       dirName += "/kb_b_linux/" + std::to_string(key);
   #endif
+  #else
+  #if STORAGE == 0
+      dirName += "/kb_r_linux_pfl/" + std::to_string(key);
+  #elif STORAGE == 1
+      dirName += "/kb_quad_linux_pfl/" + std::to_string(key);
+  #elif STORAGE == 2
+      dirName += "/kb_b_linux_pfl/" + std::to_string(key);
+  #endif
+  #endif
   
   mkdir(dirName.c_str(), 0777);
   cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
-        // -------------------------------------------------------------------------------------
+    // -------------------------------------------------------------------------------------
     
+    #if PROFILE == 1
+    // -------------------------------------------------------------------------------------
+    ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
+    #if MACHINE==0
+    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
+        int tReel = i;
+        memChannelView << this->gm->config << " ";
+        memChannelView << tReel << " ";
+        memChannelView << this->gm->wkload << " ";
+        memChannelView << this->gm->iam << " ";
+        /**
+         * TODO: Have a global config header file that saves the value of 
+         * global hw params
+         * 6 definitely needs to be replaced with such param
+         * It should not be numa_num_configured nodes
+        */
+        // Dump Read Socket Channel
+        for (auto sc = 0; sc < 4; sc++){
+            for(auto ch = 0; ch < 6; ch++){
+                memChannelView <<  glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Rd_socket_chan[sc][ch] << " ";
+            }
+        }
+        // Dump Write Socket Channel
+        for (auto sc = 0; sc < 4; sc++){
+            for(auto ch = 0; ch < 6; ch++){
+                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Wr_socket_chan[sc][ch] << " ";
+            }
+        }
+        // // Dump Write Socket Channel
+        for (auto sc = 0; sc < 4; sc++){
+            for(auto ul = 0; ul < 3; ul++){
+                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_incoming[sc][ul] << " ";
+            }
+        }
+        // Dump Write Socket Channel
+        for (auto sc = 0; sc < 4; sc++){
+            for(auto ul = 0; ul < 3; ul++){
+                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_outgoing[sc][ul] << " ";
+            }
+        }
+        memChannelView << endl;
+    }
+    #endif
+    // -------------------------------------------------------------------------------------
+    
+    ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
+    const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
+    // const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
+    const int scalarDumpSize = MAX_GRID_CELL * PERF_EVENT_CNT;
+    
+    alignas(64) double dataViewScalarDump[scalarDumpSize] = {};
+        
+    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].dataDistReel.size(); i++){
+        int tReel = i;
+        DataDistSnap dd = glb_ncore_sweeper_thrds[key].dataDistReel[i];
+
+        dataView << this->gm->config  << " ";
+        dataView << tReel << " ";
+        dataView << this->gm->wkload << " ";
+        dataView << this->gm->iam << " ";
+        
+        for (auto g = 0; g < MAX_GRID_CELL; g++){
+          memcpy(dataViewScalarDump+g*PERF_EVENT_CNT, dd.rawQCounter[g], sizeof(dd.rawQCounter[g]));
+        }
+
+        // Load the SIMD values in a memory address
+        // for (auto g = 0; g < MAX_GRID_CELL; g++){
+        //     for (auto cLine = 0; cLine < nQCounterCline; cLine++){
+        //         _mm512_store_pd(dataViewScalarDump + (g*nQCounterCline*8)+(cLine*8), dd.rawQCounter[g][cLine]);
+        //     }     
+        // }
+        
+        //Dump the perf counters
+        for (auto aSize = 0; aSize < scalarDumpSize; aSize++){
+            dataView << dataViewScalarDump[aSize] << " ";
+        }
+
+        //Dump the sample counts 
+        for (auto aSize = 0; aSize < MAX_GRID_CELL; aSize++){
+            dataView << dd.rawCntSamples[aSize] << " ";
+        }
+        
+        dataView << endl;
+    }
+    #endif 
 
     // -------------------------------------------------------------------------------------
     ofstream queryView(dirName + "/query_view.txt", std::ifstream::app);

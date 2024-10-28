@@ -436,9 +436,14 @@ int main(int argc, char* argv[])
 	#elif MACHINE == 5
 		num_workers = 10;  
 		machine_name = "intel_sb_4s_4n";
+	#elif MACHINE == 6
+		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		machine_name = "intel_skx_4s_4n";
+	#elif MACHINE == 7
+		num_workers = 14;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#endif
 	
-	#if MACHINE==3
+	#if MACHINE==3 || MACHINE == 7
 	for(auto n=0; n < num_NUMA_nodes; n++){
 		rt_cpuids.push_back(cPool[n][0]);
 		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
@@ -452,7 +457,7 @@ int main(int argc, char* argv[])
 			if (cnt == num_workers) break;
 		}
 	}
-	#elif MACHINE==4
+	#elif MACHINE==4 
 		for(auto n=0; n < 1; n++){
 			rt_cpuids.push_back(cPool[n][0]);
 			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
@@ -464,6 +469,20 @@ int main(int argc, char* argv[])
 				if (cnt == num_workers) break;
 			}
 		}
+	#elif MACHINE == 6
+	for(auto n=0; n < num_NUMA_nodes; n+=2){
+		rt_cpuids.push_back(cPool[n][1]);
+		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+		
+		ncore_cpuids.push_back(cPool[n][2]);
+		
+		int cnt = 1;
+		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+			wrk_cpuids.push_back(cPool[n][j]);
+			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+			if (cnt == num_workers) break;
+		}
+	}
 	#else
 		for(auto n=0; n < num_NUMA_nodes; n++){
 		rt_cpuids.push_back(cPool[n][1]);

@@ -247,7 +247,7 @@ void TPManager::init_ncoresweeper_threads(){
         }
 
         #if PROFILE == 1
-        #if MACHINE == 0
+        #if MACHINE == 0 || MACHINE == 1 || MACHINE == 5 || MACHINE == 6 
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the System View (Memory Channel View)
         if (i == 0){

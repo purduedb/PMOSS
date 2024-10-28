@@ -27,21 +27,13 @@
 #include "scheduling/RM.hpp"
 #include "scheduling/GM.hpp"
 
-#if MACHINE == 0
+#if MACHINE == 0 || MACHINE == 1 || MACHINE == 5 || MACHINE == 6
 #include "shared-headers/PerfEvent_intel.hpp"
-#elif MACHINE == 2
-#include "shared-headers/PerfEvent_amd.hpp"
-#elif MACHINE == 3
+#elif MACHINE == 2 || MACHINE == 3 || MACHINE == 7
 #include "shared-headers/PerfEvent_amd.hpp"
 #elif MACHINE == 4
 #include "shared-headers/PerfEvent_arm.hpp"
-#elif MACHINE == 5
-#include "shared-headers/PerfEvent_intel.hpp"
-#elif MACHINE == 6
-#include "shared-headers/PerfEvent_intel.hpp"
 #endif
-
-
 
 #include "profiling/PerfCounters.hpp"
 #include "utils/ScrambledZipfGenerator.hpp"
@@ -109,6 +101,18 @@ class TPManager{
     static const int CURR_MEGAMIND_THREADS = 1;
     static const int CURR_ROUTER_THREADS = 4;
 	  static const int CURR_WORKER_THREADS = 40;
+#elif MACHINE == 6
+    static const int CURR_NCORE_SWEEPER_THREADS = 4;
+    static const int CURR_SYS_SWEEPER_THREADS = 1;
+    static const int CURR_MEGAMIND_THREADS = 1;
+    static const int CURR_ROUTER_THREADS = 4;
+	  static const int CURR_WORKER_THREADS = 28;
+#elif MACHINE == 7
+    static const int CURR_NCORE_SWEEPER_THREADS = 2;
+    static const int CURR_SYS_SWEEPER_THREADS = 0;
+    static const int CURR_MEGAMIND_THREADS = 0;
+    static const int CURR_ROUTER_THREADS = 2;
+	  static const int CURR_WORKER_THREADS = 28;
 #else
 	  static const int CURR_WORKER_THREADS = 56;
 #endif

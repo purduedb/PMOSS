@@ -8,18 +8,13 @@
     // Do nothing or include ARM-specific headers if needed
 #endif
 // -------------------------------------------------------------------------------------
-#if MACHINE == 0
+
+#if MACHINE == 0 || MACHINE == 1 || MACHINE == 5 || MACHINE == 6
 #include "shared-headers/PerfEvent_intel.hpp"
-#elif MACHINE == 2
-#include "shared-headers/PerfEvent_amd.hpp"
-#elif MACHINE == 3
+#elif MACHINE == 2 || MACHINE == 3 || MACHINE == 7
 #include "shared-headers/PerfEvent_amd.hpp"
 #elif MACHINE == 4
 #include "shared-headers/PerfEvent_arm.hpp"
-#elif MACHINE == 5
-#include "shared-headers/PerfEvent_intel.hpp"
-#elif MACHINE == 6
-#include "shared-headers/PerfEvent_intel.hpp"
 #endif
 
 #if MACHINE == 0

@@ -99,8 +99,8 @@ struct BTreeLeaf : public BTreeLeafBase {
       Payload p;
    };
 
-   static const uint64_t maxEntries=(pageSize-sizeof(NodeBase))/(sizeof(Key)+sizeof(Payload));
-
+   static const uint64_t maxEntries=(pageSize-sizeof(NodeBase))/(sizeof(Key)+sizeof(Payload)); 
+   
    Key keys[maxEntries];
    Payload payloads[maxEntries];
 

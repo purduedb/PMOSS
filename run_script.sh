@@ -2,7 +2,7 @@
 ulimit -s unlimited
 
 for wl in 11; do
-for cfg in {2..49..2}; do
+for cfg in 100; do
   /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
 done
 done

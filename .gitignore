@@ -3,7 +3,11 @@ build/*
 src/dataset/*.dat
 src/dataset/osm_cellids_200M_uint64
 src/dataset/osm_cellids_800M_uint64
+src/dataset/osm_cellids_400M_uint64
 src/workloads/loade_zipf_int_100M.dat
+src/dataset/osm_cellids_200M_uint64.dat
+src/dataset/osm_cellids_800M_uint64.dat
+src/dataset/osm_cellids_400M_uint64.dat
 src/interference/*
 kb/*
 kb_b_/*

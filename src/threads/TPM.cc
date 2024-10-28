@@ -707,7 +707,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
   for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {
     glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys, &values] {
     erebus::utils::PinThisThread(router_cpuids[i]);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
     
     
@@ -938,7 +938,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3 ||
       wl == OSM_WKLOADA || wl == OSM_WKLOADC || wl == OSM_WKLOADE || wl == OSM_WKLOADH || wl == OSM_WKLOADA0 ||
       wl == SD_YCSB_WKLOADH1 || wl == SD_YCSB_WKLOADH2 || wl == SD_YCSB_WKLOADH3 || wl == SD_YCSB_WKLOADH4 || wl == SD_YCSB_WKLOADH5 ||
-      wl == SD_YCSB_WKLOADA00 || wl == SD_YCSB_WKLOADA01 || wl == SD_YCSB_WKLOADC1 || wl == SD_YCSB_WKLOADK
+      wl == SD_YCSB_WKLOADA00 || wl == SD_YCSB_WKLOADA01 || wl == SD_YCSB_WKLOADC1 || wl == SD_YCSB_WKLOADK || wl == SD_YCSB_WKLOADK2
+      || wl == SD_YCSB_WKLOADK3
     ){
       // for inserts open different keyrange config for different router
       // or use a single router
@@ -955,6 +956,10 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       }
       else if (wl == SD_YCSB_WKLOADK){
         wl_config += "ycsb_workloadk_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if (wl == SD_YCSB_WKLOADK2){
+        wl_config += "ycsb_workloadk2_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADA00){
@@ -991,6 +996,10 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       }
       else if (wl == SD_YCSB_WKLOADH){
         wl_config += "ycsb_workloadh";
+        input.open(wl_config);
+      }
+      else if (wl == SD_YCSB_WKLOADK3){
+        wl_config += "ycsb_workloadk3";
         input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADH1){
@@ -1284,7 +1293,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3 ||
       wl == OSM_WKLOADA || wl == OSM_WKLOADC || wl == OSM_WKLOADE || wl == OSM_WKLOADH || wl == OSM_WKLOADA0 ||
       wl == SD_YCSB_WKLOADH1 || wl == SD_YCSB_WKLOADH2 || wl == SD_YCSB_WKLOADH3 || wl == SD_YCSB_WKLOADH4 || wl == SD_YCSB_WKLOADH5 ||
-      wl == SD_YCSB_WKLOADA00 || wl == SD_YCSB_WKLOADA01 || wl == SD_YCSB_WKLOADC1 || wl == SD_YCSB_WKLOADK
+      wl == SD_YCSB_WKLOADA00 || wl == SD_YCSB_WKLOADA01 || wl == SD_YCSB_WKLOADC1 || wl == SD_YCSB_WKLOADK || wl == SD_YCSB_WKLOADK2
+      || wl == SD_YCSB_WKLOADK3
       ){
       ycsb_wl.DoTransaction(tx_keys);  
       uint64_t value = -1;

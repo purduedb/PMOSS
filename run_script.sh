@@ -28,11 +28,40 @@ ulimit -s unlimited
 #   done
 # done
 
-for wl in 41; do
-  for cfg in 102; do
+# for wl in 46; do
+#   for cfg in 100 1 101 102 1 5 7; do
+#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+#   done
+# done
+# for wl in 31; do
+#   for cfg in 1 3 5 100 101 102; do
+#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+#   done
+# done
+
+# for wl in 31; do
+#   for cfg in {259..264..1}; do
+#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+#   done
+# done
+
+for wl in 31; do
+  for cfg in {28..40..2}; do
     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
   done
 done
+
+# for wl in 46; do
+#   for cfg in {260..262..1}; do
+#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+#   done
+# done
+
+# for wl in 45; do
+#   for cfg in {10..60..3}; do
+#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+#   done
+# done
 
 # for wl in 41; do
 #   for cfg in {253..255..1}; do

@@ -13,7 +13,7 @@
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
-#define EVAL_PMOSS 1
+#define EVAL_PMOSS 0
 
 #define SINGLE_DIMENSION_KEY_LIMIT 200000000
 #define BTREE_INIT_LIMIT 30000000

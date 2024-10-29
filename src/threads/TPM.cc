@@ -572,6 +572,7 @@ TPManager::~TPManager(){
 
 
 void TPManager::init_syssweeper_threads(){
+  #if MACHINE==0
   // -------------------------------------------------------------------------------------
   for (unsigned i = 0; i < CURR_SYS_SWEEPER_THREADS; ++i) {
     glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].th = std::thread([i, this] {
@@ -679,6 +680,7 @@ void TPManager::init_syssweeper_threads(){
         }
         });
   }
+  #endif
 }
 
 

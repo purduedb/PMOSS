@@ -1,8 +1,8 @@
 #!/bin/bash
 ulimit -s unlimited
 
-export PCM_NO_MSR=1
-export PCM_NMI_WATCHDOG=1
+# export PCM_NO_MSR=1
+# export PCM_NMI_WATCHDOG=1
 
 current_dir=$(pwd)
 echo "Current directory: $current_dir"

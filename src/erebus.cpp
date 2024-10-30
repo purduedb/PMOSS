@@ -181,7 +181,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 		init_file += "dataset/fb_200M_uint64.dat";
 	}
 	else if (ds == OSM_CELLIDS){
-		init_file += "dataset/osm_cellids_800M_uint64.dat";
+		init_file += "dataset/osm_cellids_600M_uint64.dat";
 	}
 	else {
     fprintf(stderr, "Unknown workload type or key type: %d, %d\n", ds, kt);

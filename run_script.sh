@@ -45,8 +45,14 @@ ulimit -s unlimited
 #   done
 # done
 
-for wl in 31; do
-  for cfg in {28..40..2}; do
+for wl in 11; do
+  for cfg in 100 101 102 103; do
+    /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+  done
+done
+
+for wl in 11; do
+  for cfg in {1..59..2}; do
     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
   done
 done

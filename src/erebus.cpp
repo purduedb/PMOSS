@@ -127,7 +127,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 
 	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
 	
-	#if MACHINE==0
+	#if MACHINE==0 || MACHINE == 6
 		init_file = "/scratch1/yrayhan/";
 	#elif MACHINE==1
 		init_file = "/home/yrayhan/works/erebus/src/workloads/";
@@ -143,7 +143,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	
 	  
 	if (ds == YCSB) {
-		#if MACHINE==0
+		#if MACHINE==0 || MACHINE == 6
 		init_file += "loade_zipf_int_200M.dat";
 		#else
 		init_file += "dataset/loade_zipf_int_200M.dat";
@@ -339,15 +339,15 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 
 int main(int argc, char* argv[])
 {	
-	// int cfgIdx = 506;
-	// int ds = YCSB;
-	// int wl = SD_YCSB_WKLOADH;
-	// int iam = BTREE;
+	int cfgIdx = 506;
+	int ds = YCSB;
+	int wl = SD_YCSB_WKLOADH;
+	int iam = BTREE;
 
-	int cfgIdx = 1;
-	int ds = OSM_USNE;
-	int wl = MD_RS_HOT7;
-	int iam = RTREE;
+	// int cfgIdx = 1;
+	// int ds = OSM_USNE;
+	// int wl = MD_RS_HOT7;
+	// int iam = RTREE;
 
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);

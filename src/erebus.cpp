@@ -157,7 +157,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	}
 	else if (ds == OSM_CELLIDS){
 		// init_file += "dataset/osm_cellids_200M_uint64.dat";
-		init_file += "osm_cellids_200M_uint64.dat";
+		init_file += "dataset/osm_cellids_600M_uint64.dat";
 	}
 	else {
     fprintf(stderr, "Unknown workload type or key type: %d, %d\n", ds, kt);
@@ -339,15 +339,15 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 
 int main(int argc, char* argv[])
 {	
-	// int cfgIdx = 506;
-	// int ds = YCSB;
-	// int wl = SD_YCSB_WKLOADH;
-	// int iam = BTREE;
+	int cfgIdx = 506;
+	int ds = OSM_CELLIDS;
+	int wl = SD_YCSB_WKLOADH;
+	int iam = BTREE;
 
-	int cfgIdx = 1;
-	int ds = OSM_USNE;
-	int wl = MD_RS_HOT7;
-	int iam = RTREE;
+	// int cfgIdx = 1;
+	// int ds = OSM_USNE;
+	// int wl = MD_RS_HOT7;
+	// int iam = RTREE;
 
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
@@ -388,8 +388,9 @@ int main(int argc, char* argv[])
 		min_x = 1; max_x = 18446744073709551615; min_y = -1; max_y = -1; 
 	}
 	else if (ds == OSM_CELLIDS){
+		min_x = 0; max_x = 18446744073709551615; min_y = -1; max_y = -1;  //3400Mish points
 		// min_x = 33246697004540789; max_x = 13748549577969753901; min_y = -1; max_y = -1;  	//100M points
-		min_x = 33246697004540789; max_x = 5170332552548576529; min_y = -1; max_y = -1;  			//200M points
+		// min_x = 33246697004540789; max_x = 5170332552548576529; min_y = -1; max_y = -1;  			//200M points
 		// min_x = 33246697004540789; max_x = 13748551737189149045; min_y = -1; max_y = -1;  	//800M points
 		// min_x = 33246697004540789; max_x = 13748550930623082253; min_y = -1; max_y = -1;  	//200M points
 	}

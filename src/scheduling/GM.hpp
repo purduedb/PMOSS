@@ -13,7 +13,7 @@
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
-#define SINGLE_DIMENSION_KEY_LIMIT 200000000
+#define SINGLE_DIMENSION_KEY_LIMIT 343901273 // 343901273, 200000000
 #define BTREE_INIT_LIMIT 30000000
 #define LIMIT 1000                
 #define MAX_GRID_CELL 256
@@ -23,11 +23,11 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 # define USE_MODEL 0 
 // -------------------------------------------------------------------------------------
-#define MACHINE 7   // 0 (BIGDATA), 1(DBSERVER), 2 (AMD 1NPS), 3 (AMD 4NPS), NVIDIA (4), SB (5), SKX(4S4N)
+#define MACHINE 3   // 0 (BIGDATA), 1(DBSERVER), 2 (AMD 1NPS), 3 (AMD 4NPS), NVIDIA (4), SB (5), SKX(4S4N)
 #define MULTIDIM 0 
 #define STORAGE 2   // RTree(0), QTree(1), BTree
 #define LINUX 0     // 0 (SE 0, SE-NUMA 1, SN-NUMA 2)
-#define PROFILE 1
+#define PROFILE 0
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------

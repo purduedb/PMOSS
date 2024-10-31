@@ -33,16 +33,19 @@ erebus::storage::rtree::RTree* Erebus::build_rtree(int ds, int insert_strategy, 
 	std::string ds_file = std::string(PROJECT_SOURCE_DIR) + "/src/dataset/";
 
 	if (ds == OSM_USNE){
+		ds_file = "/scratch1/yrayhan/dataset/";
 		ds_file += "us.txt";
 		ifs.open(ds_file, std::ifstream::in); // 100000000
-		totPoints = 90000000;
+		totPoints = 50000000;
 	}
 	else if (ds == GEOLITE){
+		ds_file = "/scratch1/yrayhan/dataset/";
 		ds_file += "geo.txt";
 		ifs.open(ds_file, std::ifstream::in); // 24000000
 		totPoints = 24000000;
 	}
 	else if (ds == BERLINMOD02){
+		ds_file = "/scratch1/yrayhan/dataset/";
 		ds_file += "bmod02.txt";
 		ifs.open(ds_file, std::ifstream::in);  //11975098
 		totPoints = 11975098;
@@ -336,10 +339,15 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 
 int main(int argc, char* argv[])
 {	
-	int cfgIdx = 506;
-	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADH;
-	int iam = BTREE;
+	// int cfgIdx = 506;
+	// int ds = YCSB;
+	// int wl = SD_YCSB_WKLOADH;
+	// int iam = BTREE;
+
+	int cfgIdx = 1;
+	int ds = OSM_USNE;
+	int wl = MD_RS_HOT7;
+	int iam = RTREE;
 
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
@@ -388,7 +396,7 @@ int main(int argc, char* argv[])
 	
 	
 #if MULTIDIM == 1
-	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, 10, 10, min_x, max_x, min_y, max_y);
+	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, MAX_XPAR, MAX_YPAR, min_x, max_x, min_y, max_y);
 #else 
 	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, MAX_GRID_CELL, 1, min_x, max_x, min_y, max_y);
 #endif
@@ -515,17 +523,34 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 
-	#if MAX_GRID_CELL == 100
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/";
-	config_file += machine_name;
-	config_file += "/c_" + std::to_string(cfgIdx) + ".txt";
-	#else
-	std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/";
-	config_file += machine_name;
-	config_file += "/c_" + std::to_string(cfgIdx) + "_";
-	config_file += std::to_string(MAX_GRID_CELL) + 
-	".txt";
-	#endif
+	std::string config_file;
+	if(iam == BTREE){
+		#if MAX_GRID_CELL == 100
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/";
+		config_file += machine_name;
+		config_file += "/c_" + std::to_string(cfgIdx) + ".txt";
+		#else
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/";
+		config_file += machine_name;
+		config_file += "/c_" + std::to_string(cfgIdx) + "_";
+		config_file += std::to_string(MAX_GRID_CELL) + 
+		".txt";
+		#endif
+	}
+	else if (iam == RTREE){
+		#if MAX_GRID_CELL == 100
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/";
+		config_file += machine_name;
+		config_file += "/c_" + std::to_string(cfgIdx) + ".txt";
+		#else
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/";
+		config_file += machine_name;
+		config_file += "/c_" + std::to_string(cfgIdx) + "_";
+		config_file += std::to_string(MAX_GRID_CELL) + 
+		".txt";
+		#endif
+	}
+	
 	cout << config_file << endl;
 
 	glb_gm.register_grid_cells(config_file);
@@ -538,6 +563,8 @@ int main(int argc, char* argv[])
 	
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
+	#elif STORAGE == 0
+		glb_gm.idx->NUMAStatus();
 	#endif
 	glb_gm.printGM();
 

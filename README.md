@@ -12,7 +12,7 @@ System Component Architecture
 --------------------------------------------------------------------------------
 <img src="src/images/system.png">
 
-Building System Component of PMOSS
+Building PMOSS's System Component
 --------------------------------------------------------------------------------
 ### Prerequisites 
 - CMake
@@ -25,6 +25,12 @@ mkdir build
 cd build
 cmake ..
 cmake --build .
+```
+
+### Running PMOSS
+Assuming you are in the root directory of the project
+```
+./run_script.sh
 ```
 
 

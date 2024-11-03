@@ -24,8 +24,8 @@ using std::ofstream;
 #define MAX_XPAR 16 
 #define MAX_YPAR 16 
 
-#define MULTIDIM 1 // 0=1-dim (btree), 1=2-dim(rtree)
-#define STORAGE 0  // RTree(0), QTree(1), BTree
+#define MULTIDIM 0 // 0=1-dim (btree), 1=2-dim(rtree)
+#define STORAGE 2  // 0=rtree, 1=quadtree, 2=btree
 // -------------------------------------------------------------------------------------
 # define USE_MODEL 0 
 #define LINUX 3 

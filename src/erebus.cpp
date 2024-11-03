@@ -5,8 +5,6 @@
 #include <thread>   // std::thread
 #include <mutex>
 // -------------------------------------------------------------------------------------
-// #include "../third-party/pcm/src/cpucounters.h"	// Intel PCM monitoring tool
-// -------------------------------------------------------------------------------------
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
@@ -55,54 +53,7 @@ erebus::storage::rtree::RTree* Erebus::build_rtree(int ds, int insert_strategy, 
 		DefaultInsert(this->idx, rectangle);
 	}
 	ifs.close();
-	cout << this->idx->height_ << " " << GetIndexSizeInMB(this->idx) << endl;
-	/*
-	int pgCnt = 10;
-	void *pgs[pgCnt];
-	for(auto i = 0; i < pgCnt; i++) pgs[i] = this->idx->tree_nodes_[i];
-	int status [pgCnt];
-	const int destNodes[pgCnt] = {0, 1, 2, 3, 4, 5, 6, 7, 0, 1};
-	int ret_code  = move_pages(0, pgCnt, pgs, destNodes, status, 0);
-
-	for(auto pnode = 0; pnode < pgCnt; pnode++){
-		void *ptr_to_check = this->idx->tree_nodes_[pnode];
-		int tstatus[1];
-		const int tDestNodes[1] = {destNodes[pnode]};
-		int tret_code = move_pages(0, 1, &ptr_to_check, tDestNodes, tstatus, 0);
-		printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, tstatus[0], tret_code);    
-		void *pgs[9] = {
-			&(this->idx->tree_nodes_[pnode]->father),
-			&(this->idx->tree_nodes_[pnode]->children),
-			&(this->idx->tree_nodes_[pnode]->entry_num),
-			&(this->idx->tree_nodes_[pnode]->is_overflow),
-			&(this->idx->tree_nodes_[pnode]->is_leaf),
-			&(this->idx->tree_nodes_[pnode]->origin_center),
-			&(this->idx->tree_nodes_[pnode]->maximum_entry),
-			&(this->idx->tree_nodes_[pnode]->minimum_entry),
-			&(this->idx->tree_nodes_[pnode]->RR_s)
-					};
-		
-		int pgStatus[9];
-		move_pages(0, 9, pgs, NULL, pgStatus, 0);
-		for(auto i = 0; i < 9; i++)
-			cout << pgStatus[i] << " ";
-		cout << endl;
-		
-		
-		// print all the nodes addresses
-		cout << "\t\t\t-------------------------------------------------------------------------------------" << endl;
-		for(auto cnode = 0; cnode <= pnode; cnode++){
-			void *cptr_to_check = this->idx->tree_nodes_[cnode];
-			int tcstatus[1];
-			
-			int ctret_code = move_pages(0, 1, &cptr_to_check, NULL, tcstatus, 0);
-			printf("Memory at %p is at %d node (retcode %d)\n", cptr_to_check, tcstatus[0], ctret_code);    
-
-		}
-		cout << "\t\t\t-------------------------------------------------------------------------------------" << endl;
-		
-	}*/
-		
+	cout << this->idx->height_ << " " << GetIndexSizeInMB(this->idx) << endl;	
 	return this->idx;
 }
 
@@ -247,105 +198,9 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 		this->idx_btree->insert(init_keys[i], values[i]);
   }
 	auto finish = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> elapsed = finish - start;
+  	std::chrono::duration<double> elapsed = finish - start;
 
 	cout << "Checkpoint: INDEX_BUILD_COMPLETED: " << elapsed.count() << endl;
-	
-	// for(int i=0; i < total_num_key; i++){
-	// 	// cout << i << ' ';
-	// 	// cout << init_keys[i];
-	// 	// cout << ' ';
-	// 	cout << *reinterpret_cast<keytype*>(values[i]);
-	// 	// cout << endl;
-	// }
- 
-  // If we also execute transaction then open the 
-  // transacton file here
-	/*
-  std::ifstream infile_txn(txn_file);
-  
-  count = 0;
-  while ((count < LIMIT) && infile_txn.good()) {
-    infile_txn >> op >> key;
-    if (op.compare(insert) == 0) {
-      ops.push_back(OP_INSERT);
-      keys.push_back(key);
-      ranges.push_back(1);
-    }
-    else if (op.compare(read) == 0) {
-      ops.push_back(OP_READ);
-      keys.push_back(key);
-    }
-    else if (op.compare(update) == 0) {
-      ops.push_back(OP_UPSERT);
-      keys.push_back(key);
-    }
-    else if (op.compare(scan) == 0) {
-      infile_txn >> range;
-      ops.push_back(OP_SCAN);
-      keys.push_back(key);
-      ranges.push_back(range);
-    }
-    else {
-      std::cout << "UNRECOGNIZED CMD!\n";
-      break;
-    }
-    count++;
-  }
-
-
-  // Average and variation
-  long avg = 0, var = 0;
-  // If it is YSCB-E workload then we compute average and stdvar
-  if(ranges.size() != 0) {
-    for(int r : ranges) {
-      avg += r;
-    }
-
-    avg /= (long)ranges.size();
-
-    for(int r : ranges) {
-      var += ((r - avg) * (r - avg));
-    }
-
-    var /= (long)ranges.size();
-
-    fprintf(stderr, "YCSB-E scan Avg length: %ld; Variance: %ld\n",
-            avg, var);
-  }
-
-	size_t total_num_op = ops.size();
-	
-	std::vector<uint64_t> v;
-	v.reserve(10);
-
-    
-	int counter = 0;
-	for(size_t i = 0;i < total_num_op; i++) {
-		int op = ops[i];
-
-		if (op == OP_INSERT) { //INSERT
-			this->idx_btree->insert(keys[i], values[i]);
-		}
-		else if (op == OP_READ) { //READ
-			cout << OP_READ << ' ' << i << ' ';
-			v.clear();
-			this->idx_btree->find(keys[i], &v);
-			for(size_t j = 0; j < v.size(); j++) cout << v[j] << ' ';
-			cout << endl;
-		}
-		else if (op == OP_UPSERT) { //UPDATE
-			// this->idx_btree->upsert(keys[i], (uint64_t)keys[i].data);
-		}
-		else if (op == OP_SCAN) { //SCAN
-			cout << keys[i] << ' ' << ranges[i] << "===> " ;
-			cout << OP_SCAN << ' ' << i << ' ';
-			int tem_result = this->idx_btree->scan(keys[i], ranges[i]);
-			cout << tem_result << endl;
-		}
-		counter++;
-	}
-	*/
 	return this->idx_btree;
 
 
@@ -355,7 +210,7 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 	this->glb_tpool = tp;
 }
 
-}   // namespace erebus
+} 
 
 
 std::string get_cpu_vendor() {
@@ -382,15 +237,15 @@ std::string get_cpu_vendor() {
 int main(int argc, char* argv[])
 {	
 	
-	// int cfgIdx = 1;
-	// int ds = YCSB;
-	// int wl = SD_YCSB_WKLOADX2;
-	// int iam = BTREE;
-	
 	int cfgIdx = 1;
-	int ds = OSM_USNE;
-	int wl = MD_RS_HOT7;
-	int iam = RTREE;
+	int ds = YCSB;
+	int wl = SD_YCSB_WKLOADX2;
+	int iam = BTREE;
+	
+	// int cfgIdx = 1;
+	// int ds = OSM_USNE;
+	// int wl = MD_RS_HOT7;
+	// int iam = RTREE;
 
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
@@ -610,24 +465,6 @@ int main(int argc, char* argv[])
 	#endif
 	glb_gm.printGM();
 
-
-	
-	// glb_gm.printGM();
-	
-
-	// WHICH INDEX?
-	// -------------------------------------------------------------------------------------
-	// #if STORAGE == 0
-	// 	glb_gm.idx->NUMAStatus();
-	// #elif STORAGE ==1
-	// 	erebus::storage::qtree::NUMAstat ns;
-	// 	glb_gm.idx_quadtree->NUMAStatus(ns);
-	// 	for (int i =0; i < 8;i++){
-	// 		cout << ns.cntIndexNodes[i] << ' ';
-	// 	}
-	// 	cout << endl;	
-	// #endif
-
 	// -------------------------------------------------------------------------------------
 	
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
@@ -644,52 +481,9 @@ int main(int argc, char* argv[])
 	glb_tpool.dump_ncoresweeper_threads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	exit(0);
-	
-	// glb_tpool.terminateRouterThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	// glb_tpool.terminateWorkerThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	// glb_tpool.terminateMegaMindThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	// glb_tpool.terminateSysSweeperThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-
-	// glb_tpool.glb_router_thrds.clear();
-	// glb_tpool.glb_worker_thrds.clear();
-	// glb_tpool.glb_sys_sweeper_thrds.clear();
-	// glb_tpool.glb_megamind_thrds.clear();
-	// glb_tpool.glb_ncore_sweeper_thrds.clear();
 		
 	while(1);
 
-	// -------------------------------------------------------------------------------------
-
-	// pcm::SystemCounterState after_sstate = pcm::getSystemCounterState();
-
-	// std::cout << "Instructions per clock:" << pcm::getIPC(before_sstate,after_sstate) << std::endl;
-	// std::cout << "Bytes read:" << pcm::getBytesReadFromMC(before_sstate,after_sstate) << std::endl; 
-	// m->cleanup();
-	// -------------------------------------------------------------------------------------
-
-	// pcm::PCM * m = pcm::PCM::getInstance();
-
-	// pcm::PCM * m2 = pcm::PCM::getInstance();
-
-	// pcm::PCM::ErrorCode returnResult = m->program();
-	// pcm::PCM::ErrorCode returnResult2 = m2->program();
-	// if (returnResult != pcm::PCM::Success){
-	// 	std::cerr << "Intel's PCM couldn't start" << std::endl;
-	// 	std::cerr << "Error code: " << returnResult << std::endl;
-	// 	exit(1);
-	// }
-	// if (returnResult2 != pcm::PCM::Success){
-	// 	std::cerr << "Intel's PCM couldn't start" << std::endl;
-	// 	std::cerr << "Error code: " << returnResult2 << std::endl;
-	// 	exit(1);
-	// }
-
-	// pcm::SystemCounterState before_sstate = pcm::getSystemCounterState();
-	
 }
 
 

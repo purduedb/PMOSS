@@ -5,7 +5,7 @@ P-MOSS is a learned Performance MOnitoring Unit (PMU) driven Spatial Query Sched
 
 Architecture Overview
 --------------------------------------------------------------------------------
-<img src="src/images/overview.png" width=80%>
+<img src="src/images/overview.png" width=80% height=70%>
 
 
 System Component Architecture
@@ -14,11 +14,17 @@ System Component Architecture
 
 Building System Component of PMOSS
 --------------------------------------------------------------------------------
-Install cmake and then:
+### Prerequisites 
+- CMake
+- [Intel TBB](https://github.com/oneapi-src/oneTBB) 
+- [Intel PCM](https://github.com/intel/pcm)
+
+### Build instructions
 ```
 mkdir build
 cd build
 cmake ..
 cmake --build .
 ```
+
 

@@ -5,14 +5,14 @@ P-MOSS is a learned Performance MOnitoring Unit (PMU) driven Spatial Query Sched
 
 Architecture Overview
 --------------------------------------------------------------------------------
-<img src="src/images/overview.png">
+<img src="src/images/overview.png" width=80%>
 
 
 System Component Architecture
 --------------------------------------------------------------------------------
 <img src="src/images/system.png">
 
-Building System Componet of PMOSS
+Building System Component of PMOSS
 --------------------------------------------------------------------------------
 Install cmake and then:
 ```

@@ -30,7 +30,6 @@ struct PerfCounter
     }
 };
 struct HWCounterStats{
-    // TODO: This nees to be thread safe, hence use maybe concurrent_vector?
     std::vector<PerfCounter> perf_stats;
 };
 
@@ -67,7 +66,7 @@ struct IntelPCMCounter
     memdata_t sysParams;
     double upi_incoming[max_sockets][max_qpi];
     double upi_outgoing[max_sockets][max_qpi];
-    double upi_system[4]; // sustem-wide info
+    double upi_system[4]; 
     int qType;
 
     // You will need to write copy constructor for

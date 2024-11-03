@@ -13,25 +13,23 @@
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
-#define EVAL_PMOSS 0
-#define MACHINE 0 // 0 (BIGDATA), 1(DBSERVER)
+#define EVAL_PMOSS 0  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
+#define MACHINE 0     // 0 (BIGDATA), 1(DBSERVER)
 
-#define SINGLE_DIMENSION_KEY_LIMIT 200000000       
-#define BTREE_INIT_LIMIT 30000000           
-#define LIMIT 1000                  // test btree workload
+#define SINGLE_DIMENSION_KEY_LIMIT 200000000 // total keys in db       
+#define BTREE_INIT_LIMIT 30000000 // initial number of keys in btree          
+#define LIMIT 1000        
 
-#define MAX_GRID_CELL 256           // 100, changed it here:Oct 11, 24
-#define MAX_XPAR 16                // 10, changed it here:Oct 11, 24
-#define MAX_YPAR 16                 // 10, changed it here:Oct 11, 24
+#define MAX_GRID_CELL 256 // total number of index slices = MAX_XPAR*MAX_YPAR
+#define MAX_XPAR 16 
+#define MAX_YPAR 16 
 
-#define STAMP_LR_PARAM 4            // For now think of the query MBR as only output
-
+#define MULTIDIM 1 // 0=1-dim (btree), 1=2-dim(rtree)
+#define STORAGE 0  // RTree(0), QTree(1), BTree
 // -------------------------------------------------------------------------------------
 # define USE_MODEL 0 
-// -------------------------------------------------------------------------------------
-#define MULTIDIM 1 
-#define STORAGE 0  // RTree(0), QTree(1), BTree
-#define LINUX 3 // 0 (SE 0, SE-NUMA 1, SN-NUMA 2, OURS, 3)
+#define LINUX 3 
+#define STAMP_LR_PARAM 4
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
@@ -87,14 +85,12 @@ class GridManager
     GridCell glbGridCell[MAX_GRID_CELL];
     // -------------------------------------------------------------------------------------
     // Correlation Query Matrix of the grid cells [NUM_GRID_CELLS x NUM_GRID_CELLS]
-    // Update: Now each router thread has this
     int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  //It needs to be thread-safe
     // -------------------------------------------------------------------------------------
     
     int freqQueryDistPushed[MAX_GRID_CELL] = {0};  // TODO: this needs to be thread-safe
     int freqQueryDistCompleted[MAX_GRID_CELL] = {0};  // TODO: this needs to be thread-safe
 
-    // int DataDist[MAX_GRID_CELL] = {0};
     vector<int> DataDist;
     
     GridManager(int config, int wkload, int iam, int xPar, int yPar, double minXSpace, double maxXSpace, double minYSpace, double maxYSpace);
@@ -117,9 +113,7 @@ class GridManager
     
     void printQueryView();
     void printQueryCorrMatrixView();
-    
-    // void GMMigrate();
-
+  
 };
 
 

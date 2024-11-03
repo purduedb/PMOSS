@@ -112,9 +112,6 @@ void GridManager::register_grid_cells(string configFile){
 			this->glbGridCell[trk_cid].idNUMA = numaConfig[trk_cid];
 			this->glbGridCell[trk_cid].idCPU = cpuConfig[trk_cid]; 
 			
-			// Reallocate the index nodes according to the configuration
-			// -------------------------------------------------------------------------------------
-
 			trk_cid++; 
 		}
 	}

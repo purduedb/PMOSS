@@ -83,104 +83,69 @@ class TPManager{
 #else
 	  static const int CURR_WORKER_THREADS = 56;
 #endif
-    // static const int CURR_NCORE_SWEEPER_THREADS = 8;
-    // static const int CURR_SYS_SWEEPER_THREADS = 1;
-    // static const int CURR_MEGAMIND_THREADS = 8;
-    // static const int CURR_WORKER_THREADS = 56;
-    // static const int CURR_ROUTER_THREADS = 8;
-    
     // -------------------------------------------------------------------------------------    
-    static const u64 PERF_STAT_COLLECTION_INTERVAL = 100;
+    static const u64 PERF_STAT_COLLECTION_INTERVAL = 100; // granularity of profiling 
     // -------------------------------------------------------------------------------------
     
     struct SysSweeperThread {
       std::thread th;
       u64 cpuid;
-      
-
       oneapi::tbb::concurrent_queue<IntelPCMCounter> pcmCounters;
-      
       bool running = true;
-      bool job_set = false;   // Has job
-      bool job_done = false;  // Job done
+      bool job_set = false;   
+      bool job_done = false; 
     };
 
     struct NodeCoreSweeperThread {
       std::thread th;
       u64 cpuid;
-      
-      
-      /**
-       * TODO:  1. Data Distribution (A single snap: that is accumulated over time)
-       *        2. Correlation matrix (Just a sinlgle snap)
-       *        3. DRAM or Memory Resource Usage (A single snap: that is accumulated over time)
-       *            [Only the one of socket 0 has this]
-       * 
-       * */ 
-      // 
       vector <DataDistSnap> dataDistReel;
-      // vector<QueryViewSnap> queryViewReel;
       vector<IntelPCMCounter> DRAMResUsageReel;
-      // vector<memdata_t> DRAMResUsageReel;
       vector<QueryExecSnap> queryExecReel; 
-      
-      // int corrQueryReel[MAX_GRID_CELL][MAX_GRID_CELL] = {0};
-      
-      
-
       bool running = true;
-      bool job_set = false;   // Has job
-      bool job_done = false;  // Job done
+      bool job_set = false;   
+      bool job_done = false;  
     };
 
     
     struct MegaMindThread {
       std::thread th;
       u64 cpuid;
-      
-      
       bool running = true;
-      bool job_set = false;   // Has job
-      bool job_done = false;  // Job done
+      bool job_set = false;  
+      bool job_done = false;  
     };
     
     struct WorkerThread {
       std::thread th;
       u64 cpuid;
-      
       oneapi::tbb::concurrent_priority_queue<Rectangle, Rectangle::compare_f> jobs;
-      oneapi::tbb::concurrent_queue<PerfCounter> perf_stats;  // This is what we are currently using
-
-      std::unordered_map<CPUID, u64> qExecutedMice;  // Grid Id to Mice Count
+      oneapi::tbb::concurrent_queue<PerfCounter> perf_stats;  
+      std::unordered_map<CPUID, u64> qExecutedMice;  
       std::unordered_map<CPUID, u64> qExecutedElephant;
       std::unordered_map<u64, u64> qExecutedMammoth;
-      
       bool running = true;
-      bool job_set = false;   // Has job
-      bool job_done = false;  // Job done
+      bool job_set = false;   
+      bool job_done = false;
     };
 
     struct RouterThread {
       std::thread th;
       u64 cpuid;
-      
-      int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  //It needs to be thread-safe
-      
+      int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  
       bool running = true;
-      bool job_set = false;   // Has job
-      bool job_done = false;  // Job done
+      bool job_set = false;   
+      bool job_done = false;
     };
     
     struct StandbyThread {
       std::thread th;
-      u64 cpuid;
-      
-      // oneapi::tbb::concurrent_priority_queue<std::function<void()>> jobs;
-      
+      u64 cpuid;      
       bool running = true;
-      bool job_set = false;   // Has job
-      bool job_done = false;  // Job done
+      bool job_set = false;  
+      bool job_done = false; 
     };
+    
     // -------------------------------------------------------------------------------------
     std::unordered_map<CPUID, NodeCoreSweeperThread> glb_ncore_sweeper_thrds; 
     std::unordered_map<CPUID, SysSweeperThread> glb_sys_sweeper_thrds; 

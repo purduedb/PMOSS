@@ -107,15 +107,15 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	int max_init_key = -1;
 	static const uint64_t value_type=1; // 0 = random pointers, 1 = pointers to keys
 
-	keys.reserve(10000000);
-	ranges.reserve(10000000);
-	ops.reserve(10000000);
+	// keys.reserve(SINGLE_DIMENSION_KEY_LIMIT);
+	// ranges.reserve(SINGLE_DIMENSION_KEY_LIMIT);
+	// ops.reserve(SINGLE_DIMENSION_KEY_LIMIT);
 
 	memset(&init_keys[0], 0x00, SINGLE_DIMENSION_KEY_LIMIT * sizeof(keytype));
 	memset(&values[0], 0x00, SINGLE_DIMENSION_KEY_LIMIT * sizeof(uint64_t));
-	memset(&keys[0], 0x00, 10000000 * sizeof(keytype));
-	memset(&ranges[0], 0x00, 10000000 * sizeof(int));
-	memset(&ops[0], 0x00, 10000000 * sizeof(int));
+	// memset(&keys[0], 0x00, SINGLE_DIMENSION_KEY_LIMIT * sizeof(keytype));
+	// memset(&ranges[0], 0x00, SINGLE_DIMENSION_KEY_LIMIT * sizeof(int));
+	// memset(&ops[0], 0x00, SINGLE_DIMENSION_KEY_LIMIT * sizeof(int));
 
 	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
@@ -239,7 +239,7 @@ int main(int argc, char* argv[])
 	
 	int cfgIdx = 1;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADX2;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 	
 	// int cfgIdx = 1;
@@ -249,7 +249,7 @@ int main(int argc, char* argv[])
 
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
-		wl = std::atoi(argv[2]);
+		// wl = std::atoi(argv[2]);
 	}
 	
 	cout << "CONFIG=" << cfgIdx << endl;
@@ -475,7 +475,7 @@ int main(int argc, char* argv[])
 	glb_tpool.init_ncoresweeper_threads();
 	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(300000));  //200000(ycsb-a), 490000, 1000000 previously
+	std::this_thread::sleep_for(std::chrono::milliseconds(3000000));  //200000(ycsb-a), 490000, 1000000 previously
 	glb_tpool.terminate_ncoresweeper_threads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	glb_tpool.dump_ncoresweeper_threads();

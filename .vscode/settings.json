@@ -88,7 +88,12 @@
         "cuchar": "cpp",
         "latch": "cpp",
         "syncstream": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "expected": "cpp",
+        "format": "cpp",
+        "spanstream": "cpp",
+        "stacktrace": "cpp",
+        "stdfloat": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

@@ -1,6 +1,9 @@
 #ifndef PMOSS_BTREE_H_
 #define PMOSS_BTREE_H_
 
+#define _GNU_SOURCE
+#define SYS_move_pages2 462
+
 // -------------------------------------------------------------------------------------
 #include <cassert>
 #include <cstring>
@@ -11,6 +14,8 @@
 #include <sched.h>
 #include <numa.h> 
 #include <numaif.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 // -------------------------------------------------------------------------------------
 using namespace std;
 
@@ -621,6 +626,170 @@ struct BTree {
   }
 
 
+uint64_t migratory_scan2_(Key k, int range, Value* output, int destNUMA, int migrate_mode, int num_tries) {
+  int restartCount = 0;
+restart:
+  if (restartCount++)
+    yield(restartCount);
+  bool needRestart = false;
+
+  NodeBase* node = root;
+  uint64_t versionNode = node->readLockOrRestart(needRestart);
+  if (needRestart || (node!=root)) goto restart;
+
+  // Parent of current node
+  BTreeInner<Key>* parent = nullptr;
+  uint64_t versionParent;
+
+  while (node->type==PageType::BTreeInner) {
+    auto inner = static_cast<BTreeInner<Key>*>(node);
+
+    // -------------------------------------------------------------------------------------
+    // Move the node to a destination socket
+    void *ptr_to_check = inner;
+    int status[1];
+    const int destNodes[1] = {destNUMA};
+    
+    // int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+    int ret_code = syscall(SYS_move_pages2, 1, &ptr_to_check, destNodes, status, migrate_mode, num_tries);
+
+    // cout << ret_code << endl;
+    // printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
+    // -------------------------------------------------------------------------------------
+
+    if (parent) {
+      parent->readUnlockOrRestart(versionParent, needRestart);
+      if (needRestart) goto restart;
+    }
+
+    parent = inner;
+    versionParent = versionNode;
+
+    node = inner->children[inner->lowerBound(k)];
+    inner->checkOrRestart(versionNode, needRestart);
+    if (needRestart) goto restart;
+    versionNode = node->readLockOrRestart(needRestart);
+    if (needRestart) goto restart;
+  }
+
+  BTreeLeaf<Key,Value>* leaf = static_cast<BTreeLeaf<Key,Value>*>(node);
+  // -------------------------------------------------------------------------------------
+  // Move the node to a destination socket
+  void *ptr_to_check = leaf;
+  int status[1];
+  const int destNodes[1] = {destNUMA};
+  int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+  // cout << ret_code << endl;
+  // printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
+  // -------------------------------------------------------------------------------------
+  
+  unsigned pos = leaf->lowerBound(k);
+  int count = 0;
+  for (unsigned i=pos; i<leaf->count; i++) {
+    if (count==range)
+      break;
+    output[count++] = leaf->payloads[i];
+  }
+
+  if (parent) {
+    parent->readUnlockOrRestart(versionParent, needRestart);
+    if (needRestart) goto restart;
+  }
+  node->readUnlockOrRestart(versionNode, needRestart);
+  if (needRestart) goto restart;
+
+  return count;
+}
+
+uint64_t migratory_scan3_(Key k, int range, Value* output, int destNUMA, int migrate_mode, int num_tries) {
+  int restartCount = 0;
+restart:
+  if (restartCount++)
+    yield(restartCount);
+  bool needRestart = false;
+
+  NodeBase* node = root;
+  uint64_t versionNode = node->readLockOrRestart(needRestart);
+  if (needRestart || (node!=root)) goto restart;
+
+  // Parent of current node
+  BTreeInner<Key>* parent = nullptr;
+  uint64_t versionParent;
+
+  std::vector<void*> nodes_to_migrate;
+
+  while (node->type==PageType::BTreeInner) {
+    auto inner = static_cast<BTreeInner<Key>*>(node);
+    nodes_to_migrate.push_back(inner);
+
+    // -------------------------------------------------------------------------------------
+    // Move the node to a destination socket
+    void *ptr_to_check = inner;
+    int status[1];
+    const int destNodes[1] = {destNUMA};
+    
+    // int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+    // int ret_code = syscall(SYS_move_pages2, 1, &ptr_to_check, destNodes, status, migrate_mode, num_tries);
+
+    // cout << ret_code << endl;
+    // printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
+    // -------------------------------------------------------------------------------------
+
+    if (parent) {
+      parent->readUnlockOrRestart(versionParent, needRestart);
+      if (needRestart) goto restart;
+    }
+
+    parent = inner;
+    versionParent = versionNode;
+
+    node = inner->children[inner->lowerBound(k)];
+    inner->checkOrRestart(versionNode, needRestart);
+    if (needRestart) goto restart;
+    versionNode = node->readLockOrRestart(needRestart);
+    if (needRestart) goto restart;
+  }
+  
+  BTreeLeaf<Key,Value>* leaf = static_cast<BTreeLeaf<Key,Value>*>(node);
+  nodes_to_migrate.push_back(leaf);
+  // -------------------------------------------------------------------------------------
+  // Move the node to a destination socket
+  // void *ptr_to_check = leaf;
+  // int status[1];
+  // const int destNodes[1] = {destNUMA};
+  // int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+  // cout << ret_code << endl;
+  // printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
+  // -------------------------------------------------------------------------------------
+  
+  // Move all collected nodes to the destination socket
+  int num_nodes = nodes_to_migrate.size();
+  void** nodes_array = nodes_to_migrate.data();
+  int* status = new int[num_nodes];
+  int* destNodes = new int[num_nodes];
+  std::fill(destNodes, destNodes + num_nodes, destNUMA);
+  
+  int ret_code = move_pages(0, num_nodes, nodes_array, destNodes, status, 0);
+  delete[] status;
+  // -------------------------------------------------------------------------------------
+  
+  unsigned pos = leaf->lowerBound(k);
+  int count = 0;
+  for (unsigned i=pos; i<leaf->count; i++) {
+    if (count==range)
+      break;
+    output[count++] = leaf->payloads[i];
+  }
+
+  if (parent) {
+    parent->readUnlockOrRestart(versionParent, needRestart);
+    if (needRestart) goto restart;
+  }
+  node->readUnlockOrRestart(versionNode, needRestart);
+  if (needRestart) goto restart;
+
+  return count;
+}
 
 
 

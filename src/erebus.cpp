@@ -170,6 +170,8 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 
 	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
+
+	init_file = "/mnt/nvme/";
 	  
 	if (ds == YCSB) {
 		init_file += "dataset/loade_zipf_int_200M.dat";
@@ -364,9 +366,9 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 int main(int argc, char* argv[])
 {	
 
-	int cfgIdx = 1;
-	int ds = OSM_CELLIDS;
-	int wl = SD_YCSB_WKLOADX2;
+	int cfgIdx = 200;
+	int ds = YCSB;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 	
 
@@ -560,12 +562,17 @@ int main(int argc, char* argv[])
 	glb_gm.register_grid_cells(config_file);
 	glb_gm.buildDataDistIdx(iam, init_keys);
 	glb_gm.printDataDistIdx();
+	auto start = std::chrono::high_resolution_clock::now();
 	glb_gm.enforce_scheduling();
+	auto end = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+  std::cout << "Elapsed time: " << duration.count() << " ms" << std::endl;
+
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif
 	glb_gm.printGM();
-
+	exit(0);
 	
 	
 	

@@ -13,8 +13,9 @@
 #include "btree/btree.h"
 #endif
 
+
 #define MIGRATE_MODE 2 // 0 (ASYNC), 1 (LIGHT_SYNC), 2 (SYNC), 3 (SYNC_NO_COPY)
-#define RETRY_CNT 7
+#define RETRY_CNT 10
 // -------------------------------------------------------------------------------------
 
 namespace erebus
@@ -193,7 +194,8 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
       //  One solution: the range size have to be less than what you can get
       incKey(nextKey); // hack: this only works for fixed-size keys
       
-      uint64_t nextCount = idx.migratory_scan_(nextKey, range - count, results + count, destNUMA);
+      // uint64_t nextCount = idx.migratory_scan_(nextKey, range - count, results + count, destNUMA);
+      uint64_t nextCount = idx.migratory_scan3_(nextKey, range - count, results + count, destNUMA, MIGRATE_MODE, RETRY_CNT);
       // uint64_t nextCount = idx.migratory_scan2_(nextKey, range - count, results + count, destNUMA, MIGRATE_MODE, RETRY_CNT);
       if (nextCount==0)
         break; // no more entries

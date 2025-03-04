@@ -367,8 +367,9 @@ int main(int argc, char* argv[])
 {	
 
 	int cfgIdx = 200;
+	int cfgIdxFuture = 201;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADC;
+	int wl = SD_YCSB_WKLOAD_MIGRATE1;
 	int iam = BTREE;
 	
 
@@ -514,6 +515,8 @@ int main(int argc, char* argv[])
 		#else 
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
 		std::to_string(MAX_GRID_CELL) + ".txt";	
+		std::string config_file_future = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdxFuture) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
 		#endif 
 	#elif MACHINE == 7
 		#if MAX_GRID_CELL == 100
@@ -560,19 +563,18 @@ int main(int argc, char* argv[])
 	#endif
 
 	glb_gm.register_grid_cells(config_file);
+	glb_gm.register_grid_cells_future(config_file_future);
 	glb_gm.buildDataDistIdx(iam, init_keys);
 	glb_gm.printDataDistIdx();
-	auto start = std::chrono::high_resolution_clock::now();
+	
 	glb_gm.enforce_scheduling();
 	auto end = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-  std::cout << "Elapsed time: " << duration.count() << " ms" << std::endl;
-
+	
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif
-	glb_gm.printGM();
-	exit(0);
+	// glb_gm.printGM();
+	
 	
 	
 	
@@ -599,11 +601,15 @@ int main(int argc, char* argv[])
 	glb_tpool.init_ncoresweeper_threads();
 	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(300000));  // 200000(ycsb-a), 490000 (ini) 
+	std::this_thread::sleep_for(std::chrono::milliseconds(240000));  // 200000(ycsb-a), 490000 (ini) 
 	glb_tpool.terminate_ncoresweeper_threads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	glb_tpool.dump_ncoresweeper_threads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	#if STORAGE == 2
+		cout << MIGRATE_MODE << " " << RETRY_CNT << endl;
+		db.idx_btree->count_numa_division(min_x, max_x, 100000);
+	#endif
 	exit(0);
 	
 	// glb_tpool.terminateRouterThreads();

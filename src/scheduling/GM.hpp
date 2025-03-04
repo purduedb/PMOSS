@@ -16,7 +16,7 @@ using std::ofstream;
 #define EVAL_PMOSS 0
 
 #define SINGLE_DIMENSION_KEY_LIMIT 200000000 // 343901273, 200000000
-#define BTREE_INIT_LIMIT 200000000
+#define BTREE_INIT_LIMIT 50000000
 #define LIMIT 1000                  // test btree workload
 
 #define MAX_GRID_CELL 256
@@ -86,6 +86,7 @@ class GridManager
     };
     
     GridCell glbGridCell[MAX_GRID_CELL];
+    GridCell glbGridCellFuture[MAX_GRID_CELL];
     // -------------------------------------------------------------------------------------
     // Correlation Query Matrix of the grid cells [NUM_GRID_CELLS x NUM_GRID_CELLS]
     // Update: Now each router thread has this
@@ -102,6 +103,8 @@ class GridManager
     void register_grid_cells();
     void register_grid_cells(vector<CPUID> availCPUs);
     void register_grid_cells(string configFile);
+    void register_grid_cells_future(string configFile);
+
     void register_grid_cells_parallel(string configFile);
     void register_index(erebus::storage::rtree::RTree *idx);
     void register_index(erebus::storage::qtree::QuadTree *idx_quadtree);

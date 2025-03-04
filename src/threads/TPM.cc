@@ -67,6 +67,11 @@ void TPManager::init_worker_threads(){
             else if(rec_pop.op == ycsbc::Operation::SCAN){
               result = this->gm->idx_btree->scan(static_cast<uint64_t>(rec_pop.left_), static_cast<int>(rec_pop.right_));
             }
+            else if(rec_pop.op == ycsbc::Operation::MIGRATE){
+              result = this->gm->idx_btree->migrate_(static_cast<uint64_t>(rec_pop.left_), static_cast<int>(rec_pop.right_), 
+                                                    static_cast<uint64_t>(rec_pop.bottom_));
+              
+            }
             else if(rec_pop.op == ycsbc::Operation::READ){
               v.clear();
               result = this->gm->idx_btree->find(static_cast<uint64_t>(rec_pop.left_), &v);
@@ -710,6 +715,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     std::this_thread::sleep_for(std::chrono::milliseconds(30));
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
     
+    static int trk_cfg = 0;
+    static int trk_itr = 0;
     
     double pseudo_min_x = 1;
     double pseudo_max_x = 1 + (max_x - min_x);
@@ -939,13 +946,16 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       wl == OSM_WKLOADA || wl == OSM_WKLOADC || wl == OSM_WKLOADE || wl == OSM_WKLOADH || wl == OSM_WKLOADA0 ||
       wl == SD_YCSB_WKLOADH1 || wl == SD_YCSB_WKLOADH2 || wl == SD_YCSB_WKLOADH3 || wl == SD_YCSB_WKLOADH4 || wl == SD_YCSB_WKLOADH5 ||
       wl == SD_YCSB_WKLOADA00 || wl == SD_YCSB_WKLOADA01 || wl == SD_YCSB_WKLOADC1 || wl == SD_YCSB_WKLOADK || wl == SD_YCSB_WKLOADK2
-      || wl == SD_YCSB_WKLOADK3 || wl == SD_YCSB_WKLOADK4
+      || wl == SD_YCSB_WKLOADK3 || wl == SD_YCSB_WKLOADK4 || wl == SD_YCSB_WKLOAD_MIGRATE1
     ){
       // for inserts open different keyrange config for different router
       // or use a single router
       std::ifstream input;
+      std::ifstream migrate_input;
+
       #if MACHINE==2 || MACHINE == 7
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_2n/";
+      std::string mg_config = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_300_256.txt";
       #elif MACHINE==3
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_8n/";
       #endif
@@ -980,6 +990,11 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       }
       else if (wl == SD_YCSB_WKLOADC1){
         wl_config += "ycsb_workloadc1";
+        input.open(wl_config);
+      }
+      else if (wl == SD_YCSB_WKLOAD_MIGRATE1){
+        w = discrete_dist{0.80, 0.20};
+        wl_config += "ycsb_workloadmigrate1";
         input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADE){
@@ -1309,6 +1324,38 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       query = Rectangle(lx, length, value, -1);
       query.op = tx_keys[2];
       // cout << tx_keys[0] << ' ' << tx_keys[2] << endl;
+    }
+    else if (wl == SD_YCSB_WKLOAD_MIGRATE1){
+      auto index = w(genTem); // which hotspot to choose?
+      if (index == 0){
+        ycsb_wl.DoTransaction(tx_keys);  
+        uint64_t value = -1;
+        
+        lx = init_keys[tx_keys[0]]; // The key to insert/search/update
+        length = tx_keys[1];  // in case of range scan
+        if (tx_keys[2] == ycsbc::Operation::INSERT) value = values[tx_keys[0]];  // in case of 
+        query = Rectangle(lx, length, value, -1);
+        query.op = tx_keys[2];
+        // cout << tx_keys[0] << ' ' << tx_keys[2] << endl;
+      }
+      else {// Migratory scan
+        // Open a new config file
+        // Start migrating from slice 1, then round it to again 1 once it makes a full 
+        uint64_t value = -1;
+        if (trk_itr == 0) value = this->gm->glbGridCellFuture[trk_cfg].idNUMA;
+        else value = this->gm->glbGridCell[trk_cfg].idNUMA;
+        
+        lx = this->gm->glbGridCell[trk_cfg].lx;
+        length = this->gm->DataDist[trk_cfg];
+        
+        trk_cfg += 1;
+        if (trk_cfg == MAX_GRID_CELL){
+          trk_cfg = 0;
+          trk_itr = (trk_itr + 1) % 2;
+        }
+        query = Rectangle(lx, length, value, -1);
+        query.op = ycsbc::Operation::MIGRATE;
+      }
     }
     else if (wl == SD_YCSB_WKLOADX1){
       const int num_hspots = 8;

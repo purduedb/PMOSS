@@ -1,0 +1,12 @@
+#define MIGRATE_MODE 1 // 0 (ASYNC), 1 (LIGHT_SYNC), 2 (SYNC), 3 (SYNC_NO_COPY)
+#define RETRY_CNT 10
+Checkpoint: INDEX_MIGRATION_COMPLETED: 26.9033
+Elapsed time: 26903 ms
+608913 528592 0 0 0 0 0 0 
+------------------------------------------------------------------------------------------------------------------------
+#define MIGRATE_MODE 2 // 0 (ASYNC), 1 (LIGHT_SYNC), 2 (SYNC), 3 (SYNC_NO_COPY)
+#define RETRY_CNT 10
+Checkpoint: INDEX_MIGRATION_COMPLETED: 26.2328
+Elapsed time: 26232 ms
+608913 528592 0 0 0 0 0 0 
+------------------------------------------------------------------------------------------------------------------------

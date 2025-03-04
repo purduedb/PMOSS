@@ -701,7 +701,8 @@ restart:
   return count;
 }
 
-uint64_t migratory_scan3_(Key k, int range, Value* output, int destNUMA, int migrate_mode, int num_tries) {
+uint64_t migratory_scan3_(Key k, int range, Value* output, int destNUMA, int migrate_mode, int num_tries, 
+                          std::vector<void*> &nodes_to_migrate) {
   int restartCount = 0;
 restart:
   if (restartCount++)
@@ -716,7 +717,7 @@ restart:
   BTreeInner<Key>* parent = nullptr;
   uint64_t versionParent;
 
-  std::vector<void*> nodes_to_migrate;
+  // std::vector<void*> nodes_to_migrate;
 
   while (node->type==PageType::BTreeInner) {
     auto inner = static_cast<BTreeInner<Key>*>(node);
@@ -724,9 +725,9 @@ restart:
 
     // -------------------------------------------------------------------------------------
     // Move the node to a destination socket
-    void *ptr_to_check = inner;
-    int status[1];
-    const int destNodes[1] = {destNUMA};
+    // void *ptr_to_check = inner;
+    // int status[1];
+    // const int destNodes[1] = {destNUMA};
     
     // int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
     // int ret_code = syscall(SYS_move_pages2, 1, &ptr_to_check, destNodes, status, migrate_mode, num_tries);
@@ -763,14 +764,15 @@ restart:
   // -------------------------------------------------------------------------------------
   
   // Move all collected nodes to the destination socket
-  int num_nodes = nodes_to_migrate.size();
-  void** nodes_array = nodes_to_migrate.data();
-  int* status = new int[num_nodes];
-  int* destNodes = new int[num_nodes];
-  std::fill(destNodes, destNodes + num_nodes, destNUMA);
+  // int num_nodes = nodes_to_migrate.size();
+  // void** nodes_array = nodes_to_migrate.data();
+  // int* status = new int[num_nodes];
+  // int* destNodes = new int[num_nodes];
+  // std::fill(destNodes, destNodes + num_nodes, destNUMA);
   
-  int ret_code = move_pages(0, num_nodes, nodes_array, destNodes, status, 0);
-  delete[] status;
+  // int ret_code = move_pages(0, num_nodes, nodes_array, destNodes, status, 0);
+  // int ret_code = syscall(SYS_move_pages2, num_nodes, nodes_array, destNodes, status, migrate_mode, num_tries);
+  // delete[] status;
   // -------------------------------------------------------------------------------------
   
   unsigned pos = leaf->lowerBound(k);
@@ -863,9 +865,8 @@ uint64_t migratory_scan_(Key k, int range, Value* output, int destNUMA) {
     if (needRestart) goto restart;
 
     return count;
-  }
+}
 };
-
 
 } // btree
 } // storage

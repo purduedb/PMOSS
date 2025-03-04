@@ -68,6 +68,8 @@ void TPManager::init_worker_threads(){
               result = this->gm->idx_btree->scan(static_cast<uint64_t>(rec_pop.left_), static_cast<int>(rec_pop.right_));
             }
             else if(rec_pop.op == ycsbc::Operation::MIGRATE){
+              // cout << "here" << endl;
+              // cout << rec_pop.left_ << ' ' << rec_pop.right_ << ' ' << rec_pop.bottom_ << endl;
               result = this->gm->idx_btree->migrate_(static_cast<uint64_t>(rec_pop.left_), static_cast<int>(rec_pop.right_), 
                                                     static_cast<uint64_t>(rec_pop.bottom_));
               
@@ -951,11 +953,9 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // for inserts open different keyrange config for different router
       // or use a single router
       std::ifstream input;
-      std::ifstream migrate_input;
 
       #if MACHINE==2 || MACHINE == 7
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_2n/";
-      std::string mg_config = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_300_256.txt";
       #elif MACHINE==3
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_8n/";
       #endif
@@ -1352,9 +1352,11 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         if (trk_cfg == MAX_GRID_CELL){
           trk_cfg = 0;
           trk_itr = (trk_itr + 1) % 2;
+          // cout << trk_itr << ' ';
         }
         query = Rectangle(lx, length, value, -1);
         query.op = ycsbc::Operation::MIGRATE;
+        // cout << "Migrate" << endl;
       }
     }
     else if (wl == SD_YCSB_WKLOADX1){

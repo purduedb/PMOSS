@@ -171,7 +171,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
 
-	init_file = "/mnt/nvme/";
+	// init_file = "/mnt/nvme/";
 	  
 	if (ds == YCSB) {
 		init_file += "dataset/loade_zipf_int_200M.dat";
@@ -366,8 +366,8 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 int main(int argc, char* argv[])
 {	
 
-	int cfgIdx = 200;
-	int cfgIdxFuture = 201;
+	int cfgIdx = 0;
+	int cfgIdxFuture = 30;
 	int ds = YCSB;
 	int wl = SD_YCSB_WKLOAD_MIGRATE1;
 	int iam = BTREE;
@@ -573,7 +573,7 @@ int main(int argc, char* argv[])
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif
-	// glb_gm.printGM();
+	glb_gm.printGM();
 	
 	
 	
@@ -601,7 +601,7 @@ int main(int argc, char* argv[])
 	glb_tpool.init_ncoresweeper_threads();
 	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(240000));  // 200000(ycsb-a), 490000 (ini) 
+	std::this_thread::sleep_for(std::chrono::milliseconds(720000));  // 200000(ycsb-a), 490000 (ini) 
 	glb_tpool.terminate_ncoresweeper_threads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	glb_tpool.dump_ncoresweeper_threads();

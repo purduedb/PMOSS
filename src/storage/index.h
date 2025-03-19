@@ -14,8 +14,8 @@
 #endif
 
 
-#define MIGRATE_MODE 2 // 0 (ASYNC), 1 (LIGHT_SYNC), 2 (SYNC), 3 (SYNC_NO_COPY)
-#define RETRY_CNT 1
+// #define MIGRATE_MODE 0 // 0 (ASYNC), 1 (LIGHT_SYNC), 2 (SYNC), 3 (SYNC_NO_COPY)
+// #define BATCH_SIZE 2048
 // -------------------------------------------------------------------------------------
 
 namespace erebus
@@ -27,6 +27,10 @@ template<typename KeyType, class KeyComparator>
 class Index
 {
  public:
+  // Migrate parameters
+  int migration_mode = 0;
+  int bsize = 512;
+  
   // Used for migrating nodes to certain numa nodes
   virtual uint64_t migrate(KeyType key1, KeyType key2, int range, int destNUMA) = 0;
   
@@ -186,7 +190,7 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
     
     // For optimization purposes?
     // uint64_t count = idx.scan(key, range, results);
-    uint64_t count = idx.migratory_scan3_(key, range, results, destNUMA, MIGRATE_MODE, RETRY_CNT, nodes_to_migrate);
+    uint64_t count = idx.migratory_scan3_(key, range, results, destNUMA, this->migration_mode, this->bsize, nodes_to_migrate);
     // cout << count << endl;
     if (count==0)
        return 0;
@@ -201,8 +205,8 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
       incKey(nextKey); // hack: this only works for fixed-size keys
       
       // uint64_t nextCount = idx.migratory_scan_(nextKey, range - count, results + count, destNUMA);
-      uint64_t nextCount = idx.migratory_scan3_(nextKey, range - count, results + count, destNUMA, MIGRATE_MODE, RETRY_CNT, nodes_to_migrate);
-      // uint64_t nextCount = idx.migratory_scan2_(nextKey, range - count, results + count, destNUMA, MIGRATE_MODE, RETRY_CNT);
+      uint64_t nextCount = idx.migratory_scan3_(nextKey, range - count, results + count, destNUMA, this->migration_mode, this->bsize, nodes_to_migrate);
+      // uint64_t nextCount = idx.migratory_scan2_(nextKey, range - count, results + count, destNUMA, MIGRATE_MODE, BATCH_SIZE);
       if (nextCount==0)
         break; // no more entries
       count += nextCount;
@@ -215,7 +219,13 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
     std::fill(destNodes, destNodes + num_nodes, destNUMA);
   
     // int ret_code = move_pages(0, num_nodes, nodes_array, destNodes, status, 0);
-    int ret_code = syscall(SYS_move_pages2, num_nodes, nodes_array, destNodes, status, MIGRATE_MODE, RETRY_CNT);
+    int ret_code = syscall(SYS_move_pages2, num_nodes, nodes_array, destNodes, status, this->migration_mode, this->bsize);
+    // int ret_code = syscall(SYS_move_pages2, num_nodes, nodes_array, destNodes, status, MIGRATE_MODE, BATCH_SIZE);
+    count = 0;
+    for(auto i = 0; i < num_nodes; i++) {
+      if (status[i] >=0 && status[i] <= 1 )
+        count += 1;
+    }
     delete[] status;
 
     return count;

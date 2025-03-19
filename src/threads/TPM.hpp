@@ -25,6 +25,7 @@
 #include "utils/ZipfDist.hpp"
 #include "ycsbc/uniform_generator.h"
 #include "ycsbc/core_workload.h"
+#include <atomic>
 
 using namespace erebus::storage::rtree;
 namespace erebus
@@ -67,7 +68,8 @@ class TPManager{
     static const int CURR_SYS_SWEEPER_THREADS = 1;
     static const int CURR_MEGAMIND_THREADS = 1;   //For ycsb-insert realted set it to 1
     static const int CURR_ROUTER_THREADS = 2;
-	  static const int CURR_WORKER_THREADS = 48;
+	  // static const int CURR_WORKER_THREADS = 48;
+    static const int CURR_WORKER_THREADS = 10;
 #elif MACHINE == 3
     static const int CURR_NCORE_SWEEPER_THREADS = 8;
     static const int CURR_SYS_SWEEPER_THREADS = 0;
@@ -154,6 +156,8 @@ class TPManager{
       std::unordered_map<CPUID, u64> qExecutedElephant;
       std::unordered_map<u64, u64> qExecutedMammoth;
       
+      std::atomic<int> successful_migration{0};
+
       bool running = true;
       bool job_set = false;   // Has job
       bool job_done = false;  // Job done

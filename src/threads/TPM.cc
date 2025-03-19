@@ -73,6 +73,9 @@ void TPManager::init_worker_threads(){
               result = this->gm->idx_btree->migrate_(static_cast<uint64_t>(rec_pop.left_), static_cast<int>(rec_pop.right_), 
                                                     static_cast<uint64_t>(rec_pop.bottom_));
               
+              glb_worker_thrds[worker_cpuids[i]].successful_migration.fetch_add(result, std::memory_order_relaxed);
+              if (static_cast<uint64_t>(rec_pop.top_) == 0)
+                cout << "|";
             }
             else if(rec_pop.op == ycsbc::Operation::READ){
               v.clear();
@@ -575,10 +578,13 @@ void TPManager::dump_ncoresweeper_threads(){
 }
 
 void TPManager::terminate_worker_threads(){
+  std::atomic<int> succes_migration(0);
   for (const auto & [ key, value ] : glb_worker_thrds) {
     glb_worker_thrds[key].running = false;
+    succes_migration.fetch_add(glb_worker_thrds[key].successful_migration, std::memory_order_relaxed);
     // glb_worker_thrds[key].th.detach();
   }
+  std::cout << "Successful migration =  " << succes_migration.load() << std::endl;
 }
 
 void TPManager::terminate_ncoresweeper_threads(){
@@ -1354,7 +1360,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
           trk_itr = (trk_itr + 1) % 2;
           // cout << trk_itr << ' ';
         }
-        query = Rectangle(lx, length, value, -1);
+        query = Rectangle(lx, length, value, trk_cfg);
         query.op = ycsbc::Operation::MIGRATE;
         // cout << "Migrate" << endl;
       }

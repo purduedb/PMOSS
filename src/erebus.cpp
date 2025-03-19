@@ -366,16 +366,19 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 int main(int argc, char* argv[])
 {	
 
-	int cfgIdx = 0;
-	int cfgIdxFuture = 30;
+	int cfgIdx = 300;
+	int cfgIdxFuture = 301;
 	int ds = YCSB;
 	int wl = SD_YCSB_WKLOAD_MIGRATE1;
 	int iam = BTREE;
-	
+	int migMode = -1;
+	int migBatchSize = -1;
 
 	if (argc > 1) {
-		cfgIdx = std::atoi(argv[1]);
-		wl = std::atoi(argv[2]);
+		// cfgIdx = std::atoi(argv[1]);
+		// wl = std::atoi(argv[2]);
+		migMode = std::atoi(argv[1]);
+		migBatchSize = std::atoi(argv[2]);
 	}
 	
 	cout << "CONFIG=" << cfgIdx << endl;
@@ -453,9 +456,12 @@ int main(int argc, char* argv[])
 	#elif MACHINE == 1
 		num_workers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#elif MACHINE == 2 
-		num_workers = 24;  // Change the CURR_WORKER_THREADS in TPM.hpp
-		ss_cpuids.push_back(31);
-		mm_cpuids.push_back(63);
+		// num_workers = 24;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		// ss_cpuids.push_back(31);
+		// mm_cpuids.push_back(63);
+		num_workers = 5;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		// ss_cpuids.push_back(31);
+		// mm_cpuids.push_back(63);
 	#elif MACHINE == 7
 		num_workers = 14;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#elif MACHINE == 3
@@ -506,6 +512,9 @@ int main(int argc, char* argv[])
 	#elif STORAGE == 2
 		int kt = RAND_KEY;
 		db.build_btree(ds, kt, init_keys, values);
+		// Set the migration parameters
+		db.idx_btree->migration_mode = migMode;
+		db.idx_btree->bsize = migBatchSize;
 		glb_gm.register_index(db.idx_btree);
 	#endif
 	#if EVAL_PMOSS == 0
@@ -597,17 +606,18 @@ int main(int argc, char* argv[])
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
 
 	glb_tpool.init_worker_threads();
-	glb_tpool.init_megamind_threads();
+	// glb_tpool.init_megamind_threads();
 	glb_tpool.init_ncoresweeper_threads();
 	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(720000));  // 200000(ycsb-a), 490000 (ini) 
+	std::this_thread::sleep_for(std::chrono::milliseconds(360000));  // 200000(ycsb-a), 490000 (ini) 
 	glb_tpool.terminate_ncoresweeper_threads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	glb_tpool.dump_ncoresweeper_threads();
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	glb_tpool.terminate_worker_threads();
 	#if STORAGE == 2
-		cout << MIGRATE_MODE << " " << RETRY_CNT << endl;
+		cout << db.idx_btree->migration_mode << " " << db.idx_btree->bsize<< endl;
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif
 	exit(0);

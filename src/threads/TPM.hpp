@@ -35,6 +35,8 @@ namespace tp
 
 class TPManager{
   public:
+    // For migration
+    double migRatio;
     dm::GridManager *gm;
     scheduler:: ResourceManager *rm;
     

@@ -215,14 +215,18 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
     int num_nodes = nodes_to_migrate.size();
     void** nodes_array = nodes_to_migrate.data();
     int* status = new int[num_nodes];
+    // int* status = new int[num_nodes];
+    std::fill(status, status + num_nodes, -1); // Using std::fill to set all elements to -1
+
     int* destNodes = new int[num_nodes];
     std::fill(destNodes, destNodes + num_nodes, destNUMA);
   
-    // int ret_code = move_pages(0, num_nodes, nodes_array, destNodes, status, 0);
-    int ret_code = syscall(SYS_move_pages2, num_nodes, nodes_array, destNodes, status, this->migration_mode, this->bsize);
-    // int ret_code = syscall(SYS_move_pages2, num_nodes, nodes_array, destNodes, status, MIGRATE_MODE, BATCH_SIZE);
+    int ret_code = move_pages(0, num_nodes, nodes_array, destNodes, status, 0);
+    // int ret_code = syscall(SYS_move_pages2, num_nodes, nodes_array, destNodes, status, this->migration_mode, this->bsize);
     count = 0;
+
     for(auto i = 0; i < num_nodes; i++) {
+      // cout << status[i] << ' ';
       if (status[i] >=0 && status[i] <= 1 )
         count += 1;
     }

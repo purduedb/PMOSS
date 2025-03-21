@@ -650,8 +650,8 @@ restart:
     int status[1];
     const int destNodes[1] = {destNUMA};
     
-    // int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
-    int ret_code = syscall(SYS_move_pages2, 1, &ptr_to_check, destNodes, status, migrate_mode, num_tries);
+    int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
+    // int ret_code = syscall(SYS_move_pages2, 1, &ptr_to_check, destNodes, status, migrate_mode, num_tries);
 
     // cout << ret_code << endl;
     // printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);

@@ -371,14 +371,15 @@ int main(int argc, char* argv[])
 	int ds = YCSB;
 	int wl = SD_YCSB_WKLOAD_MIGRATE1;
 	int iam = BTREE;
-	int migMode = -1;
-	int migBatchSize = -1;
-
+	int migMode = 0;
+	int migBatchSize = 256;
+	double migRatio = 0.99;
 	if (argc > 1) {
 		// cfgIdx = std::atoi(argv[1]);
-		// wl = std::atoi(argv[2]);
-		migMode = std::atoi(argv[1]);
-		migBatchSize = std::atoi(argv[2]);
+		wl = std::atoi(argv[1]);
+		migMode = std::atoi(argv[2]);
+		migBatchSize = std::atoi(argv[3]);
+		migRatio = std::stod(argv[4]);
 	}
 	
 	cout << "CONFIG=" << cfgIdx << endl;
@@ -574,7 +575,7 @@ int main(int argc, char* argv[])
 	glb_gm.register_grid_cells(config_file);
 	glb_gm.register_grid_cells_future(config_file_future);
 	glb_gm.buildDataDistIdx(iam, init_keys);
-	glb_gm.printDataDistIdx();
+	// glb_gm.printDataDistIdx();
 	
 	glb_gm.enforce_scheduling();
 	auto end = std::chrono::high_resolution_clock::now();
@@ -582,7 +583,7 @@ int main(int argc, char* argv[])
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif
-	glb_gm.printGM();
+	// glb_gm.printGM();
 	
 	
 	
@@ -604,7 +605,7 @@ int main(int argc, char* argv[])
 	// -------------------------------------------------------------------------------------
 	
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
-
+	glb_tpool.migRatio = migRatio;
 	glb_tpool.init_worker_threads();
 	// glb_tpool.init_megamind_threads();
 	glb_tpool.init_ncoresweeper_threads();
@@ -617,7 +618,8 @@ int main(int argc, char* argv[])
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	glb_tpool.terminate_worker_threads();
 	#if STORAGE == 2
-		cout << db.idx_btree->migration_mode << " " << db.idx_btree->bsize<< endl;
+		cout << db.idx_btree->migration_mode << " " << db.idx_btree->bsize  
+		 << " " << wl << " " << migRatio << endl;
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif
 	exit(0);

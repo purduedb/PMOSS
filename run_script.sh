@@ -1,9 +1,29 @@
 #!/bin/bash
 # ulimit -s unlimited
 
-for bs in 512 1024 2048 4096 8192 16384 32768; do
-  /users/yrayhan/PMOSS/build/bin/erebus 3 $bs 
+# for bs in 512 1024 2048 4096 8192 16384 32768; do
+#   /users/yrayhan/PMOSS/build/bin/erebus 3 512 
+# done
+# for r in 0.01 0.2 0.5; do
+# for r in 0.2; do
+#   for wl in 49; do
+#     for mode in 0 1 2; do
+#       for bs in 64 128 256 512 1024 2048 4096; do
+#         /users/yrayhan/PMOSS/build/bin/erebus_custom $wl $mode $bs $r
+#       done
+#     done
+#   done 
+# done
+
+for r in 0.01; do
+  for wl in 48 49 50; do
+    /users/yrayhan/PMOSS/build/bin/erebus_native3 $wl -1 512 $r
+    for mode in 0 1 2; do
+      /users/yrayhan/PMOSS/build/bin/erebus_custom3 $wl $mode 512 $r
+    done
+  done 
 done
+
 # Baselines:Run the read workloads
 # for wl in 12 16 32 41 34 35 36; do
 #   for cfg in 100 101 102 103; do

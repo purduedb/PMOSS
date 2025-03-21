@@ -74,8 +74,8 @@ void TPManager::init_worker_threads(){
                                                     static_cast<uint64_t>(rec_pop.bottom_));
               
               glb_worker_thrds[worker_cpuids[i]].successful_migration.fetch_add(result, std::memory_order_relaxed);
-              if (static_cast<uint64_t>(rec_pop.top_) == 0)
-                cout << "|";
+              // if (static_cast<uint64_t>(rec_pop.top_) == 0)
+              //   cout << "|";
             }
             else if(rec_pop.op == ycsbc::Operation::READ){
               v.clear();
@@ -88,7 +88,7 @@ void TPManager::init_worker_threads(){
             //   << static_cast<uint64_t>(rec_pop.bottom_) << endl;
           #endif
           
-          cnt +=1;
+          if (rec_pop.op != ycsbc::Operation::MIGRATE) cnt +=1;
           if (cnt == PERF_STAT_COLLECTION_INTERVAL){
             e.stopCounters();
             cnt=0;
@@ -954,7 +954,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       wl == OSM_WKLOADA || wl == OSM_WKLOADC || wl == OSM_WKLOADE || wl == OSM_WKLOADH || wl == OSM_WKLOADA0 ||
       wl == SD_YCSB_WKLOADH1 || wl == SD_YCSB_WKLOADH2 || wl == SD_YCSB_WKLOADH3 || wl == SD_YCSB_WKLOADH4 || wl == SD_YCSB_WKLOADH5 ||
       wl == SD_YCSB_WKLOADA00 || wl == SD_YCSB_WKLOADA01 || wl == SD_YCSB_WKLOADC1 || wl == SD_YCSB_WKLOADK || wl == SD_YCSB_WKLOADK2
-      || wl == SD_YCSB_WKLOADK3 || wl == SD_YCSB_WKLOADK4 || wl == SD_YCSB_WKLOAD_MIGRATE1
+      || wl == SD_YCSB_WKLOADK3 || wl == SD_YCSB_WKLOADK4 || wl == SD_YCSB_WKLOAD_MIGRATE1 || wl == SD_YCSB_WKLOAD_MIGRATE2
+      || wl == SD_YCSB_WKLOAD_MIGRATE3
     ){
       // for inserts open different keyrange config for different router
       // or use a single router
@@ -999,8 +1000,24 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOAD_MIGRATE1){
-        w = discrete_dist{0.80, 0.20};
+        double qRatio = 1-this->migRatio;
+        double mRatio = this->migRatio;
+        w = discrete_dist{qRatio, mRatio};
         wl_config += "ycsb_workloadmigrate1";
+        input.open(wl_config);
+      }
+      else if (wl == SD_YCSB_WKLOAD_MIGRATE2){
+        double qRatio = 1-this->migRatio;
+        double mRatio = this->migRatio;
+        w = discrete_dist{qRatio, mRatio};
+        wl_config += "ycsb_workloadmigrate2_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if (wl == SD_YCSB_WKLOAD_MIGRATE3){
+        double qRatio = 1-this->migRatio;
+        double mRatio = this->migRatio;
+        w = discrete_dist{qRatio, mRatio};
+        wl_config += "ycsb_workloadmigrate3_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
       else if (wl == SD_YCSB_WKLOADE){
@@ -1331,7 +1348,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       query.op = tx_keys[2];
       // cout << tx_keys[0] << ' ' << tx_keys[2] << endl;
     }
-    else if (wl == SD_YCSB_WKLOAD_MIGRATE1){
+    else if (wl == SD_YCSB_WKLOAD_MIGRATE1 || wl == SD_YCSB_WKLOAD_MIGRATE2 || wl == SD_YCSB_WKLOAD_MIGRATE3){
       auto index = w(genTem); // which hotspot to choose?
       if (index == 0){
         ycsb_wl.DoTransaction(tx_keys);  

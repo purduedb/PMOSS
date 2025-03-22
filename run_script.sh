@@ -15,7 +15,7 @@
 #   done 
 # done
 
-for r in 0.01; do
+for r in 0.25 0.5; do
   for wl in 48 49 50; do
     /users/yrayhan/PMOSS/build/bin/erebus_native3 $wl -1 512 $r
     for mode in 0 1 2; do

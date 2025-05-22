@@ -5,9 +5,9 @@ mode=0
 bs=64
 for r in 0.25; do
   for wl in 48; do
-    /users/yrayhan/PMOSS_ADMS/build/bin/erebus_native $wl -1 512 $r > "results/adms_results.txt"
-    # /users/yrayhan/PMOSS_ADMS/build/bin/erebus_custom $wl $mode 512 $r > "results/adms_results.txt"
-    # /users/yrayhan/PMOSS_ADMS/build/bin/erebus $wl $mode $bs $r > "results/adms_results.txt"
+    /users/yrayhan/PMOSS/build/bin/erebus $wl -1 512 $r >> "results/adms_results.txt"
+    # /users/yrayhan/PMOSS/build/bin/erebus_custom $wl $mode 512 $r >> "results/adms_results.txt"
+    # /users/yrayhan/PMOSS/build/bin/erebus $wl $mode $bs $r >> "results/adms_results.txt"
   done 
 done
 

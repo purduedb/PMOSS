@@ -960,8 +960,10 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
 
       #if MACHINE==2 || MACHINE == 7 || MACHINE == 8
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_2n/";
-      #elif MACHINE==3
+      #elif MACHINE == 3
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_8n/";
+      #elif MACHINE == 10
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/1s_4n/";
       #endif
       
       if (wl == SD_YCSB_WKLOADA){

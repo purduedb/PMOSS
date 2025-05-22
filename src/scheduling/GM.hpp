@@ -16,7 +16,7 @@ using std::ofstream;
 #define EVAL_PMOSS 0
 
 #define SINGLE_DIMENSION_KEY_LIMIT 500000000 // 343901273, 200000000
-#define BTREE_INIT_LIMIT 350000000
+#define BTREE_INIT_LIMIT 300000000
 #define LIMIT 1000                  // test btree workload
 
 #define MAX_GRID_CELL 256
@@ -31,7 +31,7 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define MULTIDIM 0 
 #define STORAGE 2  // RTree(0), QTree(1), BTree
-#define MACHINE 2 // 0 (BIGDATA), 1(DBSERVER), 2 (AMD)
+#define MACHINE 10 // 0 (BIGDATA), 1(DBSERVER), 2 (AMD)
 #define LINUX 3 // 0 (SE 0, SE-NUMA 1, SN-NUMA 2, OURS, 3)
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------

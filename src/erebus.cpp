@@ -45,7 +45,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	// init_file = "/mnt/nvme/";
 	  
 	if (ds == YCSB) {
-		init_file += "dataset/loade_zipf_int_200M.dat";
+		init_file += "dataset/loade_zipf_int_500M.dat";
   } 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
@@ -268,7 +268,10 @@ int main(int argc, char* argv[])
 	double min_x, max_x, min_y, max_y;
 	if (ds == YCSB){
 		// min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
-		min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
+		//100M and 200M Points
+		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; 
+		//500M 
+		min_x = 734139722786418736; max_x = 6075995071374232121; min_y = -1; max_y = -1; 
 	}
 	
 	erebus::dm::GridManager glb_gm(cfgIdx, wl, iam, MAX_GRID_CELL, 1, min_x, max_x, min_y, max_y);

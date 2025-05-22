@@ -5,8 +5,9 @@ files = [
 # "fb_200M_uint64",
 # "osm_cellids_100M_uint64"
 # "osm_cellids_200M_uint64"
-"osm_cellids_600M_uint64"
+# "osm_cellids_600M_uint64"
 # "loade_zipf_int_100M.dat"
+"loade_zipf_int_500M.dat"
 ]
 
 # Initialize variables to store min and max values
@@ -29,12 +30,12 @@ max_value = float('-inf')
 # print("Maximum value in the 2nd column:", max_value)
 
 for _ in files:
-  fname = "/users/yrayhan/works/erebus/src/dataset/" + _  
+  fname = "./src/dataset/" + _  
   pts = np.fromfile(fname, dtype=np.uint64)
-  size = 340000000
+  size = 500000000
   print(pts.shape)
   print(pts[0:30])
-  print(min(pts[1:size+2]), max(pts[1:size+2]))
+  print(min(pts[1:size]), max(pts[1:size]))
 exit(0)
 
 # for _ in files:

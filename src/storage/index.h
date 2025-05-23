@@ -221,8 +221,8 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
     int* destNodes = new int[num_nodes];
     std::fill(destNodes, destNodes + num_nodes, destNUMA);
   
-    int ret_code = move_pages(0, num_nodes, nodes_array, destNodes, status, 0);
-    // int ret_code = syscall(SYS_move_pages2, num_nodes, nodes_array, destNodes, status, this->migration_mode, this->bsize);
+    // int ret_code = move_pages(0, num_nodes, nodes_array, destNodes, status, 0);
+    int ret_code = syscall(SYS_move_pages2, num_nodes, nodes_array, destNodes, status, this->migration_mode, this->bsize);
     count = 0;
 
     for(auto i = 0; i < num_nodes; i++) {

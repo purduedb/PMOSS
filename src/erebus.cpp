@@ -314,11 +314,13 @@ int main(int argc, char* argv[])
 		num_workers = 14;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#elif MACHINE == 3
 		num_workers = 6;  // Change the CURR_WORKER_THREADS in TPM.hpp
+	#elif MACHINE == 10
+		num_workers = 5;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#else
 		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#endif
 	
-	#if MACHINE ==2 
+	#if MACHINE == 2 || MACHINE == 10
 		for(auto n=0; n < num_NUMA_nodes; n++){
 			rt_cpuids.push_back(cPool[n][1]);
 			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
@@ -379,6 +381,15 @@ int main(int argc, char* argv[])
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
+		#endif 
+	#elif MACHINE == 10 
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7542_1s_4n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
+		std::string config_file_future = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7542_1s_4n/c_" + std::to_string(cfgIdxFuture) + "_" + 
 		std::to_string(MAX_GRID_CELL) + ".txt";	
 		#endif 
 	#endif

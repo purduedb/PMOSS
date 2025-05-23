@@ -630,3 +630,119 @@ Successful migration =  1107714171
 CONFIG=300
 WKLOAD=48
 500000000
+Checkpoint: INDEX_BUILD_COMPLETED: 311.347
+Checkpoint: INDEX_MIGRATION_COMPLETED: 4.53479
+491612 491267 0 0 0 0 0 0 
+==========================DUMPING Core Sweeper Threads=======================
+==========================Started dumping NCore Sweeper Thread =====> 12
+==========================Finished dumping NCore Sweeper Thread =====> 12
+-------------------------------------------------------------------------------------
+==========================Started dumping NCore Sweeper Thread =====> 2
+==========================Finished dumping NCore Sweeper Thread =====> 2
+-------------------------------------------------------------------------------------
+==================================================================
+Successful migration =  1102524611
+0 64 48 0.01
+428891 553988 0 0 0 0 0 0 
+CONFIG=300
+WKLOAD=48
+500000000
+Checkpoint: INDEX_BUILD_COMPLETED: 311.936
+Checkpoint: INDEX_MIGRATION_COMPLETED: 4.54079
+491612 491267 0 0 0 0 0 0 
+==========================DUMPING Core Sweeper Threads=======================
+==========================Started dumping NCore Sweeper Thread =====> 12
+==========================Finished dumping NCore Sweeper Thread =====> 12
+-------------------------------------------------------------------------------------
+==========================Started dumping NCore Sweeper Thread =====> 2
+==========================Finished dumping NCore Sweeper Thread =====> 2
+-------------------------------------------------------------------------------------
+==================================================================
+Successful migration =  1147278619
+0 128 48 0.01
+470733 512146 0 0 0 0 0 0 
+CONFIG=300
+WKLOAD=48
+500000000
+Checkpoint: INDEX_BUILD_COMPLETED: 306.277
+Checkpoint: INDEX_MIGRATION_COMPLETED: 4.5665
+491612 491267 0 0 0 0 0 0 
+==========================DUMPING Core Sweeper Threads=======================
+==========================Started dumping NCore Sweeper Thread =====> 12
+==========================Finished dumping NCore Sweeper Thread =====> 12
+-------------------------------------------------------------------------------------
+==========================Started dumping NCore Sweeper Thread =====> 2
+==========================Finished dumping NCore Sweeper Thread =====> 2
+-------------------------------------------------------------------------------------
+==================================================================
+Successful migration =  1126845241
+0 256 48 0.01
+444142 538737 0 0 0 0 0 0 
+CONFIG=300
+WKLOAD=48
+500000000
+Checkpoint: INDEX_BUILD_COMPLETED: 311.757
+Checkpoint: INDEX_MIGRATION_COMPLETED: 4.60077
+491612 491267 0 0 0 0 0 0 
+==========================DUMPING Core Sweeper Threads=======================
+==========================Started dumping NCore Sweeper Thread =====> 12
+==========================Finished dumping NCore Sweeper Thread =====> 12
+-------------------------------------------------------------------------------------
+==========================Started dumping NCore Sweeper Thread =====> 2
+==========================Finished dumping NCore Sweeper Thread =====> 2
+-------------------------------------------------------------------------------------
+==================================================================
+Successful migration =  1071702146
+0 512 48 0.01
+467849 515030 0 0 0 0 0 0 
+CONFIG=300
+WKLOAD=48
+500000000
+Checkpoint: INDEX_BUILD_COMPLETED: 327.117
+Checkpoint: INDEX_MIGRATION_COMPLETED: 4.67329
+491612 491267 0 0 0 0 0 0 
+==========================DUMPING Core Sweeper Threads=======================
+==========================Started dumping NCore Sweeper Thread =====> 12
+==========================Finished dumping NCore Sweeper Thread =====> 12
+-------------------------------------------------------------------------------------
+==========================Started dumping NCore Sweeper Thread =====> 2
+==========================Finished dumping NCore Sweeper Thread =====> 2
+-------------------------------------------------------------------------------------
+==================================================================
+Successful migration =  1103451638
+0 1024 48 0.01
+464188 518691 0 0 0 0 0 0 
+CONFIG=300
+WKLOAD=48
+500000000
+Checkpoint: INDEX_BUILD_COMPLETED: 309.268
+Checkpoint: INDEX_MIGRATION_COMPLETED: 4.7253
+491612 491267 0 0 0 0 0 0 
+==========================DUMPING Core Sweeper Threads=======================
+==========================Started dumping NCore Sweeper Thread =====> 12
+==========================Finished dumping NCore Sweeper Thread =====> 12
+-------------------------------------------------------------------------------------
+==========================Started dumping NCore Sweeper Thread =====> 2
+==========================Finished dumping NCore Sweeper Thread =====> 2
+-------------------------------------------------------------------------------------
+==================================================================
+Successful migration =  996048809
+0 2048 48 0.01
+524849 458030 0 0 0 0 0 0 
+CONFIG=300
+WKLOAD=48
+500000000
+Checkpoint: INDEX_BUILD_COMPLETED: 316.532
+Checkpoint: INDEX_MIGRATION_COMPLETED: 5.00873
+491612 491267 0 0 0 0 0 0 
+==========================DUMPING Core Sweeper Threads=======================
+==========================Started dumping NCore Sweeper Thread =====> 12
+==========================Finished dumping NCore Sweeper Thread =====> 12
+-------------------------------------------------------------------------------------
+==========================Started dumping NCore Sweeper Thread =====> 2
+==========================Finished dumping NCore Sweeper Thread =====> 2
+-------------------------------------------------------------------------------------
+==================================================================
+Successful migration =  858868260
+0 4096 48 0.01
+472422 510457 0 0 0 0 0 0 

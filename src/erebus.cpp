@@ -380,12 +380,17 @@ int main(int argc, char* argv[])
 		
 		ncore_cpuids.push_back(cPool[n][2]);
 		
-		int cnt = 1;
-		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
-			if (cPool[n][j] == 0 || cPool[n][j] == 12) 
+		int cnt = 0;
+		for(size_t j = 0; j < cPool[n].size(); j++){
+			if (j == 1 || j == 2) 
+				continue;
+			if (cPool[n][j] == 0 || cPool[n][j] == 12){
+				cnt++;
 				continue; 
+			} 
 			wrk_cpuids.push_back(cPool[n][j]);
 			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+			cnt++;
 			if (cnt == num_workers) break;
 		}
 	}
@@ -507,7 +512,7 @@ int main(int argc, char* argv[])
 	cout << config_file << endl;
 	glb_gm.register_grid_cells(config_file);
 	glb_gm.buildDataDistIdx(iam, init_keys);
-	glb_gm.printDataDistIdx();
+	// glb_gm.printDataDistIdx();
 	glb_gm.enforce_scheduling();
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);

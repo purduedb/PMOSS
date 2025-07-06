@@ -16,8 +16,8 @@ using std::ofstream;
 #define EVAL_PMOSS 0  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
 #define MACHINE 0     // 0 (BIGDATA), 1(DBSERVER)
 
-#define SINGLE_DIMENSION_KEY_LIMIT 200000000 // total keys in db       
-#define BTREE_INIT_LIMIT 30000000 // initial number of keys in btree          
+#define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // total keys in db       
+#define BTREE_INIT_LIMIT 1000000000 // initial number of keys in btree   30000000        
 #define LIMIT 1000        
 
 #define MAX_GRID_CELL 256 // total number of index slices = MAX_XPAR*MAX_YPAR

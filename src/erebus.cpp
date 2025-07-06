@@ -121,7 +121,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   
 	if (ds == YCSB) {
-		init_file = "/scratch1/yrayhan/loade_zipf_int_200M.dat";
+		init_file = "/scratch1/yrayhan/loade_zipf_int_1000M.dat";
 		// txn_file += "workloads/txnse_zipf_int_100M.dat";
   } else if (ds == WIKI) {
     init_file = "/scratch1/yrayhan/wiki_ts_200M_uint64.dat";
@@ -194,15 +194,47 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	cout << total_num_key << endl;
 	
 	auto start = std::chrono::high_resolution_clock::now();
-	for(size_t i = 0; i < BTREE_INIT_LIMIT; i++) {
-		this->idx_btree->insert(init_keys[i], values[i]);
-  }
+	// Multi-threaded insertion
+	std::vector<std::thread> insert_threads;
+  int NUM_INSERTION_THREADS = erebus::tp::TPManager::CURR_WORKER_THREADS;
+	insert_threads.reserve(NUM_INSERTION_THREADS);
+	size_t chunk_size = BTREE_INIT_LIMIT / NUM_INSERTION_THREADS;
+	size_t remainder = BTREE_INIT_LIMIT % NUM_INSERTION_THREADS;
+	// Create worker threads
+	for (unsigned i = 0; i < erebus::tp::TPManager::CURR_WORKER_THREADS; ++i) {
+		// Determine the start and end indices for this thread
+		size_t start_idx = i * chunk_size + std::min(static_cast<size_t>(i), remainder);
+		size_t end_idx = start_idx + chunk_size + (i < remainder ? 1 : 0);
+		// Ensure we don't exceed the array bounds
+		if (start_idx >= BTREE_INIT_LIMIT) break;
+		end_idx = std::min(end_idx, static_cast<size_t>(BTREE_INIT_LIMIT));
+
+		// Launch a thread for the range [start_idx, end_idx)
+		insert_threads.emplace_back([this, start_idx, end_idx, i, &init_keys, &values]() {
+			// Pin the thread to the specified CPU
+			erebus::utils::PinThisThread(i);
+			// Small delay to avoid contention during thread startup
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			// Perform insertions for the assigned range
+			for (size_t j = start_idx; j < end_idx; ++j) {
+					this->idx_btree->insert(init_keys[j], values[j]);
+			}
+		});
+	}
+	// Wait for all threads to complete
+	for (auto& th : insert_threads) {
+			if (th.joinable()) {
+					th.join();
+			}
+	}
+	// for(size_t i = 0; i < BTREE_INIT_LIMIT; i++) {
+	// 	this->idx_btree->insert(init_keys[i], values[i]);
+  // }
 	auto finish = std::chrono::high_resolution_clock::now();
-  	std::chrono::duration<double> elapsed = finish - start;
+  std::chrono::duration<double> elapsed = finish - start;
 
 	cout << "Checkpoint: INDEX_BUILD_COMPLETED: " << elapsed.count() << endl;
 	return this->idx_btree;
-
 
 }
 void Erebus::register_threadpool(erebus::tp::TPManager *tp)
@@ -236,10 +268,10 @@ std::string get_cpu_vendor() {
 
 int main(int argc, char* argv[])
 {	
-	
+	auto start = std::chrono::high_resolution_clock::now();
 	int cfgIdx = 1;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADX2;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 	
 	// int cfgIdx = 1;
@@ -274,8 +306,10 @@ int main(int argc, char* argv[])
 		min_x = 1308; max_x = 12785; min_y = 1308; max_y = 12785; 
 	}	
 	else if (ds == YCSB){
-		min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
+		// min_x = 36296660289; max_x = 		9223371933865469581; min_y = -1; max_y = -1; 
 		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
+		//500M 
+		min_x = 734139722786418736; max_x = 6075995071374232121; min_y = -1; max_y = -1; 
 	}
 	else if (ds == WIKI){
 		// min_x = 979672113; max_x = 1216240436; min_y = -1; max_y = -1; // 200M points
@@ -315,10 +349,10 @@ int main(int argc, char* argv[])
 	}
 	
 	int num_workers = 0;
-	#if MACHINE == 0
-		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
-		ss_cpuids.push_back(11);
-		mm_cpuids.push_back(23);
+	#if MACHINE == 0 						// BIGDATA
+		num_workers = 10; 					// Change the CURR_WORKER_THREADS in TPM.hpp
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(12);
 	#elif MACHINE == 1
 		num_workers = 28;  
 		ss_cpuids.push_back(74);
@@ -332,14 +366,30 @@ int main(int argc, char* argv[])
 		ss_cpuids.push_back(74);
 		mm_cpuids.push_back(75);
 	#elif MACHINE == 6
-		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		num_workers = 7;  			// Change the CURR_WORKER_THREADS in TPM.hpp
 		ss_cpuids.push_back(11);
 		mm_cpuids.push_back(23);
 	#else
 		num_workers = 7;  
 	#endif
 	
-	#if MACHINE == 6
+	#if MACHINE == 0					// BIGDATA
+	for(auto n=0; n < num_NUMA_nodes; n++){
+		rt_cpuids.push_back(cPool[n][1]);
+		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+		
+		ncore_cpuids.push_back(cPool[n][2]);
+		
+		int cnt = 1;
+		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+			if (cPool[n][j] == 0 || cPool[n][j] == 12) 
+				continue; 
+			wrk_cpuids.push_back(cPool[n][j]);
+			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+			if (cnt == num_workers) break;
+		}
+	}
+	#elif MACHINE == 6
 	for(auto n=0; n < num_NUMA_nodes; n+=2){
 		rt_cpuids.push_back(cPool[n][1]);
 		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
@@ -385,6 +435,7 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 	
+
 	std::string config_file;
 	if(iam == BTREE){
 	#if EVAL_PMOSS == 0
@@ -477,9 +528,13 @@ int main(int argc, char* argv[])
 	
 	std::this_thread::sleep_for(std::chrono::milliseconds(300000));  //200000(ycsb-a), 490000, 1000000 previously
 	glb_tpool.terminate_ncoresweeper_threads();
-	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(2));
 	glb_tpool.dump_ncoresweeper_threads();
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	std::this_thread::sleep_for(std::chrono::milliseconds(2));
+	
+	auto finish = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = finish - start;
+	cout << "Checkpoint: One Iteration: " << elapsed.count() << endl;
 	exit(0);
 		
 	while(1);

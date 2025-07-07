@@ -963,7 +963,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // or use a single router
       std::ifstream input;
 
-      #if MACHINE==2 || MACHINE == 7
+      #if MACHINE==8
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_2n/";
       #elif MACHINE==3
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_8n/";

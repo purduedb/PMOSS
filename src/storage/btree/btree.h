@@ -11,7 +11,7 @@
 #include <iostream>
 #include <vector>
 // -------------------------------------------------------------------------------------
-#include <immintrin.h>
+// #include <immintrin.h>
 #include <sched.h>
 #include <numa.h> 
 #include <numaif.h>

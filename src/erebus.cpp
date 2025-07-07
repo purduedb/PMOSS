@@ -171,7 +171,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   
 	if (ds == YCSB) {
-		init_file += "dataset/loade_zipf_int_200M.dat";
+		init_file += "dataset/loade_zipf_int_1000M.dat";
   } else if (ds == WIKI) {
     init_file = "/scratch1/yrayhan/wiki_ts_200M_uint64.dat";
   } else if (ds == OSM_CELLIDS) {
@@ -243,9 +243,42 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	cout << total_num_key << endl;
 	
 	auto start = std::chrono::high_resolution_clock::now();
-	for(size_t i = 0; i < BTREE_INIT_LIMIT; i++) {
-		this->idx_btree->insert(init_keys[i], values[i]);
-  }
+	// Multi-threaded insertion
+	std::vector<std::thread> insert_threads;
+  int NUM_INSERTION_THREADS = erebus::tp::TPManager::CURR_WORKER_THREADS;
+	insert_threads.reserve(NUM_INSERTION_THREADS);
+	size_t chunk_size = BTREE_INIT_LIMIT / NUM_INSERTION_THREADS;
+	size_t remainder = BTREE_INIT_LIMIT % NUM_INSERTION_THREADS;
+	// Create worker threads
+	for (unsigned i = 0; i < erebus::tp::TPManager::CURR_WORKER_THREADS; ++i) {
+		// Determine the start and end indices for this thread
+		size_t start_idx = i * chunk_size + std::min(static_cast<size_t>(i), remainder);
+		size_t end_idx = start_idx + chunk_size + (i < remainder ? 1 : 0);
+		// Ensure we don't exceed the array bounds
+		if (start_idx >= BTREE_INIT_LIMIT) break;
+		end_idx = std::min(end_idx, static_cast<size_t>(BTREE_INIT_LIMIT));
+
+		// Launch a thread for the range [start_idx, end_idx)
+		insert_threads.emplace_back([this, start_idx, end_idx, i, &init_keys, &values]() {
+			// Pin the thread to the specified CPU
+			erebus::utils::PinThisThread(i);
+			// Small delay to avoid contention during thread startup
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			// Perform insertions for the assigned range
+			for (size_t j = start_idx; j < end_idx; ++j) {
+					this->idx_btree->insert(init_keys[j], values[j]);
+			}
+		});
+	}
+	// Wait for all threads to complete
+	for (auto& th : insert_threads) {
+			if (th.joinable()) {
+					th.join();
+			}
+	}
+	// for(size_t i = 0; i < BTREE_INIT_LIMIT; i++) {
+	// 	this->idx_btree->insert(init_keys[i], values[i]);
+  // }
 	auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
 
@@ -382,9 +415,9 @@ std::string get_cpu_vendor() {
 int main(int argc, char* argv[])
 {	
 	
-	int cfgIdx = 30;
+	int cfgIdx = 1;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADH;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 	
 	if (argc > 1) {
@@ -414,8 +447,10 @@ int main(int argc, char* argv[])
 		min_x = 1308; max_x = 12785; min_y = 1308; max_y = 12785; 
 	}	
 	else if (ds == YCSB){
-		min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
+		// min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
 		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
+		//500M 
+		min_x = 734139722786418736; max_x = 6075995071374232121; min_y = -1; max_y = -1; 
 	}
 	else if (ds == WIKI){
 		// min_x = 979672113; max_x = 1216240436; min_y = -1; max_y = -1; // 200M points
@@ -455,36 +490,44 @@ int main(int argc, char* argv[])
 	}
 	
 	int num_workers = 0;
-	#if MACHINE == 0
-		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
-		ss_cpuids.push_back(11);
-		mm_cpuids.push_back(23);
-	#elif MACHINE == 1
-		num_workers = 28;  
-		ss_cpuids.push_back(74);
-		mm_cpuids.push_back(75);
-	#elif MACHINE == 2
-		num_workers = 28;  
-		ss_cpuids.push_back(31);
-		mm_cpuids.push_back(63);
-	#elif MACHINE == 5
-		num_workers = 10;  
-		ss_cpuids.push_back(62);
-		mm_cpuids.push_back(63);
+	#if MACHINE == 5
+		num_workers = 14;  
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(1);
 	#else
 		num_workers = 7;  
 	#endif
 	
+	// for(auto n=0; n < num_NUMA_nodes; n++){
+	// 	rt_cpuids.push_back(cPool[n][1]);
+	// 	glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+		
+	// 	ncore_cpuids.push_back(cPool[n][2]);
+		
+	// 	int cnt = 1;
+	// 	for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+	// 		wrk_cpuids.push_back(cPool[n][j]);
+	// 		glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+	// 		if (cnt == num_workers) break;
+	// 	}
+	// }
 	for(auto n=0; n < num_NUMA_nodes; n++){
 		rt_cpuids.push_back(cPool[n][1]);
 		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
 		
 		ncore_cpuids.push_back(cPool[n][2]);
 		
-		int cnt = 1;
-		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+		int cnt = 0;
+		for(size_t j = 0; j < cPool[n].size(); j++){
+			if (j == 1 || j == 2) 
+				continue;
+			if (cPool[n][j] == 0 || cPool[n][j] == 1){
+				cnt++;
+				continue; 
+			} 
 			wrk_cpuids.push_back(cPool[n][j]);
 			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+			cnt++;
 			if (cnt == num_workers) break;
 		}
 	}
@@ -550,9 +593,6 @@ int main(int argc, char* argv[])
 	#endif
 	glb_gm.printGM();
 
-
-	
-	glb_gm.printGM();
 	
 
 	// WHICH INDEX?
@@ -580,55 +620,11 @@ int main(int argc, char* argv[])
 	
 	std::this_thread::sleep_for(std::chrono::milliseconds(300000));  //200000(ycsb-a), 490000, 1000000 previously
 	glb_tpool.terminate_ncoresweeper_threads();
-	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(2));
 	glb_tpool.dump_ncoresweeper_threads();
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	std::this_thread::sleep_for(std::chrono::milliseconds(2));
 	exit(0);
-	
-	// glb_tpool.terminateRouterThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	// glb_tpool.terminateWorkerThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	// glb_tpool.terminateMegaMindThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-	// glb_tpool.terminateSysSweeperThreads();
-	// std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-
-	// glb_tpool.glb_router_thrds.clear();
-	// glb_tpool.glb_worker_thrds.clear();
-	// glb_tpool.glb_sys_sweeper_thrds.clear();
-	// glb_tpool.glb_megamind_thrds.clear();
-	// glb_tpool.glb_ncore_sweeper_thrds.clear();
-		
 	while(1);
-
-	// -------------------------------------------------------------------------------------
-
-	// pcm::SystemCounterState after_sstate = pcm::getSystemCounterState();
-
-	// std::cout << "Instructions per clock:" << pcm::getIPC(before_sstate,after_sstate) << std::endl;
-	// std::cout << "Bytes read:" << pcm::getBytesReadFromMC(before_sstate,after_sstate) << std::endl; 
-	// m->cleanup();
-	// -------------------------------------------------------------------------------------
-
-	// pcm::PCM * m = pcm::PCM::getInstance();
-
-	// pcm::PCM * m2 = pcm::PCM::getInstance();
-
-	// pcm::PCM::ErrorCode returnResult = m->program();
-	// pcm::PCM::ErrorCode returnResult2 = m2->program();
-	// if (returnResult != pcm::PCM::Success){
-	// 	std::cerr << "Intel's PCM couldn't start" << std::endl;
-	// 	std::cerr << "Error code: " << returnResult << std::endl;
-	// 	exit(1);
-	// }
-	// if (returnResult2 != pcm::PCM::Success){
-	// 	std::cerr << "Intel's PCM couldn't start" << std::endl;
-	// 	std::cerr << "Error code: " << returnResult2 << std::endl;
-	// 	exit(1);
-	// }
-
-	// pcm::SystemCounterState before_sstate = pcm::getSystemCounterState();
 	
 }
 

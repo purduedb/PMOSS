@@ -136,7 +136,8 @@ void GridManager::enforce_scheduling(){
 		#elif STORAGE == 1
 			MigrateNodesQuad(this->idx_quadtree, lx, hx, ly, hy, numa_id);    
 		#elif STORAGE == 2
-			this->idx_btree->migrate_(lx, this->DataDist[i], numa_id);
+			// this->idx_btree->migrate_(lx, this->DataDist[i], numa_id);
+            this->idx_btree->migrate_v1_(lx, this->DataDist[i], numa_id);
 		#endif
 	#endif
   }

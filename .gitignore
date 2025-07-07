@@ -5,6 +5,7 @@ src/dataset/geo.txt
 src/dataset/us.txt
 src/workloads/loade_zipf_int_100M.dat
 src/dataset/loade_zipf_int_200M.dat
+src/dataset/*.dat
 src/workloads/txnse_zipf_int_100M.dat
 src/interference/*
 kb/*

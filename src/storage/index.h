@@ -143,7 +143,9 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
   void incKey(GenericKey<31>& key) { key.data[strlen(key.data)-1]++; };
 
   uint64_t scan(KeyType key, int range) {
-    uint64_t results[range];
+    // uint64_t results[range];
+    uint64_t *results = new uint64_t[range];
+    
     uint64_t count = idx.scan(key, range, results);
     if (count==0)
        return 0;
@@ -161,6 +163,7 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
         break; // no more entries
       count += nextCount;
     }
+    delete[] results;
     return count;
   }
 

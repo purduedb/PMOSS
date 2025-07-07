@@ -480,46 +480,32 @@ int main(int argc, char* argv[])
 	}
 
 	int num_workers = 0;
-	#if MACHINE == 2 
-		num_workers = 29;  // Change the CURR_WORKER_THREADS in TPM.hpp
+	#if MACHINE == 8 
+		num_workers = 47;  // Change the CURR_WORKER_THREADS in TPM.hpp
 		ss_cpuids.push_back(0);
-		mm_cpuids.push_back(32);
-	#elif MACHINE == 7
-		num_workers = 14;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#elif MACHINE == 3
-		num_workers = 6;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#else
-		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#endif
-	
-	#if MACHINE ==2 
+		mm_cpuids.push_back(80);
+
 		for(auto n=0; n < num_NUMA_nodes; n++){
 			rt_cpuids.push_back(cPool[n][1]);
 			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
-			
 			ncore_cpuids.push_back(cPool[n][2]);
 			
 			int cnt = 1;
 			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+				if (cPool[n].size() % 8 > 4)
+					continue;
 				wrk_cpuids.push_back(cPool[n][j]);
 				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
 				if (cnt == num_workers) break;
 			}
 		}
-	#elif MACHINE==3 || MACHINE == 7
-		
-		for(auto n=0; n < num_NUMA_nodes; n++){
-			rt_cpuids.push_back(cPool[n][0]);
-			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
-			ncore_cpuids.push_back(cPool[n][1]);
-			int cnt = 1;
-			for(size_t j = 2; j < cPool[n].size(); j++, cnt++){
-				wrk_cpuids.push_back(cPool[n][j]);
-				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-				if (cnt == num_workers) break;
-			}
-		}
-	#endif 
+	#endif
+
+	for(auto i=0; i < wrk_cpuids.size(); i++)
+		cout << wrk_cpuids[i] << ' ';
+	cout << endl;
+	
+
 	
 	erebus::scheduler::ResourceManager glb_rm;  
 	erebus::Erebus db(&glb_gm, &glb_rm);

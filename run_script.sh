@@ -3,11 +3,19 @@ ulimit -s unlimited
 
 current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
-for wl in 12; do
-  for cfg in {1..50..2}; do
+
+
+for wl in 11; do
+  for cfg in {3..50..2}; do
     "$exec" $cfg $wl
   done
 done
+# for wl in 12; do
+#   for cfg in {1..50..2}; do
+#     "$exec" $cfg $wl
+#   done
+# done
+##############################################################################################################
 
 # Baselines:Run the read workloads
 # for wl in 12 16 32 41 34 35 36; do

@@ -490,7 +490,7 @@ int main(int argc, char* argv[])
 			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
 			ncore_cpuids.push_back(cPool[n][2]);
 			
-			int cnt = 1;
+			int cnt = 0;
 			for(size_t j = 3; j < cPool[n].size(); j++){
 				if (cPool[n][j] % 8 > 4)
 					continue;

@@ -27,12 +27,14 @@
 #include "scheduling/RM.hpp"
 #include "scheduling/GM.hpp"
 
-#if MACHINE == 0 || MACHINE == 1 || MACHINE == 5 || MACHINE == 6
-#include "shared-headers/PerfEvent_intel.hpp"
+#if MACHINE == 0 
+#include "shared-headers/PerfEvent_intel_skx.hpp"
 #elif MACHINE == 2 || MACHINE == 3 || MACHINE == 7
 #include "shared-headers/PerfEvent_amd.hpp"
 #elif MACHINE == 4
 #include "shared-headers/PerfEvent_arm.hpp"
+#elif MACHINE == 5 || MACHINE == 6
+#include "shared-headers/PerfEvent_intel_sb.hpp"
 #endif
 
 #include "profiling/PerfCounters.hpp"

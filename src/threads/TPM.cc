@@ -295,7 +295,8 @@ void TPManager::dump_ncoresweeper_threads(){
       dirName += "/kb_quad_linux/" + std::to_string(key);
   #elif STORAGE == 2
       // dirName += "/kb_b_linux/" + std::to_string(key);
-      dirName += "/kb_bs_linux/" + std::to_string(key);
+      // dirName += "/kb_bs_linux/" + std::to_string(key); // <-----
+      dirName += "/kb_b/" + std::to_string(key);
   #endif
   #else
   #if STORAGE == 0

@@ -1111,120 +1111,6 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       hy = ly + width;
       query = Rectangle(lx, hx, ly, hy);
     }
-    else if (wl == MD_RS_HOT3){
-      const int nHotSpots = 3;
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == nHotSpots) {
-          lx = dlx_ureal(gen);
-          ly = dly_ureal(gen);
-      }
-      else{
-          lx = GX[index](genTem) + 0.880170200000002;
-          ly = GY[index](genTem) - 0.4350911999999987;
-      }  
-      length = dLength_ureal(gen);
-      width = dLength_ureal(gen);
-      hx = lx + length;
-      hy = ly + width;
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_RS_HOT5){
-      const int nHotSpots = 5;
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == nHotSpots) {
-          lx = dlx_ureal(gen);
-          ly = dly_ureal(gen);
-      }
-      else{
-          lx = GX[index](genTem) + 0.880170200000002;
-          ly = GY[index](genTem) - 0.4350911999999987;
-      }
-      length = dLength_ureal(gen);
-      width = dLength_ureal(gen);
-      hx = lx + length;
-      hy = ly + width;
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_RS_HOT7){
-      const int nHotSpots = 7;
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == nHotSpots) {
-          lx = dlx_ureal(gen);
-          ly = dly_ureal(gen);
-      }
-      else{
-          lx = GX[index](genTem) + 0.880170200000002;
-          ly = GY[index](genTem) - 0.4350911999999987;
-      }
-      length = dLength_ureal(gen);
-      width = dLength_ureal(gen);
-      hx = lx + length;
-      hy = ly + width;
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_LK_RS_25_75){
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == 0) { // this is a point search
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 0;
-          hy = ly + 0;
-      }
-      else{
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 4;
-          hy = ly + 2;
-      }
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_LK_RS_50_50){
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == 0) { // this is a point search
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 0;
-          hy = ly + 0;
-      }
-      else{
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 4;
-          hy = ly + 2;
-      }
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_LK_RS_75_25){
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == 0) { // this is a point search
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 0;
-          hy = ly + 0;
-      }
-      else{
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 4;
-          hy = ly + 2;
-      }
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_RS_LOGNORMAL){
-      lx = dlx_lnorm(gen);
-      ly = dly_lnorm(gen);
-      
-      while(lx > pseudo_max_x || lx < pseudo_min_x)
-          lx = dlx_lnorm(gen);
-      while(ly > max_y || ly < min_y)
-          ly = dly_lnorm(gen);  
-      lx = lx - (1 - min_x);
-      length = dLength_ureal(gen);
-      width = dWidth_ureal(gen);
-      hx = lx + length;
-      hy = ly + width;
-      query = Rectangle(lx, hx, ly, hy);
-    }
     else if (
       wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
       wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADE1 || wl == SD_YCSB_WKLOADH || 
@@ -1271,15 +1157,13 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       }
                     
       if (valid_gcells.size() == 0) continue;  
-      
-      
       for(size_t qc1 = 0; qc1 < valid_gcells.size()-1; qc1++){
-          int pCell = valid_gcells[qc1];
-          for(size_t qc2 = qc1; qc2 < valid_gcells.size(); qc2++){
-              int cCell = valid_gcells[qc2];
-              glb_router_thrds[router_cpuids[i]].qCorrMatrix[pCell][cCell] ++;
-              glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
-          }
+        int pCell = valid_gcells[qc1];
+        for(size_t qc2 = qc1; qc2 < valid_gcells.size(); qc2++){
+          int cCell = valid_gcells[qc2];
+          glb_router_thrds[router_cpuids[i]].qCorrMatrix[pCell][cCell] ++;
+          glb_router_thrds[router_cpuids[i]].qCorrMatrix[cCell][pCell] ++;
+        }
       }
 
       if(this->gm->config >= 500 && this->gm->config <= 505){
@@ -1361,16 +1245,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       gm->freqQueryDistCompleted[glbGridCellInsert]++;
         
       int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
-      glb_worker_thrds[cpuid].jobs.push(query);
-      
-
-      // int cpuid_idx = dq(genInt);
-      // int cpuid = this->worker_cpuids[cpuid_idx];
-      // glb_worker_thrds[cpuid].jobs.push(query);
-      // -------------------------------------------------------------------------------------
-      
-      }
-            
+      glb_worker_thrds[cpuid].jobs.push(query);      
+    }           
     });
   }
 }

@@ -121,8 +121,12 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   
 	if (ds == YCSB) {
+	#if MACHINE == 0
 		init_file = "/scratch1/yrayhan/loade_zipf_int_1000M.dat";
 		// txn_file += "workloads/txnse_zipf_int_100M.dat";
+	#elif MACHINE == 1
+		init_file = "/scratch1/yrayhan/loade_zipf_int_1000M.dat";
+	#endif
   } else if (ds == WIKI) {
     init_file = "/scratch1/yrayhan/wiki_ts_200M_uint64.dat";
   } else if (ds == OSM_CELLIDS) {
@@ -349,14 +353,14 @@ int main(int argc, char* argv[])
 	}
 	
 	int num_workers = 0;
-	#if MACHINE == 0 						// BIGDATA
-		num_workers = 10; 					// Change the CURR_WORKER_THREADS in TPM.hpp
+	#if MACHINE == 0 						
+		num_workers = 10; 				
 		ss_cpuids.push_back(0);
 		mm_cpuids.push_back(12);
 	#elif MACHINE == 1
-		num_workers = 28;  
-		ss_cpuids.push_back(74);
-		mm_cpuids.push_back(75);
+		num_workers = 25;  
+		ss_cpuids.push_back(57);
+		mm_cpuids.push_back(58);
 	#elif MACHINE == 2
 		num_workers = 28;  
 		ss_cpuids.push_back(31);
@@ -366,14 +370,14 @@ int main(int argc, char* argv[])
 		ss_cpuids.push_back(74);
 		mm_cpuids.push_back(75);
 	#elif MACHINE == 6
-		num_workers = 7;  			// Change the CURR_WORKER_THREADS in TPM.hpp
+		num_workers = 7; 
 		ss_cpuids.push_back(11);
 		mm_cpuids.push_back(23);
 	#else
 		num_workers = 7;  
 	#endif
 	
-	#if MACHINE == 0					// BIGDATA
+	#if MACHINE == 0	// BIGDATA
 	for(auto n=0; n < num_NUMA_nodes; n++){
 		rt_cpuids.push_back(cPool[n][1]);
 		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
@@ -388,6 +392,20 @@ int main(int argc, char* argv[])
 				cnt++;
 				continue; 
 			} 
+			wrk_cpuids.push_back(cPool[n][j]);
+			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+			cnt++;
+			if (cnt == num_workers) break;
+		}
+	}
+	#elif MACHINE == 1	// DBSERVER
+	for(auto n=0; n < num_NUMA_nodes; n++){
+		rt_cpuids.push_back(cPool[n][1]);
+		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+		ncore_cpuids.push_back(cPool[n][2]);
+		
+		int cnt = 0;
+		for(size_t j = 3; j < cPool[n].size(); j++){
 			wrk_cpuids.push_back(cPool[n][j]);
 			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
 			cnt++;

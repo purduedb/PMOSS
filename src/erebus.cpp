@@ -496,7 +496,7 @@ int main(int argc, char* argv[])
 					continue;
 				wrk_cpuids.push_back(cPool[n][j]);
 				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-				cnt++
+				cnt++;
 				if (cnt == num_workers) break;
 			}
 		}

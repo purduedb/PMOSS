@@ -50,25 +50,8 @@ class TPManager{
     static const int MAX_WORKER_THREADS = 200;
     static const int MAX_ROUTER_THREADS = 20;
     
-#if MACHINE == 0
-    static const int CURR_NCORE_SWEEPER_THREADS = 8;
-    static const int CURR_SYS_SWEEPER_THREADS = 1;
-    static const int CURR_MEGAMIND_THREADS = 1;
-    static const int CURR_ROUTER_THREADS = 8;
-	  static const int CURR_WORKER_THREADS = 56;
-#elif MACHINE == 1
-    static const int CURR_NCORE_SWEEPER_THREADS = 2;
-    static const int CURR_SYS_SWEEPER_THREADS = 1;
-    static const int CURR_MEGAMIND_THREADS = 2;
-    static const int CURR_ROUTER_THREADS = 2;
-	  static const int CURR_WORKER_THREADS = 56;
-#elif MACHINE == 2
-    static const int CURR_NCORE_SWEEPER_THREADS = 2;
-    static const int CURR_SYS_SWEEPER_THREADS = 1;
-    static const int CURR_MEGAMIND_THREADS = 1;
-    static const int CURR_ROUTER_THREADS = 2;
-	  static const int CURR_WORKER_THREADS = 56;
-#elif MACHINE == 5
+
+#if MACHINE == 5
     static const int CURR_NCORE_SWEEPER_THREADS = 4;
     static const int CURR_SYS_SWEEPER_THREADS = 1;
     static const int CURR_MEGAMIND_THREADS = 1;

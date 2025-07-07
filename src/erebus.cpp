@@ -492,7 +492,7 @@ int main(int argc, char* argv[])
 			
 			int cnt = 1;
 			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
-				if (cPool[n].size() % 8 > 4)
+				if (cPool[i][j] % 8 > 4)
 					continue;
 				wrk_cpuids.push_back(cPool[n][j]);
 				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});

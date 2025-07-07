@@ -2,7 +2,7 @@
 // -------------------------------------------------------------------------------------
 #include <iostream>
 #include <fstream>
-#include <thread>   // std::thread
+#include <thread>  
 #include <mutex>
 // -------------------------------------------------------------------------------------
 // #include "../third-party/pcm/src/cpucounters.h"	// Intel PCM monitoring tool
@@ -130,7 +130,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	#if MACHINE==0 || MACHINE == 6
 		init_file = "/scratch1/yrayhan/";
 	#elif MACHINE==1
-		init_file = "/home/yrayhan/works/erebus/src/workloads/";
+		init_file = "/home/yrayhan/works/PMOSS/src/workloads/";
 	#elif MACHINE==2
 		init_file;
 	#elif MACHINE==3
@@ -146,9 +146,9 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 		#if MACHINE==0 || MACHINE == 6
 		init_file += "loade_zipf_int_200M.dat";
 		#else
-		init_file += "dataset/loade_zipf_int_200M.dat";
+		init_file += "dataset/loade_zipf_int_1000M.dat";
 		#endif		
-  	}  
+  }  
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
 	}
@@ -222,112 +222,47 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	cout << total_num_key << endl;
 	
 	auto start = std::chrono::high_resolution_clock::now();
-	for(size_t i = 0; i < BTREE_INIT_LIMIT; i++) {
-		this->idx_btree->insert(init_keys[i], values[i]);
-  }
+	std::vector<std::thread> insert_threads;
+  int NUM_INSERTION_THREADS = erebus::tp::TPManager::CURR_WORKER_THREADS;
+	insert_threads.reserve(NUM_INSERTION_THREADS);
+	size_t chunk_size = BTREE_INIT_LIMIT / NUM_INSERTION_THREADS;
+	size_t remainder = BTREE_INIT_LIMIT % NUM_INSERTION_THREADS;
+	// Create worker threads
+	for (unsigned i = 0; i < erebus::tp::TPManager::CURR_WORKER_THREADS; ++i) {
+		// Determine the start and end indices for this thread
+		size_t start_idx = i * chunk_size + std::min(static_cast<size_t>(i), remainder);
+		size_t end_idx = start_idx + chunk_size + (i < remainder ? 1 : 0);
+		// Ensure we don't exceed the array bounds
+		if (start_idx >= BTREE_INIT_LIMIT) break;
+		end_idx = std::min(end_idx, static_cast<size_t>(BTREE_INIT_LIMIT));
+
+		// Launch a thread for the range [start_idx, end_idx)
+		insert_threads.emplace_back([this, start_idx, end_idx, i, &init_keys, &values]() {
+			// Pin the thread to the specified CPU
+			erebus::utils::PinThisThread(i);
+			// Small delay to avoid contention during thread startup
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			// Perform insertions for the assigned range
+			for (size_t j = start_idx; j < end_idx; ++j) {
+					this->idx_btree->insert(init_keys[j], values[j]);
+			}
+		});
+	}
+	// Wait for all threads to complete
+	for (auto& th : insert_threads) {
+			if (th.joinable()) {
+					th.join();
+			}
+	}
+	// for(size_t i = 0; i < BTREE_INIT_LIMIT; i++) {
+	// 	this->idx_btree->insert(init_keys[i], values[i]);
+  // }
 	auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
 
 	cout << "Checkpoint: INDEX_BUILD_COMPLETED: " << elapsed.count() << endl;
 	
-	// for(int i=0; i < total_num_key; i++){
-	// 	// cout << i << ' ';
-	// 	// cout << init_keys[i];
-	// 	// cout << ' ';
-	// 	cout << *reinterpret_cast<keytype*>(values[i]);
-	// 	// cout << endl;
-	// }
- 
-  // If we also execute transaction then open the 
-  // transacton file here
-	/*
-  std::ifstream infile_txn(txn_file);
-  
-  count = 0;
-  while ((count < LIMIT) && infile_txn.good()) {
-    infile_txn >> op >> key;
-    if (op.compare(insert) == 0) {
-      ops.push_back(OP_INSERT);
-      keys.push_back(key);
-      ranges.push_back(1);
-    }
-    else if (op.compare(read) == 0) {
-      ops.push_back(OP_READ);
-      keys.push_back(key);
-    }
-    else if (op.compare(update) == 0) {
-      ops.push_back(OP_UPSERT);
-      keys.push_back(key);
-    }
-    else if (op.compare(scan) == 0) {
-      infile_txn >> range;
-      ops.push_back(OP_SCAN);
-      keys.push_back(key);
-      ranges.push_back(range);
-    }
-    else {
-      std::cout << "UNRECOGNIZED CMD!\n";
-      break;
-    }
-    count++;
-  }
-
-
-  // Average and variation
-  long avg = 0, var = 0;
-  // If it is YSCB-E workload then we compute average and stdvar
-  if(ranges.size() != 0) {
-    for(int r : ranges) {
-      avg += r;
-    }
-
-    avg /= (long)ranges.size();
-
-    for(int r : ranges) {
-      var += ((r - avg) * (r - avg));
-    }
-
-    var /= (long)ranges.size();
-
-    fprintf(stderr, "YCSB-E scan Avg length: %ld; Variance: %ld\n",
-            avg, var);
-  }
-
-	size_t total_num_op = ops.size();
-	
-	std::vector<uint64_t> v;
-	v.reserve(10);
-
-    
-	int counter = 0;
-	for(size_t i = 0;i < total_num_op; i++) {
-		int op = ops[i];
-
-		if (op == OP_INSERT) { //INSERT
-			this->idx_btree->insert(keys[i], values[i]);
-		}
-		else if (op == OP_READ) { //READ
-			cout << OP_READ << ' ' << i << ' ';
-			v.clear();
-			this->idx_btree->find(keys[i], &v);
-			for(size_t j = 0; j < v.size(); j++) cout << v[j] << ' ';
-			cout << endl;
-		}
-		else if (op == OP_UPSERT) { //UPDATE
-			// this->idx_btree->upsert(keys[i], (uint64_t)keys[i].data);
-		}
-		else if (op == OP_SCAN) { //SCAN
-			cout << keys[i] << ' ' << ranges[i] << "===> " ;
-			cout << OP_SCAN << ' ' << i << ' ';
-			int tem_result = this->idx_btree->scan(keys[i], ranges[i]);
-			cout << tem_result << endl;
-		}
-		counter++;
-	}
-	*/
 	return this->idx_btree;
-
-
 }
 void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 {
@@ -378,7 +313,9 @@ int main(int argc, char* argv[])
 	}	
 	else if (ds == YCSB){
 		// min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
-		min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
+		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
+		//500M and 1000M
+		min_x = 734139722786418736; max_x = 6075995071374232121; min_y = -1; max_y = -1; 
 	}
 	else if (ds == WIKI){
 		// min_x = 979672113; max_x = 1216240436; min_y = -1; max_y = -1; // 200M points
@@ -427,46 +364,81 @@ int main(int argc, char* argv[])
 	int num_workers = 0;
 	std::string machine_name;
 	#if MACHINE == 0
-		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 		machine_name = "intel_skx_4s_8n";
-		ss_cpuids.push_back(11);
+		num_workers = 10; 					
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(12);	
+		for(auto n=0; n < num_NUMA_nodes; n++){
+			rt_cpuids.push_back(cPool[n][1]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			ncore_cpuids.push_back(cPool[n][2]);
+			int cnt = 0;
+			for(size_t j = 0; j < cPool[n].size(); j++){
+				if (j == 1 || j == 2) 
+					continue;
+				if (cPool[n][j] == 0 || cPool[n][j] == 12){
+					cnt++;
+					continue; 
+				} 
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				cnt++;
+				if (cnt == num_workers) break;
+			}
+		}	
 	#elif MACHINE == 1
 		num_workers = 28;  
 		machine_name = "intel_ice_2s_2n";
-	#elif MACHINE == 2
-		num_workers = 28;  // Change the CURR_WORKER_THREADS in TPM.hpp
-		machine_name = "amd_epyc7543_2s_2n";
-	#elif MACHINE == 3
-		num_workers = 6;  // Change the CURR_WORKER_THREADS in TPM.hpp	
-		machine_name = "amd_epyc7543_2s_8n";
-	#elif MACHINE == 4
-		num_workers = 56;  // Change the CURR_WORKER_THREADS in TPM.hpp	
-		machine_name = "nvidia_gh_1s_1n";
-	#elif MACHINE == 5
-		num_workers = 10;  
-		machine_name = "intel_sb_4s_4n";
-	#elif MACHINE == 6
-		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
-		machine_name = "intel_skx_4s_4n";
-	#elif MACHINE == 7
-		num_workers = 14;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#endif
-	
-	#if MACHINE==3 || MACHINE == 7
-	for(auto n=0; n < num_NUMA_nodes; n++){
-		rt_cpuids.push_back(cPool[n][0]);
-		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
-		
-		ncore_cpuids.push_back(cPool[n][1]);
-		
-		int cnt = 1;
-		for(size_t j = 2; j < cPool[n].size(); j++, cnt++){
-			wrk_cpuids.push_back(cPool[n][j]);
-			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-			if (cnt == num_workers) break;
+		for(auto n=0; n < num_NUMA_nodes; n++){
+			rt_cpuids.push_back(cPool[n][1]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			
+			ncore_cpuids.push_back(cPool[n][2]);
+			
+			int cnt = 1;
+			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
 		}
-	}
-	#elif MACHINE==4 
+	#elif MACHINE == 2
+		machine_name = "amd_epyc7543_2s_2n";
+		num_workers = 29;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(32);
+		for(auto n=0; n < num_NUMA_nodes; n++){
+			rt_cpuids.push_back(cPool[n][1]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			
+			ncore_cpuids.push_back(cPool[n][2]);
+			
+			int cnt = 1;
+			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
+		}		
+	#elif MACHINE == 3
+		machine_name = "amd_epyc7543_2s_8n";
+		num_workers = 6;  
+		for(auto n=0; n < num_NUMA_nodes; n++){
+			rt_cpuids.push_back(cPool[n][0]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
+			
+			ncore_cpuids.push_back(cPool[n][1]);
+			
+			int cnt = 1;
+			for(size_t j = 2; j < cPool[n].size(); j++, cnt++){
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
+		}
+	#elif MACHINE == 4
+		machine_name = "nvidia_gh_1s_1n";	
+		num_workers = 56; 		
 		for(auto n=0; n < 1; n++){
 			rt_cpuids.push_back(cPool[n][0]);
 			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
@@ -478,35 +450,57 @@ int main(int argc, char* argv[])
 				if (cnt == num_workers) break;
 			}
 		}
+	#elif MACHINE == 5
+		machine_name = "intel_sb_4s_4n";
+		num_workers = 14;  
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(1);
+				for(size_t j = 0; j < cPool[n].size(); j++){
+			if (j == 1 || j == 2) 
+				continue;
+			if (cPool[n][j] == 0 || cPool[n][j] == 1){
+				cnt++;
+				continue; 
+			} 
+			wrk_cpuids.push_back(cPool[n][j]);
+			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+			cnt++;
+			if (cnt == num_workers) break;
+		}
 	#elif MACHINE == 6
-	for(auto n=0; n < num_NUMA_nodes; n+=2){
-		rt_cpuids.push_back(cPool[n][1]);
-		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
-		
-		ncore_cpuids.push_back(cPool[n][2]);
-		
-		int cnt = 1;
-		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
-			wrk_cpuids.push_back(cPool[n][j]);
-			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-			if (cnt == num_workers) break;
+		num_workers = 7;  
+		machine_name = "intel_skx_4s_4n";
+		for(auto n=0; n < num_NUMA_nodes; n+=2){
+			rt_cpuids.push_back(cPool[n][1]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			
+			ncore_cpuids.push_back(cPool[n][2]);
+			
+			int cnt = 1;
+			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
 		}
-	}
-	#else
+	#elif MACHINE == 7
+		num_workers = 14; 
 		for(auto n=0; n < num_NUMA_nodes; n++){
-		rt_cpuids.push_back(cPool[n][1]);
-		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
-		
-		ncore_cpuids.push_back(cPool[n][2]);
-		
-		int cnt = 1;
-		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
-			wrk_cpuids.push_back(cPool[n][j]);
-			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-			if (cnt == num_workers) break;
-		}
-	}
+			rt_cpuids.push_back(cPool[n][0]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
+			
+			ncore_cpuids.push_back(cPool[n][1]);
+			
+			int cnt = 1;
+			for(size_t j = 2; j < cPool[n].size(); j++, cnt++){
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
+		} 
 	#endif
+	
+
 	
 	erebus::scheduler::ResourceManager glb_rm;  
 	erebus::Erebus db(&glb_gm, &glb_rm);
@@ -594,9 +588,9 @@ int main(int argc, char* argv[])
 	
 	std::this_thread::sleep_for(std::chrono::milliseconds(300000));  // 200000(ycsb-a), 490000 (ini) 
 	glb_tpool.terminate_ncoresweeper_threads();
-	std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(2));
 	glb_tpool.dump_ncoresweeper_threads();
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	std::this_thread::sleep_for(std::chrono::milliseconds(2));
 	exit(0);
 	while(1);
 }

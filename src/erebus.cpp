@@ -523,52 +523,22 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 	#if EVAL_PMOSS == 0
-	#if MACHINE == 2 
+	#if MACHINE == 8
 		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ibm_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
-		std::to_string(MAX_GRID_CELL) + ".txt";	
-		#endif 
-	#elif MACHINE == 7
-		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7302_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
-		#else 
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7302_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
-		std::to_string(MAX_GRID_CELL) + ".txt";	
-		#endif 
-	#elif MACHINE==3
-		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + ".txt";
-		#else 
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ibm_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
 		std::to_string(MAX_GRID_CELL) + ".txt";	
 		#endif 
 	#endif
 	#else
 	
-	#if MACHINE == 2 
+	#if MACHINE == 8 
 		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_2n/" + std::to_string(wl)
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/ibm_2s_2n/" + std::to_string(wl)
 			+ "/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_2n/" + std::to_string(wl) 
-			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
-		#endif 
-	#elif MACHINE == 7 
-		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7302_2s_2n/" + std::to_string(wl)
-			+ "/c_" + std::to_string(cfgIdx) + ".txt";
-		#else 
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7302_2s_2n/" + std::to_string(wl) 
-			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
-		#endif 
-	#elif MACHINE==3
-		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_8n/" + std::to_string(wl)
-			+ "/c_" + std::to_string(cfgIdx) + ".txt";
-		#else 
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_8n/" + std::to_string(wl) 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/ibm_2s_2n/" + std::to_string(wl) 
 			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
 		#endif 
 	#endif

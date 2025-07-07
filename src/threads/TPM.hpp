@@ -138,8 +138,10 @@ class TPManager{
       std::thread th;
       u64 cpuid;
       
-      oneapi::tbb::concurrent_priority_queue<Rectangle, Rectangle::compare_f> jobs;
-      oneapi::tbb::concurrent_queue<PerfCounter> perf_stats;  // This is what we are currently using
+      // oneapi::tbb::concurrent_priority_queue<Rectangle, Rectangle::compare_f> jobs;
+      // oneapi::tbb::concurrent_queue<PerfCounter> perf_stats;  // This is what we are currently using
+      tbb::concurrent_priority_queue<Rectangle, Rectangle::compare_f> jobs;
+      tbb::concurrent_queue<PerfCounter> perf_stats;  // This is what we are currently using
 
       std::unordered_map<CPUID, u64> qExecutedMice;  // Grid Id to Mice Count
       std::unordered_map<CPUID, u64> qExecutedElephant;

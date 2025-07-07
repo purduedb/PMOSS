@@ -37,7 +37,8 @@ void TPManager::init_worker_threads(){
                     
         int result = 0;        
         Rectangle rec_pop;
-        int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
+        // int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
+        int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].job_set.size();
         
         // ycsb workload: holds lookup result
         std::vector<uint64_t> v; 
@@ -45,6 +46,7 @@ void TPManager::init_worker_threads(){
                     
         if (size_jobqueue != 0){
           glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
+          glb_worker_thrds[worker_cpuids[i]].job_set.try_pop(rec_pop);
           if (cnt == 0) {
             e.startCounters();
           }

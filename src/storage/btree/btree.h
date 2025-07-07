@@ -10,6 +10,7 @@
 #include <atomic>
 #include <iostream>
 #include <vector>
+#include <thread>
 // -------------------------------------------------------------------------------------
 // #include <immintrin.h>
 #include <sched.h>
@@ -42,7 +43,8 @@ struct OptLock {
     uint64_t version;
     version = typeVersionLockObsolete.load();
     if (isLocked(version) || isObsolete(version)) {
-      _mm_pause();
+      // _mm_pause();
+      std::this_thread::yield()
       needRestart = true;
     }
     return version;
@@ -61,7 +63,8 @@ struct OptLock {
     if (typeVersionLockObsolete.compare_exchange_strong(version, version + 0b10)) {
       version = version + 0b10;
     } else {
-      _mm_pause();
+      // _mm_pause();
+      std::this_thread::yield()
       needRestart = true;
     }
   }
@@ -262,7 +265,9 @@ struct BTree {
     if (count>3)
       sched_yield();
     else
-      _mm_pause();
+      std::this_thread::yield()
+      // _mm_pause();
+      
   }
 
   void insert(Key k, Value v) {

@@ -168,8 +168,8 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	memset(&ranges[0], 0x00, 10000000 * sizeof(int));
 	memset(&ops[0], 0x00, 10000000 * sizeof(int));
 
-	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
-  std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
+	std::string init_file;
+  // std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
 
 	// init_file = "/mnt/nvme/";
 	  

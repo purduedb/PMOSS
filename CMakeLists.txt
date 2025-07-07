@@ -7,7 +7,7 @@ project("erebus"
 # Set output directories
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_BINARY_DIR}/bin")
 
-set(CMAKE_CXX_COMPILER g++-11)
+# set(CMAKE_CXX_COMPILER g++-11)
 
 # Set compilation flags
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")

@@ -8,7 +8,7 @@ current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
 
 for wl in 12; do
-  for cfg in {3..30..2}; do
+  for cfg in {1..50..2}; do
     "$exec" $cfg $wl
   done
 done

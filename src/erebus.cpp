@@ -502,9 +502,9 @@ int main(int argc, char* argv[])
 		}
 	#endif
 
-	for(auto i=0; i < wrk_cpuids.size(); i++)
-		cout << wrk_cpuids[i] << ' ';
-	cout << endl;
+	// for(auto i=0; i < wrk_cpuids.size(); i++)
+	// 	cout << wrk_cpuids[i] << ' ';
+	// cout << endl;
 	
 
 	

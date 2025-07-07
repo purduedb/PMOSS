@@ -44,7 +44,7 @@ struct OptLock {
     version = typeVersionLockObsolete.load();
     if (isLocked(version) || isObsolete(version)) {
       // _mm_pause();
-      std::this_thread::yield()
+      std::this_thread::yield();
       needRestart = true;
     }
     return version;
@@ -64,7 +64,7 @@ struct OptLock {
       version = version + 0b10;
     } else {
       // _mm_pause();
-      std::this_thread::yield()
+      std::this_thread::yield();
       needRestart = true;
     }
   }
@@ -265,7 +265,7 @@ struct BTree {
     if (count>3)
       sched_yield();
     else
-      std::this_thread::yield()
+      std::this_thread::yield();
       // _mm_pause();
       
   }

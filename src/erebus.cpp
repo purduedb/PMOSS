@@ -174,7 +174,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	// init_file = "/mnt/nvme/";
 	  
 	if (ds == YCSB) {
-		init_file += "dataset/loade_zipf_int_1000M.dat";
+		init_file += "/proj/pmoss-PG0/loade_zipf_int_1000M.dat";
   } 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
@@ -491,11 +491,12 @@ int main(int argc, char* argv[])
 			ncore_cpuids.push_back(cPool[n][2]);
 			
 			int cnt = 1;
-			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+			for(size_t j = 3; j < cPool[n].size(); j++){
 				if (cPool[n][j] % 8 > 4)
 					continue;
 				wrk_cpuids.push_back(cPool[n][j]);
 				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				cnt++
 				if (cnt == num_workers) break;
 			}
 		}

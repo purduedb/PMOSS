@@ -5,10 +5,10 @@ ulimit -s unlimited
 export PCM_NO_MSR=1
 export PCM_NMI_WATCHDOG=1
 
-# [11, 12, 13, 44, 45, 16]
+# [11, 12, TODO: 45, 16]
 current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
-for wl in 11; do
+for wl in 16; do
   for cfg in {1..60..3}; do
     "$exec" $cfg $wl
   done

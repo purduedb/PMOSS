@@ -16,7 +16,7 @@ using std::ofstream;
 #define EVAL_PMOSS 0
 
 #define SINGLE_DIMENSION_KEY_LIMIT 1000000000       
-#define BTREE_INIT_LIMIT 800000000           
+#define BTREE_INIT_LIMIT 1000000000           
 #define LIMIT 1000                  // test btree workload
 
 #define MAX_GRID_CELL 256           // 100, changed it here:Oct 11, 24

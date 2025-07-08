@@ -2,6 +2,8 @@ linux-6.8.0/*
 build/*
 .vscode/*
 src/dataset/*.dat
+kb_bs_linux/*
+kb_bs_linux_2s_2n/*
 src/dataset/osm_cellids_200M_uint64
 src/dataset/osm_cellids_800M_uint64
 src/dataset/osm_cellids_400M_uint64

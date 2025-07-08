@@ -484,6 +484,10 @@ int main(int argc, char* argv[])
 		num_workers = 29;  // Change the CURR_WORKER_THREADS in TPM.hpp
 		ss_cpuids.push_back(0);
 		mm_cpuids.push_back(32);
+	#elif MACHINE == 3 
+		num_workers = 6; 
+		ss_cpuids.push_back(2);
+		mm_cpuids.push_back(10);
 	#elif MACHINE == 7
 		num_workers = 14;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#elif MACHINE == 3
@@ -506,7 +510,23 @@ int main(int argc, char* argv[])
 				if (cnt == num_workers) break;
 			}
 		}
-	#elif MACHINE==3 || MACHINE == 7
+	#elif MACHINE==3 	
+		for(auto n=0; n < num_NUMA_nodes; n++){
+			rt_cpuids.push_back(cPool[n][0]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
+			
+			ncore_cpuids.push_back(cPool[n][1]);
+			
+			int cnt = 1;
+			for(size_t j = 2; j < cPool[n].size(); j++, cnt++){
+				if(cPool[n][j] == 2 || cPool[n][j] == 10) 
+					continue; // skip ss and mm cores
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
+		}
+	#elif MACHINE == 7
 		
 		for(auto n=0; n < num_NUMA_nodes; n++){
 			rt_cpuids.push_back(cPool[n][0]);

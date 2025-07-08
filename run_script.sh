@@ -4,17 +4,15 @@ ulimit -s unlimited
 current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
 
-
-for wl in 11; do
-  for cfg in {3..50..2}; do
+# []
+for wl in 44 45; do
+  for cfg in {1..60..2}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in 100 101 102; do
     "$exec" $cfg $wl
   done
 done
-# for wl in 12; do
-#   for cfg in {1..50..2}; do
-#     "$exec" $cfg $wl
-#   done
-# done
 ##############################################################################################################
 
 # Baselines:Run the read workloads

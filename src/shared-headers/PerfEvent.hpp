@@ -44,7 +44,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#define PERF_EVENT_CNT 10  
+#define PERF_EVENT_CNT 11  
 
 struct PerfEvent {
    
@@ -79,7 +79,7 @@ struct PerfEvent {
       // counters for skylake-x for counting 
       registerCounter("cycles", PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES);
       registerCounter("instructions", PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
-      // registerCounter("L1D-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
+      registerCounter("L1D-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       // registerCounter("L1I-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1I|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       // registerCounter("LLC-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_LL|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       // registerCounter("branch-misses", PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_MISSES);      

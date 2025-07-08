@@ -44,7 +44,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#define PERF_EVENT_CNT 11  
+#define PERF_EVENT_CNT 10  
 
 struct PerfEvent {
    
@@ -79,15 +79,15 @@ struct PerfEvent {
       // counters for skylake-x for counting 
       registerCounter("cycles", PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES);
       registerCounter("instructions", PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
-      registerCounter("L1D-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
+      // registerCounter("L1D-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       // registerCounter("L1I-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1I|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
-      // registerCounter("LLC-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_LL|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
+      registerCounter("LLC-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_LL|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       // registerCounter("branch-misses", PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_MISSES);      
       registerCounter("PM_DATA_ALL_FROM_OFF_CHIP_CACHE", PERF_TYPE_RAW, 0x64c04a);
       // registerCounter("DTLB-Miss", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_DTLB|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       registerCounter("PM_DATA_ALL_FROM_ON_CHIP_CACHE", PERF_TYPE_RAW, 0x61c048);
       // registerCounter("LLC-write-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_LL|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16)); 
-      registerCounter("PM_DATA_ALL_FROM_DL4", PERF_TYPE_RAW, 0x63c04c);
+      // registerCounter("PM_DATA_ALL_FROM_DL4", PERF_TYPE_RAW, 0x63c04c);
       registerCounter("PM_DATA_ALL_FROM_LMEM", PERF_TYPE_RAW, 0x62c048);
       registerCounter("PM_DATA_ALL_FROM_DMEM", PERF_TYPE_RAW, 0x64c04c);
       registerCounter("PM_CMPLU_STALL_DMISS_LMEM", PERF_TYPE_RAW, 0x4c018);

@@ -15,6 +15,8 @@
 #include "shared-headers/PerfEvent_amd.hpp"
 #elif MACHINE == 4
 #include "shared-headers/PerfEvent_arm.hpp"
+#elif MACHINE == 8
+#include "shared-headers/PerfEvent_ibm.hpp"
 #endif
 
 #if MACHINE == 0

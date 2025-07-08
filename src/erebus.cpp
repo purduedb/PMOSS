@@ -139,12 +139,16 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 		init_file;
 	#elif MACHINE==5
 		init_file;
+	#elif MACHINE==8
+		init_file;
 	#endif 
 	
 	  
 	if (ds == YCSB) {
 		#if MACHINE==0 || MACHINE == 6
 		init_file += "loade_zipf_int_200M.dat";
+		#elif MACHINE==8
+		init_file = "/proj/pmoss-PG0/loade_zipf_int_1000M.dat";
 		#else
 		init_file += "dataset/loade_zipf_int_1000M.dat";
 		#endif		
@@ -498,6 +502,27 @@ int main(int argc, char* argv[])
 				if (cnt == num_workers) break;
 			}
 		} 
+	#elif MACHINE == 8
+		machine_name = "ibm_2s_2n";
+		num_workers = 47;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(80);
+
+		for(auto n=0; n < num_NUMA_nodes; n++){
+			rt_cpuids.push_back(cPool[n][1]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			ncore_cpuids.push_back(cPool[n][2]);
+			
+			int cnt = 0;
+			for(size_t j = 3; j < cPool[n].size(); j++){
+				if (cPool[n][j] % 8 > 4)
+					continue;
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				cnt++;
+				if (cnt == num_workers) break;
+			}
+		}
 	#endif
 	
 

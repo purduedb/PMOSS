@@ -280,7 +280,7 @@ int main(int argc, char* argv[])
 {	
 	int cfgIdx = 506;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADH;
+	int wl = SD_YCSB_WKLOADK;
 	int iam = BTREE;
 
 	// int cfgIdx = 1;

@@ -9,7 +9,8 @@ echo "Current directory: $current_dir"
 exec="$current_dir/build/bin/erebus"
 
 # AMD EPYC 7543 2S_8N [11, 12, 13, 44, 45]
-for wl in 16 12; do
+# 11
+for wl in 44 45 13; do
   numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 $wl
   for cfg in 500 502 506; do
     "$exec" $cfg $wl
@@ -17,7 +18,7 @@ for wl in 16 12; do
 done
 
 
-# AMD EPYC 7543 2S_2N [11, 12, 13, 44, 45]
+# AMD EPYC 7543 2S_2N [11, 12, 13, 44, 45, 16]
 # for wl in 16; do
 #   numactl --interleave=0,1 "$exec" 501 $wl
 #   for cfg in 500 502 506; do

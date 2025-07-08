@@ -14,7 +14,7 @@ using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // 343901273, 200000000
-#define BTREE_INIT_LIMIT 1000000000
+#define BTREE_INIT_LIMIT 800000000
 #define LIMIT 1000                
 #define MAX_GRID_CELL 256
 #define STAMP_LR_PARAM 4            

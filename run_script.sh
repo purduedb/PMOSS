@@ -4,9 +4,9 @@ ulimit -s unlimited
 current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
 
-
-for wl in 44; do
-  for cfg in {3..50..3}; do
+# [11, 12, 13, 44, 45, 16]
+for wl in 45; do
+  for cfg in {1..50..3}; do
     "$exec" $cfg $wl
   done
 done

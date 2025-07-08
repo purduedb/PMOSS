@@ -44,7 +44,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#define PERF_EVENT_CNT 10  
+#define PERF_EVENT_CNT 12  
 
 struct PerfEvent {
    
@@ -73,7 +73,8 @@ struct PerfEvent {
    std::vector<std::string> names;
    std::chrono::time_point<std::chrono::steady_clock> startTime;
    std::chrono::time_point<std::chrono::steady_clock> stopTime;
-
+   // PM_CMPLU_STALL_DMISS_REMOTE, PM_CMPLU_STALL_DMISS_LMEM, PM_DATA_ALL_FROM_DL4, PM_DATA_ALL_FROM_DMEM, PM_DATA_ALL_FROM_LL4, PM_DATA_ALL_FROM_LMEM
+   // PM_DATA_ALL_FROM_OFF_CHIP_CACHE, PM_DATA_ALL_FROM_OFF_CHIP_CACHE
    PerfEvent() {
       // counters for skylake-x for counting 
       registerCounter("cycles", PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES);
@@ -87,8 +88,11 @@ struct PerfEvent {
       // registerCounter("memory-accesses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_NODE|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_ACCESS<<16));
       registerCounter("LLC-write-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_LL|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16)); 
       // registerCounter("memory-write-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_NODE|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
-      registerCounter("MEM_LOAD_L3_MISS_RETIRED:LOCAL_DRAM", PERF_TYPE_RAW, 0x5301d3);
+      
+      // registerCounter("MEM_LOAD_L3_MISS_RETIRED:LOCAL_DRAM", PERF_TYPE_RAW, 0x5301d3);
       //registerCounter("MEM_LOAD_L3_MISS_RETIRED:REMOTE_DRAM", PERF_TYPE_RAW, 0x5302d3);
+      registerCounter("PM_DATA_ALL_FROM_LMEM", PERF_TYPE_RAW, 0x62c048);
+      registerCounter("PM_DATA_ALL_FROM_DMEM", PERF_TYPE_RAW, 0x64c04c);
       //registerCounter("CYCLE_ACTIVITY.CYCLES_L3_MISS", PERF_TYPE_RAW, 0x25302a3);
       //registerCounter("CYCLE_ACTIVITY.CYCLES_MEM_ANY", PERF_TYPE_RAW, 0x105310a3);
       registerCounter("task-clock", PERF_TYPE_SOFTWARE, PERF_COUNT_SW_TASK_CLOCK);

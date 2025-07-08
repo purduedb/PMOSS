@@ -7,15 +7,15 @@ export PCM_NMI_WATCHDOG=1
 current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
 
-# [11, 12, 13, 44]
-for wl in 45; do
-  for cfg in {1..2..3}; do
+# []
+for wl in 44 45; do
+  for cfg in {1..30..3}; do
     "$exec" $cfg $wl
   done
-  for cfg in {30..80..3}; do
+  for cfg in {30..60..3}; do
     "$exec" $cfg $wl
   done
-  for cfg in {80..100..3}; do
+  for cfg in 100 101 102; do
     "$exec" $cfg $wl
   done
 done

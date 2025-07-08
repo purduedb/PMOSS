@@ -14,7 +14,7 @@ using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define EVAL_PMOSS 0  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
-#define MACHINE 0     // 0 (BIGDATA), 1(DBSERVER)
+#define MACHINE 1     // 0 (BIGDATA), 1(DBSERVER)
 
 #define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // total keys in db       
 #define BTREE_INIT_LIMIT 800000000 // initial number of keys in btree   30000000        

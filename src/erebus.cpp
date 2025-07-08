@@ -354,9 +354,9 @@ int main(int argc, char* argv[])
 		ss_cpuids.push_back(0);
 		mm_cpuids.push_back(12);
 	#elif MACHINE == 1
-		num_workers = 28;  
-		ss_cpuids.push_back(74);
-		mm_cpuids.push_back(75);
+		num_workers = 33;  
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(1);
 	#elif MACHINE == 2
 		num_workers = 28;  
 		ss_cpuids.push_back(31);
@@ -391,6 +391,20 @@ int main(int argc, char* argv[])
 			wrk_cpuids.push_back(cPool[n][j]);
 			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
 			cnt++;
+			if (cnt == num_workers) break;
+		}
+	}
+	#elif MACHINE == 1
+	for(auto n=0; n < num_NUMA_nodes; n++){
+		rt_cpuids.push_back(cPool[n][1]);
+		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+		
+		ncore_cpuids.push_back(cPool[n][2]);
+		
+		int cnt = 1;
+		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+			wrk_cpuids.push_back(cPool[n][j]);
+			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
 			if (cnt == num_workers) break;
 		}
 	}
@@ -454,21 +468,10 @@ int main(int argc, char* argv[])
 	#elif MACHINE==1
 		#if MAX_GRID_CELL == 100
 		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ice_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
-		#endif
-	#elif MACHINE==5
-		#if MAX_GRID_CELL == 100
-		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/sb_4s_4n/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
 		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ice_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
 			std::to_string(MAX_GRID_CELL) + ".txt";
-		#endif 
-	#elif MACHINE==6
-		#if MAX_GRID_CELL == 100
-		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_4n/c_" + std::to_string(cfgIdx) + ".txt";
-		#else 
-		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_4n/c_" + std::to_string(cfgIdx) + "_" + 
-			std::to_string(MAX_GRID_CELL) + ".txt";
-		#endif 
+		#endif
 	#endif
 	#else 
 	#if MACHINE==0
@@ -483,6 +486,9 @@ int main(int argc, char* argv[])
 		#if MAX_GRID_CELL == 100
 		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_ice_2s_2n/" + std::to_string(wl)
 			+ "/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/ice_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
+			std::to_string(MAX_GRID_CELL) + ".txt";
 		#endif
 	#elif MACHINE==6
 		#if MAX_GRID_CELL == 100

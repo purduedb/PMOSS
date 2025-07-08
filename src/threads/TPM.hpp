@@ -20,8 +20,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 // -------------------------------------------------------------------------------------
+#if MACHINE == 8
+#include "tbb/concurrent_priority_queue.h"
+#include "tbb/concurrent_queue.h"
+#else
 #include "oneapi/tbb/concurrent_priority_queue.h"
 #include "oneapi/tbb/concurrent_queue.h"
+#endif
 // -------------------------------------------------------------------------------------
 #include "shared-headers/Units.hpp"
 #include "scheduling/RM.hpp"
@@ -35,6 +40,8 @@
 #include "shared-headers/PerfEvent_arm.hpp"
 #elif MACHINE == 5 || MACHINE == 6
 #include "shared-headers/PerfEvent_intel_sb.hpp"
+#elif MACHINE == 8
+#include "shared-headers/PerfEvent_ibm.hpp"
 #endif
 
 #include "profiling/PerfCounters.hpp"
@@ -115,6 +122,12 @@ class TPManager{
     static const int CURR_MEGAMIND_THREADS = 0;
     static const int CURR_ROUTER_THREADS = 2;
 	  static const int CURR_WORKER_THREADS = 28;
+#elif MACHINE == 8
+    static const int CURR_NCORE_SWEEPER_THREADS = 2;
+    static const int CURR_SYS_SWEEPER_THREADS = 1;
+    static const int CURR_MEGAMIND_THREADS = 1;   //For ycsb-insert realted set it to 1
+    static const int CURR_ROUTER_THREADS = 2;
+	  static const int CURR_WORKER_THREADS = 94;
 #else
 	  static const int CURR_WORKER_THREADS = 56;
 #endif
@@ -182,9 +195,13 @@ class TPManager{
     struct WorkerThread {
       std::thread th;
       u64 cpuid;
-      
+      #if MACHINE == 8
+      tbb::concurrent_priority_queue<Rectangle, Rectangle::compare_f> jobs;
+      tbb::concurrent_queue<PerfCounter> perf_stats;  // This is what we are currently using
+      #else
       oneapi::tbb::concurrent_priority_queue<Rectangle, Rectangle::compare_f> jobs;
       oneapi::tbb::concurrent_queue<PerfCounter> perf_stats;  // This is what we are currently using
+      #endif 
 
       std::unordered_map<CPUID, u64> qExecutedMice;  // Grid Id to Mice Count
       std::unordered_map<CPUID, u64> qExecutedElephant;

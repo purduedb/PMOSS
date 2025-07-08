@@ -49,6 +49,8 @@ struct OptLock {
     if (isLocked(version) || isObsolete(version)) {
       #if MACHINE==4
         asm volatile("yield");
+      #elif MACHINE==8
+        std::this_thread::yield();
       #else
         _mm_pause();
       #endif
@@ -72,6 +74,8 @@ struct OptLock {
     } else {
       #if MACHINE==4
         asm volatile("yield");
+      #elif MACHINE==8
+        std::this_thread::yield();
       #else
         _mm_pause();
       #endif
@@ -278,6 +282,8 @@ struct BTree {
     else{
       #if MACHINE==4
         asm volatile("yield");
+      #elif MACHINE==8
+        std::this_thread::yield();
       #else
         _mm_pause();
       #endif

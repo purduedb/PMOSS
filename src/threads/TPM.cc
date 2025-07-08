@@ -1008,6 +1008,14 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         wl_config += "ycsb_workloadk2_" + to_string(router_cpuids[i]);
         input.open(wl_config);
       }
+      else if (wl == SD_YCSB_WKLOADK3){
+        wl_config += "ycsb_workloadk3_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
+      else if (wl == SD_YCSB_WKLOADK4){
+        wl_config += "ycsb_workloadk4_" + to_string(router_cpuids[i]);
+        input.open(wl_config);
+      }
       else if(wl == WIKI_WKLOADA){
         wl_config += "wiki_workloada_" + to_string(router_cpuids[i]);
         input.open(wl_config);

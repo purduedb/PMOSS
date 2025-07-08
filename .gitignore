@@ -5,6 +5,7 @@ src/dataset/
 src/workloads/loade_zipf_int_100M.dat
 src/interference/*
 kb_bs_linux/*
+kb_bs_linux_2s_2n/*
 kb/*
 kb_quad/*
 kb_b/*

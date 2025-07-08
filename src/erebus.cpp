@@ -426,6 +426,8 @@ int main(int argc, char* argv[])
 		}		
 	#elif MACHINE == 3
 		machine_name = "amd_epyc7543_2s_8n";
+		ss_cpuids.push_back(2);
+		mm_cpuids.push_back(10);
 		num_workers = 6;  
 		for(auto n=0; n < num_NUMA_nodes; n++){
 			rt_cpuids.push_back(cPool[n][0]);
@@ -435,6 +437,8 @@ int main(int argc, char* argv[])
 			
 			int cnt = 1;
 			for(size_t j = 2; j < cPool[n].size(); j++, cnt++){
+				if(cPool[n][j] == 2 || cPool[n][j] == 10) 
+					continue; // skip ss and mm cores
 				wrk_cpuids.push_back(cPool[n][j]);
 				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
 				if (cnt == num_workers) break;

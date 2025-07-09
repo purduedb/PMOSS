@@ -17,7 +17,7 @@ using std::ofstream;
 #define MACHINE 0     // 0 (BIGDATA), 1(DBSERVER)
 
 #define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // total keys in db       
-#define BTREE_INIT_LIMIT 800000000 // initial number of keys in btree   30000000        
+#define BTREE_INIT_LIMIT 1000000000 // initial number of keys in btree   30000000        
 #define LIMIT 1000        
 
 #define MAX_GRID_CELL 256 // total number of index slices = MAX_XPAR*MAX_YPAR

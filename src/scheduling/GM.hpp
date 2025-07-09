@@ -1,17 +1,6 @@
 #ifndef PMOSS_GRIDMANAGER_H_
 #define PMOSS_GRIDMANAGER_H_
 
-#include <iostream>
-#include <fstream>
-// -------------------------------------------------------------------------------------
-#include "utils/Misc.hpp"
-#include "storage/index.h"  
-#include "storage/btree/btree.h"  
-#include "storage/rtree/rtree.h"
-#include "storage/qtree/qtree.h"  
-// -------------------------------------------------------------------------------------
-using std::ifstream;
-using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // 343901273, 200000000
 #define BTREE_INIT_LIMIT 680000000
@@ -23,7 +12,7 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 # define USE_MODEL 0 
 // -------------------------------------------------------------------------------------
-#define MACHINE 0   // 0 (BIGDATA), 1(DBSERVER), 2 (AMD 1NPS), 3 (AMD 4NPS), NVIDIA (4), SB (5), SKX(4S4N) 6
+#define MACHINE 8   // 0 (BIGDATA), 1(DBSERVER), 2 (AMD 1NPS), 3 (AMD 4NPS), NVIDIA (4), SB (5), SKX(4S4N) 6, 8 (IBM)
 #define MULTIDIM 0 
 #define STORAGE 2   // RTree(0), QTree(1), BTree
 #define LINUX 0     // 0 (SE 0, SE-NUMA 1, SN-NUMA 2)
@@ -31,6 +20,19 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
+
+#include <iostream>
+#include <fstream>
+// -------------------------------------------------------------------------------------
+#include "utils/Misc.hpp"
+#include "storage/index.h"  
+#include "storage/btree/btree.h"  
+#include "storage/rtree/rtree.h"
+#include "storage/qtree/qtree.h"  
+// -------------------------------------------------------------------------------------
+using std::ifstream;
+using std::ofstream;
+
 
 namespace erebus
 {

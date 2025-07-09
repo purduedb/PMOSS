@@ -1,17 +1,6 @@
 #ifndef PMOSS_GRIDMANAGER_H_
 #define PMOSS_GRIDMANAGER_H_
 
-#include <iostream>
-#include <fstream>
-// -------------------------------------------------------------------------------------
-#include "utils/Misc.hpp"
-#include "storage/index.h"  
-#include "storage/btree/btree.h"  
-#include "storage/rtree/rtree.h"
-#include "storage/qtree/qtree.h"  
-// -------------------------------------------------------------------------------------
-using std::ifstream;
-using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // 343901273, 200000000
 #define BTREE_INIT_LIMIT 800000000
@@ -31,6 +20,19 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
+
+#include <iostream>
+#include <fstream>
+// -------------------------------------------------------------------------------------
+#include "utils/Misc.hpp"
+#include "storage/index.h"  
+#include "storage/btree/btree.h"  
+#include "storage/rtree/rtree.h"
+#include "storage/qtree/qtree.h"  
+// -------------------------------------------------------------------------------------
+using std::ifstream;
+using std::ofstream;
+
 
 namespace erebus
 {

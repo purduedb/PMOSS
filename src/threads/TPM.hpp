@@ -141,7 +141,7 @@ class TPManager{
       std::thread th;
       u64 cpuid;
       
-      #if MACHINE==0
+      #if MACHINE==0 || MACHINE == 1 || MACHINE == 6
       oneapi::tbb::concurrent_queue<IntelPCMCounter> pcmCounters;
       #endif
 
@@ -166,7 +166,7 @@ class TPManager{
       vector <DataDistSnap> dataDistReel;
       vector<QueryViewSnap> queryViewReel;
       
-      #if MACHINE==0
+      #if MACHINE==0 || MACHINE == 1 || MACHINE == 6
       vector<IntelPCMCounter> DRAMResUsageReel;
       #endif
       

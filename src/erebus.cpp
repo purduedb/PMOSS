@@ -146,7 +146,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	  
 	if (ds == YCSB) {
 		#if MACHINE==0 || MACHINE == 6
-		init_file += "loade_zipf_int_200M.dat";
+		init_file += "loade_zipf_int_1000M.dat";
 		#elif MACHINE==8
 		init_file = "/proj/pmoss-PG0/loade_zipf_int_1000M.dat";
 		#else

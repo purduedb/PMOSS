@@ -463,17 +463,25 @@ int main(int argc, char* argv[])
 		num_workers = 14;  
 		ss_cpuids.push_back(0);
 		mm_cpuids.push_back(1);
-				for(size_t j = 0; j < cPool[n].size(); j++){
-			if (j == 1 || j == 2) 
-				continue;
-			if (cPool[n][j] == 0 || cPool[n][j] == 1){
+		for(auto n=0; n < num_NUMA_nodes; n++){
+			rt_cpuids.push_back(cPool[n][1]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			
+			ncore_cpuids.push_back(cPool[n][2]);
+			
+			int cnt = 0;
+			for(size_t j = 0; j < cPool[n].size(); j++){
+				if (j == 1 || j == 2) 
+					continue;
+				if (cPool[n][j] == 0 || cPool[n][j] == 1){
+					cnt++;
+					continue; 
+				} 
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
 				cnt++;
-				continue; 
-			} 
-			wrk_cpuids.push_back(cPool[n][j]);
-			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-			cnt++;
-			if (cnt == num_workers) break;
+				if (cnt == num_workers) break;
+			}
 		}
 	#elif MACHINE == 6
 		num_workers = 7;  

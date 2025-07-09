@@ -121,8 +121,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   
 	if (ds == YCSB) {
-		init_file = "/scratch1/yrayhan/loade_zipf_int_1000M.dat";
-		// txn_file += "workloads/txnse_zipf_int_100M.dat";
+		init_file += "dataset/loade_zipf_int_1000M.dat";
   } else if (ds == WIKI) {
     init_file = "/scratch1/yrayhan/wiki_ts_200M_uint64.dat";
   } else if (ds == OSM_CELLIDS) {

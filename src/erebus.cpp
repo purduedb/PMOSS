@@ -515,7 +515,7 @@ int main(int argc, char* argv[])
 			}
 		} 
 	#elif MACHINE == 8
-		machine_name = "ibm_2s_2n";
+		machine_name = "ibm_power_2s_2n";
 		num_workers = 47;  // Change the CURR_WORKER_THREADS in TPM.hpp
 		ss_cpuids.push_back(0);
 		mm_cpuids.push_back(80);

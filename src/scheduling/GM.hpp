@@ -23,7 +23,7 @@ using std::ofstream;
 // -------------------------------------------------------------------------------------
 # define USE_MODEL 0 
 // -------------------------------------------------------------------------------------
-#define MACHINE 0   // 0 (BIGDATA), 1(DBSERVER), 2 (AMD 1NPS), 3 (AMD 4NPS), NVIDIA (4), SB (5), SKX(4S4N) 6
+#define MACHINE 8   // 0 (BIGDATA), 1(DBSERVER), 2 (AMD 1NPS), 3 (AMD 4NPS), NVIDIA (4), SB (5), SKX(4S4N) 6, 8 (IBM)
 #define MULTIDIM 0 
 #define STORAGE 2   // RTree(0), QTree(1), BTree
 #define LINUX 0     // 0 (SE 0, SE-NUMA 1, SN-NUMA 2)

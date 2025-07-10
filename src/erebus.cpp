@@ -484,21 +484,42 @@ int main(int argc, char* argv[])
 			}
 		}
 	#elif MACHINE == 6
-		num_workers = 7;  
 		machine_name = "intel_skx_4s_4n";
+		num_workers = 10;  
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(24);
+		
 		for(auto n=0; n < num_NUMA_nodes; n+=2){
 			rt_cpuids.push_back(cPool[n][1]);
 			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
-			
 			ncore_cpuids.push_back(cPool[n][2]);
-			
-			int cnt = 1;
-			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+			int cnt = 0;
+			for(size_t j = 0; j < cPool[n].size(); j++){
+				if (j == 1 || j == 2) 
+					continue;
+				if (cPool[n][j] == 0 || cPool[n][j] == 12){
+					cnt++;
+					continue; 
+				} 
 				wrk_cpuids.push_back(cPool[n][j]);
 				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				cnt++;
 				if (cnt == num_workers) break;
 			}
-		}
+		}		
+		// for(auto n=0; n < num_NUMA_nodes; n+=2){
+		// 	rt_cpuids.push_back(cPool[n][1]);
+		// 	glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			
+		// 	ncore_cpuids.push_back(cPool[n][2]);
+			
+		// 	int cnt = 1;
+		// 	for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+		// 		wrk_cpuids.push_back(cPool[n][j]);
+		// 		glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+		// 		if (cnt == num_workers) break;
+		// 	}
+		// }
 	#elif MACHINE == 7
 		num_workers = 14; 
 		for(auto n=0; n < num_NUMA_nodes; n++){

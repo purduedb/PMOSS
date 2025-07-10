@@ -20,10 +20,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 // -------------------------------------------------------------------------------------
-#include "shared-headers/Units.hpp"
-#include "scheduling/RM.hpp"
-#include "scheduling/GM.hpp"
-
 #if MACHINE == 8
 #include "tbb/concurrent_priority_queue.h"
 #include "tbb/concurrent_queue.h"
@@ -32,6 +28,9 @@
 #include "oneapi/tbb/concurrent_queue.h"
 #endif
 // -------------------------------------------------------------------------------------
+#include "shared-headers/Units.hpp"
+#include "scheduling/RM.hpp"
+#include "scheduling/GM.hpp"
 
 #if MACHINE == 0 
 #include "shared-headers/PerfEvent_intel_skx.hpp"
@@ -116,7 +115,7 @@ class TPManager{
     static const int CURR_SYS_SWEEPER_THREADS = 1;
     static const int CURR_MEGAMIND_THREADS = 1;
     static const int CURR_ROUTER_THREADS = 4;
-	  static const int CURR_WORKER_THREADS = 28;
+	  static const int CURR_WORKER_THREADS = 38;
 #elif MACHINE == 7
     static const int CURR_NCORE_SWEEPER_THREADS = 2;
     static const int CURR_SYS_SWEEPER_THREADS = 0;

@@ -453,7 +453,7 @@ int main(int argc, char* argv[])
 			rt_cpuids.push_back(cPool[n][0]);
 			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
 			ncore_cpuids.push_back(cPool[n][1]);
-			for(size_t j = 4; j < cPool[n].size(); j++, cnt++){
+			for(size_t j = 4; j < cPool[n].size(); j++){
 				wrk_cpuids.push_back(cPool[n][j]);
 				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
 			}

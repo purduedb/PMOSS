@@ -3,21 +3,24 @@ ulimit -s unlimited
 
 current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
-
-# [11, 12, 13, 44, 45, 16]
-for wl in 13; do
-  for cfg in 100 101 102; do
-# []
-for wl in 44 45; do
-  for cfg in {1..60..2}; do
-    "$exec" $cfg $wl
-  done
+# Fix the workload for baseline of AMD_2S_8N
+# [44 45 12 16 13]
+for wl in 11; do
   for cfg in 100 101 102; do
     "$exec" $cfg $wl
   done
-  # for cfg in {1..50..3}; do
-  #   "$exec" $cfg $wl
-  # done
+  for cfg in {1..30..3}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {30..40..3}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {40..50..3}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {50..60..3}; do
+    "$exec" $cfg $wl
+  done
 done
 
 

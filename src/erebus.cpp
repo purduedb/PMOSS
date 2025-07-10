@@ -401,7 +401,7 @@ int main(int argc, char* argv[])
 
 	int cfgIdx = 1;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADE;
+	int wl = SD_YCSB_WKLOADA;
 	int iam = BTREE;
 	
 	if (argc > 1) {

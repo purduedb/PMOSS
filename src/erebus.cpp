@@ -558,7 +558,6 @@ int main(int argc, char* argv[])
 		}
 	#endif
 	
-
 	
 	erebus::scheduler::ResourceManager glb_rm;  
 	erebus::Erebus db(&glb_gm, &glb_rm);

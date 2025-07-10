@@ -103,7 +103,7 @@ class TPManager{
     static const int CURR_SYS_SWEEPER_THREADS = 1;
     static const int CURR_MEGAMIND_THREADS = 1;
     static const int CURR_ROUTER_THREADS = 1;
-	  static const int CURR_WORKER_THREADS = 56;
+	  static const int CURR_WORKER_THREADS = 68;
 #elif MACHINE == 5
     static const int CURR_NCORE_SWEEPER_THREADS = 4;
     static const int CURR_SYS_SWEEPER_THREADS = 1;

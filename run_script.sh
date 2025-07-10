@@ -8,13 +8,24 @@ current_dir=$(pwd)
 echo "Current directory: $current_dir"
 exec="$current_dir/build/bin/erebus"
 
-# INTEL SKX 4S4N [44 45 11 12 16 13]
-for wl in 13; do
-  numactl --interleave=0,2,4,6 "$exec" 501 $wl
+
+
+# NVIDIA []
+for wl in 12 16; do
+  numactl --interleave=0 "$exec" 501 $wl
   for cfg in 500 502 506; do
     "$exec" $cfg $wl
   done
 done
+
+
+# INTEL SKX 4S4N [44 45 11 12 16 13]
+# for wl in 13; do
+#   numactl --interleave=0,2,4,6 "$exec" 501 $wl
+#   for cfg in 500 502 506; do
+#     "$exec" $cfg $wl
+#   done
+# done
 
 
 # AMD EPYC 7543 2S_8N [11, 12, 13, 44, 45, 16]

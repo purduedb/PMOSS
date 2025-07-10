@@ -147,7 +147,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	if (ds == YCSB) {
 		#if MACHINE==0 || MACHINE == 6
 		init_file += "loade_zipf_int_1000M.dat";
-		#elif MACHINE==8
+		#elif MACHINE==8 || MACHINE == 4
 		init_file = "/proj/pmoss-PG0/loade_zipf_int_1000M.dat";
 		#else
 		init_file += "dataset/loade_zipf_int_1000M.dat";
@@ -446,16 +446,16 @@ int main(int argc, char* argv[])
 		}
 	#elif MACHINE == 4
 		machine_name = "nvidia_gh_1s_1n";	
-		num_workers = 56; 		
+		num_workers = 68; 
+		ss_cpuids.push_back(2);
+		mm_cpuids.push_back(3);		
 		for(auto n=0; n < 1; n++){
 			rt_cpuids.push_back(cPool[n][0]);
 			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
 			ncore_cpuids.push_back(cPool[n][1]);
-			int cnt = 1;
-			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+			for(size_t j = 4; j < cPool[n].size(); j++, cnt++){
 				wrk_cpuids.push_back(cPool[n][j]);
 				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-				if (cnt == num_workers) break;
 			}
 		}
 	#elif MACHINE == 5

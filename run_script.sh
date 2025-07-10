@@ -7,9 +7,8 @@ export PCM_NMI_WATCHDOG=1
 current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
 
-# 16 baki, 11 of 100 baki
-# [11, 12, 13, 44, 45]
-for wl in 16; do
+# []
+for wl in 44; do
   for cfg in {1..2..3}; do
     "$exec" $cfg $wl
   done

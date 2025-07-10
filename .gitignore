@@ -10,6 +10,9 @@ kb/*
 kb_b_/*
 kb_quad/*
 kb_b/*
+kb_bs_linux_4s_4n/*
+kb_bs_linux/*
+kb_bs_4s_4n/*
 src/profiling/PCMMem.cpp
 learned/*
 run_script.sh

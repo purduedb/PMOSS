@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
 	auto start = std::chrono::high_resolution_clock::now();
 	int cfgIdx = 1;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADC;
+	int wl = SD_YCSB_WKLOADK;
 	int iam = BTREE;
 	
 	// int cfgIdx = 1;
@@ -353,27 +353,15 @@ int main(int argc, char* argv[])
 		num_workers = 10; 					// Change the CURR_WORKER_THREADS in TPM.hpp
 		ss_cpuids.push_back(0);
 		mm_cpuids.push_back(12);
-	#elif MACHINE == 1
-		num_workers = 28;  
-		ss_cpuids.push_back(74);
-		mm_cpuids.push_back(75);
-	#elif MACHINE == 2
-		num_workers = 28;  
-		ss_cpuids.push_back(31);
-		mm_cpuids.push_back(63);
-	#elif MACHINE == 5
-		num_workers = 14;  
-		ss_cpuids.push_back(74);
-		mm_cpuids.push_back(75);
 	#elif MACHINE == 6
-		num_workers = 7;  			// Change the CURR_WORKER_THREADS in TPM.hpp
-		ss_cpuids.push_back(11);
-		mm_cpuids.push_back(23);
+		num_workers = 10;  
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(24);
 	#else
 		num_workers = 7;  
 	#endif
 	
-	#if MACHINE == 0					// BIGDATA
+	#if MACHINE == 0				
 	for(auto n=0; n < num_NUMA_nodes; n++){
 		rt_cpuids.push_back(cPool[n][1]);
 		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
@@ -395,19 +383,24 @@ int main(int argc, char* argv[])
 		}
 	}
 	#elif MACHINE == 6
-	for(auto n=0; n < num_NUMA_nodes; n+=2){
-		rt_cpuids.push_back(cPool[n][1]);
-		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
-		
-		ncore_cpuids.push_back(cPool[n][2]);
-		
-		int cnt = 1;
-		for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
-			wrk_cpuids.push_back(cPool[n][j]);
-			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-			if (cnt == num_workers) break;
-		}
-	}
+		for(auto n=0; n < num_NUMA_nodes; n+=2){
+			rt_cpuids.push_back(cPool[n][1]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			ncore_cpuids.push_back(cPool[n][2]);
+			int cnt = 0;
+			for(size_t j = 0; j < cPool[n].size(); j++){
+				if (j == 1 || j == 2) 
+					continue;
+				if (cPool[n][j] == 0 || cPool[n][j] == 24){
+					cnt++;
+					continue; 
+				} 
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				cnt++;
+				if (cnt == num_workers) break;
+			}
+		}	
 	#else
 	for(auto n=0; n < num_NUMA_nodes; n++){
 		rt_cpuids.push_back(cPool[n][1]);

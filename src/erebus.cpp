@@ -168,12 +168,11 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	memset(&ranges[0], 0x00, 10000000 * sizeof(int));
 	memset(&ops[0], 0x00, 10000000 * sizeof(int));
 
-	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
-  std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
-	  
+	std::string init_file;
+    
 	if (ds == YCSB) {
-		init_file += "dataset/loade_zipf_int_200M.dat";
-  	} 
+		init_file = "/proj/pmoss-PG0/loade_zipf_int_1000M.dat";
+  } 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
 	}
@@ -439,67 +438,19 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	int num_workers = 0;
-	#if MACHINE == 0
-		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
-		ss_cpuids.push_back(11);
-		mm_cpuids.push_back(23);
-	#elif MACHINE == 1
-		num_workers = 40;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#elif MACHINE == 2
-		num_workers = 28;  // Change the CURR_WORKER_THREADS in TPM.hpp
-		ss_cpuids.push_back(31);
-		mm_cpuids.push_back(63);
-	#elif MACHINE == 3
-		num_workers = 6;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#elif MACHINE == 4
-		num_workers = 56;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#else
-		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#endif
-	
-	#if MACHINE ==2
-		for(auto n=0; n < num_NUMA_nodes; n++){
-			rt_cpuids.push_back(cPool[n][1]);
-			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
-			
-			ncore_cpuids.push_back(cPool[n][2]);
-			
-			int cnt = 1;
-			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
-				wrk_cpuids.push_back(cPool[n][j]);
-				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-				if (cnt == num_workers) break;
-			}
+	int num_workers = 68;  // Change the CURR_WORKER_THREADS in TPM.hpp
+	ss_cpuids.push_back(2);
+	mm_cpuids.push_back(3);		
+	for(auto n=0; n < 1; n++){
+		rt_cpuids.push_back(cPool[n][0]);
+		glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
+		ncore_cpuids.push_back(cPool[n][1]);
+		for(size_t j = 4; j < cPool[n].size(); j++){
+			wrk_cpuids.push_back(cPool[n][j]);
+			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
 		}
-	#elif MACHINE==3
-		
-		for(auto n=0; n < num_NUMA_nodes; n++){
-			rt_cpuids.push_back(cPool[n][0]);
-			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
-			ncore_cpuids.push_back(cPool[n][1]);
-			int cnt = 1;
-			for(size_t j = 2; j < cPool[n].size(); j++, cnt++){
-				wrk_cpuids.push_back(cPool[n][j]);
-				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-				if (cnt == num_workers) break;
-			}
-		}
-	#elif MACHINE==4
-		
-		for(auto n=0; n < 1; n++){
-			rt_cpuids.push_back(cPool[n][0]);
-			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
-			ncore_cpuids.push_back(cPool[n][1]);
-			int cnt = 1;
-			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
-				wrk_cpuids.push_back(cPool[n][j]);
-				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-				if (cnt == num_workers) break;
-			}
-		}
-	#endif 
-	
+	}
+
 	erebus::scheduler::ResourceManager glb_rm;  
 	erebus::Erebus db(&glb_gm, &glb_rm);
 	

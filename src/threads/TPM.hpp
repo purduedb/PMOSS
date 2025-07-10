@@ -78,7 +78,7 @@ class TPManager{
     static const int CURR_SYS_SWEEPER_THREADS = 1;
     static const int CURR_MEGAMIND_THREADS = 1;
     static const int CURR_ROUTER_THREADS = 1;
-	  static const int CURR_WORKER_THREADS = 56;
+	  static const int CURR_WORKER_THREADS = 68;
 #else
 	  static const int CURR_WORKER_THREADS = 56;
 #endif

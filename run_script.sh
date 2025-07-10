@@ -1,21 +1,16 @@
 #!/bin/bash
+
 ulimit -s unlimited
 
-for wl in 11; do
-for cfg in 100; do
-  /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+current_dir=$(pwd)
+exec="$current_dir/build/bin/erebus"
+
+# []
+for wl in 44 45; do
+  for cfg in {1..40..2}; do
+    "$exec" $cfg $wl
+  done
 done
-done
 
-# for cfg in {1..49..2}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 16
-# done
 
-# for cfg in {1..49..2}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 32
-# done
-
-# for cfg in {1..49..2}; do
-#   /users/yrayhan/works/erebus/build/bin/erebus $cfg 41
-# done
 

@@ -6,6 +6,7 @@ kb/*
 kb_quad/*
 kb_b/*
 kb_b_linux/*
+kb_bs_linux/*
 src/profiling/PCMMem.cpp
 learned/*
 src/dataset/osm_cellids_800M_uint64

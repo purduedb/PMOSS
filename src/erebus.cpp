@@ -245,9 +245,42 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	cout << total_num_key << endl;
 	
 	auto start = std::chrono::high_resolution_clock::now();
-	for(size_t i = 0; i < BTREE_INIT_LIMIT; i++) {
-		this->idx_btree->insert(init_keys[i], values[i]);
-  }
+	// Multi-threaded insertion
+	std::vector<std::thread> insert_threads;
+  int NUM_INSERTION_THREADS = erebus::tp::TPManager::CURR_WORKER_THREADS;
+	insert_threads.reserve(NUM_INSERTION_THREADS);
+	size_t chunk_size = BTREE_INIT_LIMIT / NUM_INSERTION_THREADS;
+	size_t remainder = BTREE_INIT_LIMIT % NUM_INSERTION_THREADS;
+	// Create worker threads
+	for (unsigned i = 0; i < erebus::tp::TPManager::CURR_WORKER_THREADS; ++i) {
+		// Determine the start and end indices for this thread
+		size_t start_idx = i * chunk_size + std::min(static_cast<size_t>(i), remainder);
+		size_t end_idx = start_idx + chunk_size + (i < remainder ? 1 : 0);
+		// Ensure we don't exceed the array bounds
+		if (start_idx >= BTREE_INIT_LIMIT) break;
+		end_idx = std::min(end_idx, static_cast<size_t>(BTREE_INIT_LIMIT));
+
+		// Launch a thread for the range [start_idx, end_idx)
+		insert_threads.emplace_back([this, start_idx, end_idx, i, &init_keys, &values]() {
+			// Pin the thread to the specified CPU
+			erebus::utils::PinThisThread(i);
+			// Small delay to avoid contention during thread startup
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			// Perform insertions for the assigned range
+			for (size_t j = start_idx; j < end_idx; ++j) {
+					this->idx_btree->insert(init_keys[j], values[j]);
+			}
+		});
+	}
+	// Wait for all threads to complete
+	for (auto& th : insert_threads) {
+			if (th.joinable()) {
+					th.join();
+			}
+	}
+	// for(size_t i = 0; i < BTREE_INIT_LIMIT; i++) {
+	// 	this->idx_btree->insert(init_keys[i], values[i]);
+  // }
 	auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
 
@@ -481,7 +514,7 @@ int main(int argc, char* argv[])
 	glb_gm.register_grid_cells(config_file);
 	glb_gm.buildDataDistIdx(iam, init_keys);
 	glb_gm.printDataDistIdx();
-	glb_gm.enforce_scheduling();
+	// glb_gm.enforce_scheduling();
 	#if STORAGE == 2
 		db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	#endif

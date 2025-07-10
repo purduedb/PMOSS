@@ -44,7 +44,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#define PERF_EVENT_CNT 13  // Previously
+#define PERF_EVENT_CNT 16  // Previously
 
 struct PerfEvent {
    
@@ -86,11 +86,11 @@ struct PerfEvent {
       registerCounter("DTLB-Miss", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_DTLB|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       registerCounter("MEM_ACCESS_RD", PERF_TYPE_RAW, 0x8000066);
       registerCounter("LLC-STORE-MISSES", PERF_TYPE_RAW, 0x10102);
-      registerCounter("MEM_ACCESS_WR", PERF_TYPE_RAW, 0x8000067);
-      // registerCounter("MEM_LOAD_L3_MISS_RETIRED:LOCAL_DRAM", PERF_TYPE_RAW, 0x5301d3);
-      // registerCounter("MEM_LOAD_L3_MISS_RETIRED:REMOTE_DRAM", PERF_TYPE_RAW, 0x5302d3);
-      // registerCounter("CYCLE_ACTIVITY.CYCLES_L3_MISS", PERF_TYPE_RAW, 0x25302a3);
+      registerCounter("MEM_ACCESS_WR", PERF_TYPE_RAW, 0x8000067);      
       registerCounter("STALL_BACKEND_MEM", PERF_TYPE_RAW, 0x8004005);
+      registerCounter("STALL_BACKEND_MEM", PERF_TYPE_RAW, 0x8004005);
+      registerCounter("L1D_CACHE_LMISS_RD", PERF_TYPE_RAW, 0x8000039);
+      registerCounter("L2D_CACHE_LMISS_RD", PERF_TYPE_RAW, 0x8004009);
       registerCounter("task-clock", PERF_TYPE_SOFTWARE, PERF_COUNT_SW_TASK_CLOCK);
       
       // additional counters can be found in linux/perf_event.h

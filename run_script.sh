@@ -10,8 +10,8 @@ exec="$current_dir/build/bin/erebus"
 
 
 
-# NVIDIA []
-for wl in 12 16; do
+# NVIDIA [44 45 12 16 11 13]
+for wl in 13; do
   numactl --interleave=0 "$exec" 501 $wl
   for cfg in 500 502 506; do
     "$exec" $cfg $wl

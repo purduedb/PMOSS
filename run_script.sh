@@ -8,7 +8,7 @@ current_dir=$(pwd)
 echo "Current directory: $current_dir"
 exec="$current_dir/build/bin/erebus"
 
-# INTEL SKX 4S4N [44 45 11 12 16]
+# INTEL SKX 4S4N [44 45 11 12 16 13]
 for wl in 13; do
   numactl --interleave=0,2,4,6 "$exec" 501 $wl
   for cfg in 500 502 506; do

@@ -391,7 +391,9 @@ int main(int argc, char* argv[])
 			}
 		}	
 	#elif MACHINE == 1
-		num_workers = 28;  
+		num_workers = 33;  
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(1);
 		machine_name = "intel_ice_2s_2n";
 		for(auto n=0; n < num_NUMA_nodes; n++){
 			rt_cpuids.push_back(cPool[n][1]);

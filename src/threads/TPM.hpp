@@ -103,7 +103,7 @@ class TPManager{
     static const int CURR_SYS_SWEEPER_THREADS = 1;
     static const int CURR_MEGAMIND_THREADS = 1;
     static const int CURR_ROUTER_THREADS = 1;
-	  static const int CURR_WORKER_THREADS = 56;
+	  static const int CURR_WORKER_THREADS = 68;
 #elif MACHINE == 5
     static const int CURR_NCORE_SWEEPER_THREADS = 4;
     static const int CURR_SYS_SWEEPER_THREADS = 1;
@@ -115,7 +115,7 @@ class TPManager{
     static const int CURR_SYS_SWEEPER_THREADS = 1;
     static const int CURR_MEGAMIND_THREADS = 1;
     static const int CURR_ROUTER_THREADS = 4;
-	  static const int CURR_WORKER_THREADS = 28;
+	  static const int CURR_WORKER_THREADS = 38;
 #elif MACHINE == 7
     static const int CURR_NCORE_SWEEPER_THREADS = 2;
     static const int CURR_SYS_SWEEPER_THREADS = 0;
@@ -141,7 +141,7 @@ class TPManager{
       std::thread th;
       u64 cpuid;
       
-      #if MACHINE==0
+      #if MACHINE==0 || MACHINE == 1 || MACHINE == 6
       oneapi::tbb::concurrent_queue<IntelPCMCounter> pcmCounters;
       #endif
 
@@ -166,7 +166,7 @@ class TPManager{
       vector <DataDistSnap> dataDistReel;
       vector<QueryViewSnap> queryViewReel;
       
-      #if MACHINE==0
+      #if MACHINE==0 || MACHINE == 1 || MACHINE == 6
       vector<IntelPCMCounter> DRAMResUsageReel;
       #endif
       

@@ -153,7 +153,7 @@ void TPManager::init_ncoresweeper_threads(){
           glb_worker_thrds[wkCPUID].perf_stats.push(perf_counter);
         }
         
-        #if MACHINE==0
+        #if MACHINE==0 || MACHINE == 1 || MACHINE == 6
         // Then, push the token to the system_sweeper cpu to get the System View (MemChannel)
         if (i == 0){
           IntelPCMCounter iPCMCnt;
@@ -296,6 +296,7 @@ void TPManager::dump_ncoresweeper_threads(){
   #elif STORAGE == 2
       // dirName += "/kb_b_linux/" + std::to_string(key);
       dirName += "/kb_bs_linux/" + std::to_string(key); // <-----
+      // dirName += "/kb_bs_linux_4s_4n/" + std::to_string(key); // <-----
       // dirName += "/kb_b/" + std::to_string(key);
   #endif
   #else
@@ -315,7 +316,7 @@ void TPManager::dump_ncoresweeper_threads(){
     #if PROFILE == 1
     // -------------------------------------------------------------------------------------
     ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
-    #if MACHINE==0
+    #if MACHINE==0 || MACHINE == 1 || MACHINE == 6
     for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
         int tReel = i;
         memChannelView << this->gm->config << " ";
@@ -574,7 +575,7 @@ TPManager::~TPManager(){
 
 
 void TPManager::init_syssweeper_threads(){
-  #if MACHINE==0
+  #if MACHINE==0 || MACHINE == 1 || MACHINE == 6
   // -------------------------------------------------------------------------------------
   for (unsigned i = 0; i < CURR_SYS_SWEEPER_THREADS; ++i) {
     glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].th = std::thread([i, this] {

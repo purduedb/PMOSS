@@ -146,8 +146,8 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	  
 	if (ds == YCSB) {
 		#if MACHINE==0 || MACHINE == 6
-		init_file += "loade_zipf_int_200M.dat";
-		#elif MACHINE==8
+		init_file += "loade_zipf_int_1000M.dat";
+		#elif MACHINE==8 || MACHINE == 4
 		init_file = "/proj/pmoss-PG0/loade_zipf_int_1000M.dat";
 		#else
 		init_file += "dataset/loade_zipf_int_1000M.dat";
@@ -280,7 +280,7 @@ int main(int argc, char* argv[])
 {	
 	int cfgIdx = 506;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADH;
+	int wl = SD_YCSB_WKLOADK;
 	int iam = BTREE;
 
 	// int cfgIdx = 1;
@@ -448,16 +448,16 @@ int main(int argc, char* argv[])
 		}
 	#elif MACHINE == 4
 		machine_name = "nvidia_gh_1s_1n";	
-		num_workers = 56; 		
+		num_workers = 68; 
+		ss_cpuids.push_back(2);
+		mm_cpuids.push_back(3);		
 		for(auto n=0; n < 1; n++){
 			rt_cpuids.push_back(cPool[n][0]);
 			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
 			ncore_cpuids.push_back(cPool[n][1]);
-			int cnt = 1;
-			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+			for(size_t j = 4; j < cPool[n].size(); j++){
 				wrk_cpuids.push_back(cPool[n][j]);
 				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-				if (cnt == num_workers) break;
 			}
 		}
 	#elif MACHINE == 5
@@ -465,34 +465,63 @@ int main(int argc, char* argv[])
 		num_workers = 14;  
 		ss_cpuids.push_back(0);
 		mm_cpuids.push_back(1);
-				for(size_t j = 0; j < cPool[n].size(); j++){
-			if (j == 1 || j == 2) 
-				continue;
-			if (cPool[n][j] == 0 || cPool[n][j] == 1){
-				cnt++;
-				continue; 
-			} 
-			wrk_cpuids.push_back(cPool[n][j]);
-			glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
-			cnt++;
-			if (cnt == num_workers) break;
-		}
-	#elif MACHINE == 6
-		num_workers = 7;  
-		machine_name = "intel_skx_4s_4n";
-		for(auto n=0; n < num_NUMA_nodes; n+=2){
+		for(auto n=0; n < num_NUMA_nodes; n++){
 			rt_cpuids.push_back(cPool[n][1]);
 			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
 			
 			ncore_cpuids.push_back(cPool[n][2]);
 			
-			int cnt = 1;
-			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+			int cnt = 0;
+			for(size_t j = 0; j < cPool[n].size(); j++){
+				if (j == 1 || j == 2) 
+					continue;
+				if (cPool[n][j] == 0 || cPool[n][j] == 1){
+					cnt++;
+					continue; 
+				} 
 				wrk_cpuids.push_back(cPool[n][j]);
 				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				cnt++;
 				if (cnt == num_workers) break;
 			}
 		}
+	#elif MACHINE == 6
+		machine_name = "intel_skx_4s_4n";
+		num_workers = 10;  
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(24);
+		
+		for(auto n=0; n < num_NUMA_nodes; n+=2){
+			rt_cpuids.push_back(cPool[n][1]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			ncore_cpuids.push_back(cPool[n][2]);
+			int cnt = 0;
+			for(size_t j = 0; j < cPool[n].size(); j++){
+				if (j == 1 || j == 2) 
+					continue;
+				if (cPool[n][j] == 0 || cPool[n][j] == 12){
+					cnt++;
+					continue; 
+				} 
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				cnt++;
+				if (cnt == num_workers) break;
+			}
+		}		
+		// for(auto n=0; n < num_NUMA_nodes; n+=2){
+		// 	rt_cpuids.push_back(cPool[n][1]);
+		// 	glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			
+		// 	ncore_cpuids.push_back(cPool[n][2]);
+			
+		// 	int cnt = 1;
+		// 	for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+		// 		wrk_cpuids.push_back(cPool[n][j]);
+		// 		glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+		// 		if (cnt == num_workers) break;
+		// 	}
+		// }
 	#elif MACHINE == 7
 		num_workers = 14; 
 		for(auto n=0; n < num_NUMA_nodes; n++){
@@ -509,7 +538,7 @@ int main(int argc, char* argv[])
 			}
 		} 
 	#elif MACHINE == 8
-		machine_name = "ibm_2s_2n";
+		machine_name = "ibm_power_2s_2n";
 		num_workers = 47;  // Change the CURR_WORKER_THREADS in TPM.hpp
 		ss_cpuids.push_back(0);
 		mm_cpuids.push_back(80);
@@ -531,7 +560,6 @@ int main(int argc, char* argv[])
 		}
 	#endif
 	
-
 	
 	erebus::scheduler::ResourceManager glb_rm;  
 	erebus::Erebus db(&glb_gm, &glb_rm);

@@ -6,13 +6,14 @@ src/workloads/loade_zipf_int_100M.dat
 src/interference/*
 kb_bs_linux/*
 kb_bs_linux_2s_2n/*
+kb_bs_linux_4s_4n/*
 kb/*
 kb_quad/*
 kb_b/*
 kb_b_/*
 kb_b__/*
 kb_b_linux_old/*
-src/profiling/PCMMem.cpp
+# src/profiling/PCMMem.cpp
 learned/*
 src/scheduling/GM.hpp
 kb_b_linux/*
@@ -21,3 +22,4 @@ kb_bs__/*
 kb_r__/*
 kb_r_linux/*
 kb_r_linux_pfl/*
+CMakeLists.txt

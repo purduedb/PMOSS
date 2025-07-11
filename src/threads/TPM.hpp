@@ -32,7 +32,7 @@
 #include "scheduling/RM.hpp"
 #include "scheduling/GM.hpp"
 
-#if MACHINE == 0 
+#if MACHINE == 0 || MACHINE == 1
 #include "shared-headers/PerfEvent_intel_skx.hpp"
 #elif MACHINE == 2 || MACHINE == 3 || MACHINE == 7
 #include "shared-headers/PerfEvent_amd.hpp"
@@ -85,7 +85,7 @@ class TPManager{
     static const int CURR_SYS_SWEEPER_THREADS = 1;
     static const int CURR_MEGAMIND_THREADS = 2;
     static const int CURR_ROUTER_THREADS = 2;
-	  static const int CURR_WORKER_THREADS = 56;
+	  static const int CURR_WORKER_THREADS = 66;
 #elif MACHINE == 2
     static const int CURR_NCORE_SWEEPER_THREADS = 2;
     static const int CURR_SYS_SWEEPER_THREADS = 1;

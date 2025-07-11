@@ -5,60 +5,28 @@ ulimit -s unlimited
 export PCM_NO_MSR=1
 export PCM_NMI_WATCHDOG=1
 
-# [11 12 16 44 TODO: 45]
+# [11 12 16 44 45 13]
 current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
-for wl in 45; do
-  for cfg in {1..30..3}; do
-    "$exec" $cfg $wl
-  done
-  for cfg in {30..40..3}; do
-    "$exec" $cfg $wl
-  done
-  for cfg in {40..50..3}; do
-    "$exec" $cfg $wl
-  done
-  for cfg in {50..60..3}; do
-    "$exec" $cfg $wl
-  done
-  for cfg in 100 101 102; do
-    "$exec" $cfg $wl
-  done
-done
-
-# for wl in 11 13; do
-#   for cfg in {250..252..1}; do
-#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
+# for wl in 12 16; do
+#   for cfg in {2..30..3}; do
+#     "$exec" $cfg $wl
 #   done
+#   for cfg in {31..40..3}; do
+#     "$exec" $cfg $wl
+#   done
+#   for cfg in {41..50..3}; do
+#     "$exec" $cfg $wl
+#   done
+#   for cfg in {51..59..3}; do
+#     "$exec" $cfg $wl
+#   done
+#   # for cfg in 100 101 102; do
+#   #   "$exec" $cfg $wl
+#   # done
 # done
 
-# for wl in 41; do
-#   for cfg in {256..258..1}; do
-#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
-#   done
-# done
-
-# for wl in 41; do
-#   for cfg in {1..60..2}; do
-#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
-#   done
-# done
-
-# for wl in 12 16 32 41 34 35 36; do
-#   for cfg in 100 101 102 103; do
-#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
-#   done
-# done
-
-# for wl in 11 39 40 13; do
-#   for cfg in 100 101 102 103; do
-#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
-#   done
-# done
-
-
-# for wl in 11 13; do
-#   for cfg in {1..59..4}; do
-#     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
-#   done
-# done
+# Learned Models []
+cfg=201
+wl=12
+"$exec" $cfg $wl

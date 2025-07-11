@@ -30,11 +30,7 @@ exec="$current_dir/build/bin/erebus"
 # cfg=202
 # wl=44
 # "$exec" $cfg $wl
-wl=44
-for cfg in 202 302;do
-  "$exec" $cfg $wl
-done
-wl=45
-for cfg in 203 303;do
+wl=16
+for cfg in 204 304;do
   "$exec" $cfg $wl
 done

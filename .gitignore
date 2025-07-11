@@ -20,3 +20,5 @@ kb_bs__/*
 kb_r_linux/*
 kb_r_linux_pfl/*
 kb_b_linux_pfl/*
+src/dataset/*.dat
+src/dataset/loade_zipf_int_1000M.dat

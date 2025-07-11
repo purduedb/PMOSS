@@ -490,8 +490,6 @@ int main(int argc, char* argv[])
 		mm_cpuids.push_back(10);
 	#elif MACHINE == 7
 		num_workers = 14;  // Change the CURR_WORKER_THREADS in TPM.hpp
-	#elif MACHINE == 3
-		num_workers = 6;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#else
 		num_workers = 7;  // Change the CURR_WORKER_THREADS in TPM.hpp
 	#endif

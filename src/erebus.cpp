@@ -117,11 +117,12 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	memset(&ranges[0], 0x00, 10000000 * sizeof(int));
 	memset(&ops[0], 0x00, 10000000 * sizeof(int));
 
-	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
-  std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
+	// std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
+  // std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
+	std::string init_file;
   
 	if (ds == YCSB) {
-		init_file += "dataset/loade_zipf_int_1000M.dat";
+		init_file = "/proj/pmoss-PG0/loade_zipf_int_1000M.dat";
   } else if (ds == WIKI) {
     init_file = "/scratch1/yrayhan/wiki_ts_200M_uint64.dat";
   } else if (ds == OSM_CELLIDS) {

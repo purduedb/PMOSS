@@ -6,31 +6,31 @@ exec="$current_dir/build/bin/erebus"
 
 # Fix the workload for baseline of AMD_2S_8N
 # [44 45 12 16 13 11]
-# for wl in 12 16; do
-#   # for cfg in 100 101 102; do
-#   #   "$exec" $cfg $wl
-#   # done
-#   for cfg in {2..30..3}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {31..40..3}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {41..50..3}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {51..59..3}; do
-#     "$exec" $cfg $wl
-#   done
-# done
-
-# Learned Models
-# []
-for wl in 44; do
-  for cfg in 222; do
+for wl in 13; do
+  # for cfg in 100 101 102; do
+  #   "$exec" $cfg $wl
+  # done
+  for cfg in {2..30..3}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {31..40..3}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {41..50..3}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {51..59..3}; do
     "$exec" $cfg $wl
   done
 done
+
+# Learned Models
+# [11 44 45 12 16]
+# for wl in 13; do
+#   for cfg in 305; do
+#     "$exec" $cfg $wl
+#   done
+# done
 ##############################################################################################################
 
 

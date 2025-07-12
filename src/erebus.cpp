@@ -512,7 +512,7 @@ int main(int argc, char* argv[])
 	// #elif STORAGE == 0
 	// 	glb_gm.idx->NUMAStatus();
 	// #endif
-	// glb_gm.printGM();
+	glb_gm.printGM();
 
 	// -------------------------------------------------------------------------------------
 	

@@ -487,8 +487,8 @@ int main(int argc, char* argv[])
 		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_ice_2s_2n/" + std::to_string(wl)
 			+ "/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
-		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/ice_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
-			std::to_string(MAX_GRID_CELL) + ".txt";
+		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_ice_2s_2n/" + std::to_string(wl)
+			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";
 		#endif
 	#elif MACHINE==6
 		#if MAX_GRID_CELL == 100
@@ -525,7 +525,7 @@ int main(int argc, char* argv[])
 	// #elif STORAGE == 0
 	// 	glb_gm.idx->NUMAStatus();
 	// #endif
-	// glb_gm.printGM();
+	glb_gm.printGM();
 
 	// -------------------------------------------------------------------------------------
 	

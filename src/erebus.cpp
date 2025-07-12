@@ -526,9 +526,9 @@ int main(int argc, char* argv[])
 	#if EVAL_PMOSS == 0
 	#if MACHINE == 8
 		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ibm_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ibm_power_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ibm_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/ibm_power_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
 		std::to_string(MAX_GRID_CELL) + ".txt";	
 		#endif 
 	#endif
@@ -536,10 +536,10 @@ int main(int argc, char* argv[])
 	
 	#if MACHINE == 8 
 		#if MAX_GRID_CELL == 100
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/ibm_2s_2n/" + std::to_string(wl)
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/ibm_power_2s_2n/" + std::to_string(wl)
 			+ "/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
-		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/ibm_2s_2n/" + std::to_string(wl) 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/ibm_power_2s_2n/" + std::to_string(wl) 
 			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
 		#endif 
 	#endif

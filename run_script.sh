@@ -24,9 +24,9 @@ exec="$current_dir/build/bin/erebus"
 # done
 
 # Learned Models
-# []
-for wl in 11; do
-  for cfg in 210; do
+# [11]
+for wl in 12; do
+  for cfg in 211; do
     "$exec" $cfg $wl
   done
 done

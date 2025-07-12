@@ -25,11 +25,17 @@ exec="$current_dir/build/bin/erebus"
 
 # Learned Models
 # [11]
-for wl in 12; do
-  for cfg in 211; do
-    "$exec" $cfg $wl
-  done
-done
+# for wl in 12; do
+#   for cfg in 211; do
+#     "$exec" $cfg $wl
+#   done
+# done
+"$exec" 211 12
+"$exec" 214 16
+
+# "$exec" 212 44
+# "$exec" 213 45
+
 ##############################################################################################################
 
 # Baselines:Run the read workloads

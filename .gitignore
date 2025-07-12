@@ -14,6 +14,7 @@ src/dataset/osm_cellids_800M_uint64.dat
 src/dataset/osm_cellids_400M_uint64.dat
 src/dataset/osm_cellids_600M_uint64.dat
 src/interference/*
+kb_b_new/*
 kb/*
 kb_b_/*
 kb_b__/*

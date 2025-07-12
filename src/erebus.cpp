@@ -511,10 +511,8 @@ int main(int argc, char* argv[])
 	#elif MACHINE==3 	
 		for(auto n=0; n < num_NUMA_nodes; n++){
 			rt_cpuids.push_back(cPool[n][0]);
-			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});
-			
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});	
 			ncore_cpuids.push_back(cPool[n][1]);
-			
 			int cnt = 1;
 			for(size_t j = 2; j < cPool[n].size(); j++, cnt++){
 				if(cPool[n][j] == 2 || cPool[n][j] == 10) 

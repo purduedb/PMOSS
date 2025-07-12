@@ -500,17 +500,25 @@ int main(int argc, char* argv[])
 		glb_gm.register_index(db.idx_btree);
 	#endif
 	
-	
+	#if EVAL_PMOSS == 0
 	#if MACHINE==4
 		#if MAX_GRID_CELL == 100
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/nvidia_gh_1s_1n/c_" + std::to_string(cfgIdx) + ".txt";
 		#else 
 		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/nvidia_gh_1s_1n/c_" + std::to_string(cfgIdx) + "_" + 
 		std::to_string(MAX_GRID_CELL) + ".txt";	
-		
+		#endif
+	#endif
+	#else 
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/nvidia_gh_1s_1n/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/nvidia_gh_1s_1n/" + std::to_string(wl) 
+			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
 		#endif
 	#endif
 
+	cout << "Config file: " << config_file << endl;
 	glb_gm.register_grid_cells(config_file);
 	glb_gm.buildDataDistIdx(iam, init_keys);
 	glb_gm.printDataDistIdx();

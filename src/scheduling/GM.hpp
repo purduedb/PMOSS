@@ -13,6 +13,8 @@
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
+#define EVAL_PMOSS 1
+
 #define SINGLE_DIMENSION_KEY_LIMIT 1000000000      
 #define BTREE_INIT_LIMIT 800000000
 #define LIMIT 1000                  // test btree workload

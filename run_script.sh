@@ -19,7 +19,7 @@ exec="$current_dir/build/bin/erebus"
 # learned 
 #[11 12 16 44 45 1]
 for wl in 13; do
-  for cfg in 215; do
+  for cfg in 215 205; do
     "$exec" $cfg $wl
   done
 done

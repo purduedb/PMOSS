@@ -5,36 +5,32 @@ current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
 
 # [11 12 44 45 16]
-# for wl in 12 16; do
-#   # for cfg in 100 101 102; do
-#   #   "$exec" $cfg $wl
-#   # done
-#   for cfg in {2..30..3}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {31..40..3}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {41..50..3}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {51..59..3}; do
-#     "$exec" $cfg $wl
-#   done
-# done
+for wl in 34; do
+  # for cfg in 100 101 102; do
+  #   "$exec" $cfg $wl
+  # done
+  for cfg in {2..30..3}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {31..40..3}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {41..50..3}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {51..59..3}; do
+    "$exec" $cfg $wl
+  done
+done
 
 # Learned Models
 # [11]
-# for wl in 12; do
+# for wl in 13; do
 #   for cfg in 211; do
 #     "$exec" $cfg $wl
 #   done
 # done
-# "$exec" 211 12
-# "$exec" 214 16
 
-"$exec" 212 44
-"$exec" 213 45
 
 ##############################################################################################################
 

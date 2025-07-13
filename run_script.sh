@@ -6,19 +6,19 @@ exec="$current_dir/build/bin/erebus"
 
 # [11 12 44 45 16]
 for wl in 34; do
-  # for cfg in 100 101 102; do
-  #   "$exec" $cfg $wl
-  # done
-  for cfg in {2..30..3}; do
+  for cfg in 100 101 102; do
     "$exec" $cfg $wl
   done
-  for cfg in {31..40..3}; do
+  for cfg in {1..30..4}; do
     "$exec" $cfg $wl
   done
-  for cfg in {41..50..3}; do
+  for cfg in {30..40..4}; do
     "$exec" $cfg $wl
   done
-  for cfg in {51..59..3}; do
+  for cfg in {40..50..4}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {50..59..4}; do
     "$exec" $cfg $wl
   done
 done

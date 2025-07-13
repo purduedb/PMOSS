@@ -544,7 +544,7 @@ int main(int argc, char* argv[])
 		#endif 
 	#endif
 	#endif
-
+	cout << config_file << uint64_t time_enabled;
 	glb_gm.register_grid_cells(config_file);
 	glb_gm.buildDataDistIdx(iam, init_keys);
 	// glb_gm.printDataDistIdx();

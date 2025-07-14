@@ -6,31 +6,31 @@ exec="$current_dir/build/bin/erebus"
 
 # [11 12 44 45 16]
 # [27]
-for wl in 28; do
-  for cfg in 100 101 102; do
-    "$exec" $cfg $wl
-  done
-  for cfg in {1..30..4}; do
-    "$exec" $cfg $wl
-  done
-  for cfg in {30..40..4}; do
-    "$exec" $cfg $wl
-  done
-  for cfg in {40..50..4}; do
-    "$exec" $cfg $wl
-  done
-  for cfg in {50..59..4}; do
-    "$exec" $cfg $wl
-  done
-done
-
-# Learned Models
-# [11]
-# for wl in 13; do
-#   for cfg in 211; do
+# for wl in 28; do
+#   for cfg in 100 101 102; do
+#     "$exec" $cfg $wl
+#   done
+#   for cfg in {1..30..4}; do
+#     "$exec" $cfg $wl
+#   done
+#   for cfg in {30..40..4}; do
+#     "$exec" $cfg $wl
+#   done
+#   for cfg in {40..50..4}; do
+#     "$exec" $cfg $wl
+#   done
+#   for cfg in {50..59..4}; do
 #     "$exec" $cfg $wl
 #   done
 # done
+
+# Learned Models
+# [11]
+for wl in 28; do
+  for cfg in 207; do
+    "$exec" $cfg $wl
+  done
+done
 
 
 ##############################################################################################################

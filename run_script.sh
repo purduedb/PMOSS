@@ -3,34 +3,27 @@ ulimit -s unlimited
 
 current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
-# 12 201
-# 11 [200],
-# 26 [100 48 54 506 206]
-# 27 [100 101 58 506 207]
-for wl in 11; do
-  for cfg in 37 40 40 7; do
+
+
+# [11 12 44 45 16]
+# [27]
+for wl in 11 45; do
+  for cfg in 100 101 102; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {1..30..4}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {30..40..4}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {40..50..4}; do
+    "$exec" $cfg $wl
+  done
+  for cfg in {50..59..4}; do
     "$exec" $cfg $wl
   done
 done
-# [11 12 44 45 16]
-# [27]
-# for wl in 28; do
-#   for cfg in 100 101 102; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {1..30..4}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {30..40..4}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {40..50..4}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {50..59..4}; do
-#     "$exec" $cfg $wl
-#   done
-# done
 
 # Learned Models
 # [11]

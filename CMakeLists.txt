@@ -54,5 +54,5 @@ add_executable(erebus ${SOURCE_FILES})
 target_link_libraries(erebus 
   TBB::tbb
   pthread
-  # -fsanitize=address
+  -fsanitize=address
 )

@@ -7,7 +7,7 @@ exec="$current_dir/build/bin/erebus"
 
 # [11 12 44 45 16]
 # [27]
-for wl in 11 45; do
+for wl in 12; do
   for cfg in 100 101 102; do
     "$exec" $cfg $wl
   done

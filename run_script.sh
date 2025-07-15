@@ -3,10 +3,12 @@ ulimit -s unlimited
 
 current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
-# [37, 40, 40, 7, 200],
-# [34, 41, 51, 26, 201],
+# 12 34 41 51 26 201
+# 11 [37 40 40 7 200],
+# 26 [100 48 54 506 206]
+# 27 [100 101 58 506 207]
 for wl in 12; do
-  for cfg in 34 41 51 26 201; do
+  for cfg in 34 41 51 26; do
     "$exec" $cfg $wl
   done
 done

@@ -23,9 +23,11 @@ void TPManager::init_worker_threads(){
       erebus::utils::PinThisThread(worker_cpuids[i]);
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
       glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
-          
+      
+      #if PROFILE==1
       PerfEvent e;
-      int cnt = 0;    
+      int cnt = 0;  
+      #endif
       
       while (1) {  
         if(!glb_worker_thrds[worker_cpuids[i]].running) {
@@ -42,8 +44,11 @@ void TPManager::init_worker_threads(){
                     
         if (size_jobqueue != 0){
           glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
+          
+          #if PROFILE==1
           if (cnt == 0) e.startCounters();
-                    
+          #endif
+
           // -------------------------------------------------------------------------------------
           #if STORAGE == 0
             result = QueryRectangle(this->gm->idx, rec_pop.left_, rec_pop.right_, rec_pop.bottom_, rec_pop.top_);
@@ -71,6 +76,7 @@ void TPManager::init_worker_threads(){
            
           #endif
           
+          #if PROFILE==1
           cnt +=1;
           if (cnt == PERF_STAT_COLLECTION_INTERVAL){
             e.stopCounters();
@@ -90,6 +96,8 @@ void TPManager::init_worker_threads(){
                               
             glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
           }
+          #endif 
+
           gm->freqQueryDistCompleted[rec_pop.aGrid] += 1;
           
           auto itQExecMice = glb_worker_thrds[worker_cpuids[i]].qExecutedMice.find(rec_pop.aGrid);
@@ -242,6 +250,7 @@ void TPManager::init_ncoresweeper_threads(){
         std::this_thread::sleep_for(std::chrono::milliseconds(40000));  // 80000
         
         // First, push the token to the worker cpus to get the DataView
+        #if PROFILE==1
         PerfCounter perf_counter;
         perf_counter.qType = SYNC_TOKEN;
         for (auto[itr, rangeEnd] = this->gm->NUMAToWorkerCPUs.equal_range(numaID); itr != rangeEnd; ++itr)
@@ -257,6 +266,7 @@ void TPManager::init_ncoresweeper_threads(){
           iPCMCnt.qType = SYNC_TOKEN;
           glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.push(iPCMCnt);
         }
+        #endif 
         
         // Take a snapshot of the DataView from the  threads
         const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
@@ -274,20 +284,27 @@ void TPManager::init_ncoresweeper_threads(){
                     break;
                 }
                 
+                #if SIMD == 1
                 // Use SIMD to compute the DataView
+                // ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
+                // __m512d rawQCounter[nQCounterCline];
+                // __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
+                // for (auto vCline = 0; vCline < nQCounterCline; vCline++){
+                //   rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
+                //   rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
+                //   rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
+                //   if (vCline == 0){
+                //     rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
+                //   }
+                //   ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
+                // } 
+                #else
                 ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
-                __m512d rawQCounter[nQCounterCline];
-                __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
-                for (auto vCline = 0; vCline < nQCounterCline; vCline++){
-                  rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
-                  rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
-                  rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
-                  if (vCline == 0){
-                    rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
-                  }
-                  ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
-                }      
-                
+                for(auto ex = 0; ex < PERF_EVENT_CNT; ex++){
+                  ddSnap.rawQCounter[pc.gIdx][ex] += (pc.raw_counter_values[ex] / pc.raw_counter_values[1])*1000;
+                }
+                ddSnap.rawQCounter[pc.gIdx][1] = pc.raw_counter_values[1];
+                #endif
 
             }
             else break;
@@ -313,6 +330,7 @@ void TPManager::init_ncoresweeper_threads(){
 
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the System View (Memory Channel View)
+         #if PROFILE == 1
         if (i == 0){
             bool token_found = false;                    
             // memdata_t DRAMResUsageSnap;
@@ -332,6 +350,7 @@ void TPManager::init_ncoresweeper_threads(){
             }
             glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].DRAMResUsageReel.push_back(DRAMResUsageSnap);
         }
+        #endif
         
       }
     });
@@ -341,20 +360,36 @@ void TPManager::init_ncoresweeper_threads(){
 void TPManager::dump_ncoresweeper_threads(){
   cout << "==========================DUMPING Core Sweeper Threads=======================" << endl;
   for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
-
-  string dirName = std::string(PROJECT_SOURCE_DIR);
+  string dirName;
+  #if PROFILE ==1
+  dirName = std::string(PROJECT_SOURCE_DIR);
   #if STORAGE == 0
       dirName += "/kb_r__/" + std::to_string(key);
   #elif STORAGE == 1
       dirName += "/kb_quad/" + std::to_string(key);
   #elif STORAGE == 2
-      dirName += "/kb_bs__/" + std::to_string(key);
+      // dirName += "/kb_bs__/" + std::to_string(key);
+      dirName += "/kb_bs_profile/" + std::to_string(key);
       // dirName += "/kb_bs_4s_4n/" + std::to_string(key);
+  #endif
+  #elif PROFILE == 0
+  dirName = std::string(PROJECT_SOURCE_DIR);
+  #if STORAGE == 0
+      dirName += "/kb_r__/" + std::to_string(key);
+  #elif STORAGE == 1
+      dirName += "/kb_quad/" + std::to_string(key);
+  #elif STORAGE == 2
+      dirName += "/kb_bs_profile/" + std::to_string(key);
+      // dirName += "/kb_bs_4s_4n/" + std::to_string(key);
+  #endif
   #endif
   
   mkdir(dirName.c_str(), 0777);
+  cout << dirName << endl;
+
   cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
         // -------------------------------------------------------------------------------------
+    #if PROFILE == 1
     ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
     for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
         int tReel = i;
@@ -394,6 +429,7 @@ void TPManager::dump_ncoresweeper_threads(){
         }
         memChannelView << endl;
     }
+    #endif
     // -------------------------------------------------------------------------------------
     ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
     const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
@@ -410,12 +446,18 @@ void TPManager::dump_ncoresweeper_threads(){
         dataView << this->gm->wkload << " ";
         dataView << this->gm->iam << " ";
 
+        #if SIMD == 1
         // Load the SIMD values in a memory address
         for (auto g = 0; g < MAX_GRID_CELL; g++){
             for (auto cLine = 0; cLine < nQCounterCline; cLine++){
                 _mm512_store_pd(dataViewScalarDump + (g*nQCounterCline*8)+(cLine*8), dd.rawQCounter[g][cLine]);
             }     
         }
+        #else
+        for (auto g = 0; g < MAX_GRID_CELL; g++){
+          memcpy(dataViewScalarDump+g*PERF_EVENT_CNT, dd.rawQCounter[g], sizeof(dd.rawQCounter[g]));
+        }
+        #endif
         
         //Dump the perf counters
         for (auto aSize = 0; aSize < scalarDumpSize; aSize++){

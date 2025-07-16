@@ -271,7 +271,7 @@ int main(int argc, char* argv[])
 	auto start = std::chrono::high_resolution_clock::now();
 	int cfgIdx = 1;
 	int ds = YCSB;
-	int wl = SD_YCSB_WKLOADK;
+	int wl = SD_YCSB_WKLOADA;
 	int iam = BTREE;
 	
 	// int cfgIdx = 1;

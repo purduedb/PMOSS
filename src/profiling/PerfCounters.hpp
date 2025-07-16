@@ -34,7 +34,11 @@ struct HWCounterStats{
 };
 
 struct DataDistSnap{
+    #if SIMD == 1
     __m512d rawQCounter[MAX_GRID_CELL][int(PERF_EVENT_CNT/8)+1];  // This gets copied to the main array
+    #else 
+    double rawQCounter[MAX_GRID_CELL][PERF_EVENT_CNT];  // This gets copied to the main array
+    #endif
     double rawCntSamples[MAX_GRID_CELL] = {0};   
 };
 

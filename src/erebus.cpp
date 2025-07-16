@@ -400,8 +400,8 @@ int main(int argc, char* argv[])
 {	
 
 	int cfgIdx = 1;
-	int ds = OSM_CELLIDS;
-	int wl = SD_YCSB_WKLOADA;
+	int ds = YCSB;
+	int wl = SD_YCSB_WKLOADH;
 	int iam = BTREE;
 	
 	if (argc > 1) {

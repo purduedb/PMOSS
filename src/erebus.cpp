@@ -400,7 +400,7 @@ int main(int argc, char* argv[])
 {	
 
 	int cfgIdx = 1;
-	int ds = OSM_CELLIDS;
+	int ds = YCSB;
 	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 	

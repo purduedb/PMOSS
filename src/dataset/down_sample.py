@@ -3,29 +3,29 @@ import struct
 import os
 
 def downsample(fn):
-    # if os.path.exists("/scratch1/yrayhan/" + fn + "_600M_uint64"):
+    # if os.path.exists("/scratch1/xxxxxxxxxxxxxx/" + fn + "_600M_uint64"):
     #     return
 
     print("Downsampling", fn)
-    d = np.fromfile("/scratch1/yrayhan/" + fn + "_800M_uint64", dtype=np.uint64)[1:]
+    d = np.fromfile("/scratch1/xxxxxxxxxxxxxx/" + fn + "_800M_uint64", dtype=np.uint64)[1:]
     nd = np.delete(d, np.arange(0, d.size, 4))
 
-    # with open("/scratch1/yrayhan/" + fn + "_600M_uint64", "wb") as f:
+    # with open("/scratch1/xxxxxxxxxxxxxx/" + fn + "_600M_uint64", "wb") as f:
     #     f.write(struct.pack("Q", len(nd)))
     #     nd.tofile(f)
 
     # nd = d[::2]
-    # with open("/scratch1/yrayhan/" + fn + "_400M_uint64", "wb") as f:
+    # with open("/scratch1/xxxxxxxxxxxxxx/" + fn + "_400M_uint64", "wb") as f:
     #     f.write(struct.pack("Q", len(nd)))
     #     nd.tofile(f)
 
     nd = d[::4]
-    with open("/scratch1/yrayhan/" + fn + "_200M_uint64", "wb") as f:
+    with open("/scratch1/xxxxxxxxxxxxxx/" + fn + "_200M_uint64", "wb") as f:
         f.write(struct.pack("Q", len(nd)))
         nd.tofile(f)
     
     # nd = d[::8]
-    # with open("/scratch1/yrayhan/" + fn + "_100M_uint64", "wb") as f:
+    # with open("/scratch1/xxxxxxxxxxxxxx/" + fn + "_100M_uint64", "wb") as f:
     #     f.write(struct.pack("Q", len(nd)))
     #     nd.tofile(f)
     

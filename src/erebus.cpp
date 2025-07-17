@@ -28,7 +28,7 @@ erebus::storage::rtree::RTree* Erebus::build_rtree(int ds, int insert_strategy, 
 	
 	ifstream ifs;
 	int totPoints = 0;
-	std::string ds_file = "/scratch1/yrayhan/dataset/";
+	std::string ds_file = "/scratch1/xxxxxxxxxxxxxx/dataset/";
 	if (ds == OSM_USNE){
 		ds_file += "us.txt";
 		ifs.open(ds_file, std::ifstream::in); // 100000000
@@ -121,12 +121,12 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   
 	if (ds == YCSB) {
-		init_file = "/scratch1/yrayhan/loade_zipf_int_1000M.dat";
+		init_file = "/scratch1/xxxxxxxxxxxxxx/loade_zipf_int_1000M.dat";
 		// txn_file += "workloads/txnse_zipf_int_100M.dat";
   } else if (ds == WIKI) {
-    init_file = "/scratch1/yrayhan/wiki_ts_200M_uint64.dat";
+    init_file = "/scratch1/xxxxxxxxxxxxxx/wiki_ts_200M_uint64.dat";
   } else if (ds == OSM_CELLIDS) {
-    init_file = "/scratch1/yrayhan/osm_cellids_200M_uint64.dat";
+    init_file = "/scratch1/xxxxxxxxxxxxxx/osm_cellids_200M_uint64.dat";
   } 
 	else {
     fprintf(stderr, "Unknown workload type or key type: %d, %d\n", ds, kt);

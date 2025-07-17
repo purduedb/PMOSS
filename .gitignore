@@ -4,6 +4,10 @@ build/*
 src/dataset/*.dat
 kb_bs_linux/*
 kb_bs_linux_2s_2n/*
+2s_2n_kb_b/*
+2s_2n_kb_b__/*
+2s_2n_kb_b_unseen_wkload/*
+2s_2n_kb_bs_linux/*
 src/dataset/osm_cellids_200M_uint64
 src/dataset/osm_cellids_800M_uint64
 src/dataset/osm_cellids_400M_uint64

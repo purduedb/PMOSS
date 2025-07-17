@@ -33,19 +33,19 @@ erebus::storage::rtree::RTree* Erebus::build_rtree(int ds, int insert_strategy, 
 	std::string ds_file = std::string(PROJECT_SOURCE_DIR) + "/src/dataset/";
 
 	if (ds == OSM_USNE){
-		ds_file = "/scratch1/yrayhan/dataset/";
+		ds_file = "/scratch1/xxxxxxxxxxxx/dataset/";
 		ds_file += "us.txt";
 		ifs.open(ds_file, std::ifstream::in); // 100000000
 		totPoints = 50000000;
 	}
 	else if (ds == GEOLITE){
-		ds_file = "/scratch1/yrayhan/dataset/";
+		ds_file = "/scratch1/xxxxxxxxxxxx/dataset/";
 		ds_file += "geo.txt";
 		ifs.open(ds_file, std::ifstream::in); // 24000000
 		totPoints = 24000000;
 	}
 	else if (ds == BERLINMOD02){
-		ds_file = "/scratch1/yrayhan/dataset/";
+		ds_file = "/scratch1/xxxxxxxxxxxx/dataset/";
 		ds_file += "bmod02.txt";
 		ifs.open(ds_file, std::ifstream::in);  //11975098
 		totPoints = 11975098;
@@ -128,9 +128,9 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
 	
 	#if MACHINE==0 || MACHINE == 6
-		init_file = "/scratch1/yrayhan/";
+		init_file = "/scratch1/xxxxxxxxxxxx/";
 	#elif MACHINE==1
-		init_file = "/home/yrayhan/works/PMOSS/src/workloads/";
+		init_file = "/home/xxxxxxxxxxxx/works/PMOSS/src/workloads/";
 	#elif MACHINE==2
 		init_file;
 	#elif MACHINE==3

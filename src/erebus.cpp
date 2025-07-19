@@ -2,7 +2,7 @@
 // -------------------------------------------------------------------------------------
 #include <iostream>
 #include <fstream>
-#include <thread>   // std::thread
+#include <thread>   
 #include <mutex>
 // -------------------------------------------------------------------------------------
 using std::ifstream;
@@ -306,9 +306,6 @@ int main(int argc, char* argv[])
 		min_x = 1308; max_x = 12785; min_y = 1308; max_y = 12785; 
 	}	
 	else if (ds == YCSB){
-		// min_x = 36296660289; max_x = 		9223371933865469581; min_y = -1; max_y = -1; 
-		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
-		//500M 
 		min_x = 734139722786418736; max_x = 6075995071374232121; min_y = -1; max_y = -1; 
 	}
 	else if (ds == WIKI){
@@ -533,7 +530,7 @@ int main(int argc, char* argv[])
 	auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
 	cout << "Checkpoint: One Iteration: " << elapsed.count() << endl;
-	exit(0);
+	// exit(0);
 		
 	while(1);
 

@@ -286,18 +286,18 @@ void TPManager::init_ncoresweeper_threads(){
                 
                 #if SIMD == 1
                 // Use SIMD to compute the DataView
-                // ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
-                // __m512d rawQCounter[nQCounterCline];
-                // __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
-                // for (auto vCline = 0; vCline < nQCounterCline; vCline++){
-                //   rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
-                //   rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
-                //   rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
-                //   if (vCline == 0){
-                //     rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
-                //   }
-                //   ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
-                // } 
+                ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
+                __m512d rawQCounter[nQCounterCline];
+                __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
+                for (auto vCline = 0; vCline < nQCounterCline; vCline++){
+                  rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
+                  rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
+                  rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
+                  if (vCline == 0){
+                    rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
+                  }
+                  ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
+                } 
                 #else
                 ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
                 for(auto ex = 0; ex < PERF_EVENT_CNT; ex++){

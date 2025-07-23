@@ -12,21 +12,18 @@ cd build
 cmake ..
 cmake --build .
 ```
-
-### Build instructions
+### Running Code
 Config for baselines  
 - 500: OS local alloc
 - 501: OS interleave
 - 502: SE: NUMA
 - 506: SN: NUMA
 
-### Running Code
 ```
 ./run_script.sh
 ```
 
 ### Implementation
-
 ```
 PMOSS
 ├── README.md                  # Project README file

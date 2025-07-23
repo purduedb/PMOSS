@@ -1,5 +1,5 @@
 #!/bin/bash
-ulimit -s unlimited
+# ulimit -s unlimited
 
 export PCM_NO_MSR=1
 export PCM_NMI_WATCHDOG=1

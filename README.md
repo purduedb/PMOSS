@@ -30,11 +30,6 @@ Assuming you are in the root directory of the project
 PMOSS
 ├── README.md                  # Project README file
 ├── Kb_b__                     # The ``Offline'' / ``Fine-tuning'' dataset
-├── include                    # Root folder for header files
-│   ├── access                 # Folder for storage access layer 
-│   ├── storage                # Folder for storage engine layer
-│   ├── tcop                   # Folder for standalone process layer
-│   ...
 ├── src                        # Root folder for c source code
 │   ├── config                 # The scheduling policy for different machines
 │   │   ├── amd_epyc7302_2s_2n # The scheduling policy for AMD EPYC 7302 Server with NPS=1

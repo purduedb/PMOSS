@@ -14,7 +14,7 @@ using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define PROFILE 1
-#define SIMD 0
+#define SIMD 1
 
 #define EVAL_PMOSS 1  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
 #define MACHINE 0     // 0 (BIGDATA), 1(DBSERVER)

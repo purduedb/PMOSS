@@ -368,8 +368,9 @@ void TPManager::dump_ncoresweeper_threads(){
   #elif STORAGE == 1
       dirName += "/kb_quad/" + std::to_string(key);
   #elif STORAGE == 2
-      // dirName += "/kb_bs__/" + std::to_string(key);
-      dirName += "/kb_bs_profile/" + std::to_string(key);
+      // dirName += "/kb_b__/" + std::to_string(key);  // This is for testing purpose 
+      dirName += "/kb_bs__/" + std::to_string(key);
+      // dirName += "/kb_bs_profile/" + std::to_string(key);
       // dirName += "/kb_bs_4s_4n/" + std::to_string(key);
   #endif
   #elif PROFILE == 0

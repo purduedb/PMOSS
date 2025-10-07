@@ -122,12 +122,13 @@ void GridManager::register_grid_cells(string configFile){
 void GridManager::enforce_scheduling(){
   auto start = std::chrono::high_resolution_clock::now();
   for(size_t i = 0; i < MAX_GRID_CELL; i++){
+    // auto start1 = std::chrono::high_resolution_clock::now();
     double lx = this->glbGridCell[i].lx;
     double hx = this->glbGridCell[i].hx;
     double ly = this->glbGridCell[i].ly;
     double hy = this->glbGridCell[i].hy;
     int numa_id = this->glbGridCell[i].idNUMA;
-  #if LINUX != 0
+    #if LINUX != 0
 		#if STORAGE == 0
 			MigrateNodes(this->idx, lx, hx, ly, hy, numa_id);    
 		#elif STORAGE == 1
@@ -137,6 +138,9 @@ void GridManager::enforce_scheduling(){
             this->idx_btree->migrate_v1_(lx, this->DataDist[i], numa_id);
 		#endif
 	#endif
+    // auto finish1 = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double> elapsed1 = finish1 - start1;
+    // cout << "Checkpoint: SINGLE_MIGRATION_COMPLETED: " << elapsed1.count() << endl;
   }
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;

@@ -507,6 +507,7 @@ int main(int argc, char* argv[])
 	glb_gm.buildDataDistIdx(iam, init_keys);
 	// glb_gm.printDataDistIdx();
 	glb_gm.enforce_scheduling();
+	
 	// #if STORAGE == 2
 	// 	db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	// #elif STORAGE == 0

@@ -34,8 +34,21 @@ exec="$current_dir/build/bin/erebus"
 
 # w / wo profiling
 # [11]
-for wl in 16; do
-  for cfg in 204; do
-    "$exec" $cfg $wl
-  done
+# for wl in 16; do
+#   for cfg in 204; do
+#     "$exec" $cfg $wl
+#   done
+# done
+
+# Date: 2024-06-10 (Testing new KBs)
+# Add a wl list and a cfg list 
+wl=(12 16)
+cfg=(12001 12004)
+for i in "${!wl[@]}"; do
+  "$exec" ${cfg[$i]} ${wl[$i]}
 done
+# wl=11
+# cfg=(1000 1001 1002 1003 1004 1005 1006 1007 1008)
+# for c in "${cfg[@]}"; do
+#   "$exec" $c $wl
+# done

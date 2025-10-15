@@ -201,13 +201,16 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
   }
 
   uint64_t migrate_v1_(KeyType key, int range, int destNUMA) {
-    uint64_t results[range];
+    // Allocate results array on heap instead of stack to avoid stack overflow
+    uint64_t* results = new uint64_t[range];
     std::vector<void*> nodes_to_migrate;
-    
+
     uint64_t count = idx.migratory_scan3_(key, range, results, destNUMA, -1, -1, nodes_to_migrate);
     // cout << count << endl;
-    if (count==0)
+    if (count==0) {
+      delete[] results;
       return 0;
+    }
     // uint64_t count = 0;
 
     while (count < range) {
@@ -217,7 +220,7 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
       //  that does not exist
       //  One solution: the range size have to be less than what you can get
       incKey(nextKey); // hack: this only works for fixed-size keys
-      
+
       // uint64_t nextCount = idx.migratory_scan_(nextKey, range - count, results + count, destNUMA);
       uint64_t nextCount = idx.migratory_scan3_(nextKey, range - count, results + count, destNUMA, -1, -1, nodes_to_migrate);
       // uint64_t nextCount = idx.migratory_scan2_(nextKey, range - count, results + count, destNUMA, MIGRATE_MODE, BATCH_SIZE);
@@ -234,7 +237,7 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
 
     int* destNodes = new int[num_nodes];
     std::fill(destNodes, destNodes + num_nodes, destNUMA);
-  
+
     int ret_code = move_pages(0, num_nodes, nodes_array, destNodes, status, 0);
     count = 0;
     // for(auto i = 0; i < num_nodes; i++) {
@@ -243,6 +246,8 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
     //     count += 1;
     // }
     delete[] status;
+    delete[] destNodes;
+    delete[] results;
 
     return count;
   }

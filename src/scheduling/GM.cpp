@@ -336,6 +336,53 @@ void GridManager::printQueryCorrMatrixView(){
     cout << "-------------------------------------------------------------------------------------" << endl;
 }
 
+// -------------------------------------------------------------------------------------
+// Dynamic Reconfiguration Methods
+// -------------------------------------------------------------------------------------
+
+void GridManager::reload_configuration(string configFile) {
+    cout << "Reloading configuration from: " << configFile << endl;
+
+    ifstream ifs(configFile, std::ifstream::in);
+    if (!ifs.is_open()) {
+        cerr << "ERROR: Failed to open config file: " << configFile << endl;
+        return;
+    }
+
+    vector<NUMAID> numaConfig;
+    vector<CPUID> cpuConfig;
+
+    // Read new NUMA assignments
+    for (int i = 0; i < nGridCells; i++) {
+        NUMAID nID;
+        ifs >> nID;
+        numaConfig.push_back(nID);
+    }
+
+    // Read new CPU assignments
+    for (int i = 0; i < nGridCells; i++) {
+        CPUID cpuID;
+        ifs >> cpuID;
+        cpuConfig.push_back(cpuID);
+    }
+
+    ifs.close();
+
+    // CRITICAL SECTION: Acquire exclusive write lock to update configuration
+    // This blocks all router threads from reading idCPU/idNUMA during update
+    // to ensure they never route queries to suboptimal cores
+    {
+        std::unique_lock<std::shared_mutex> lock(config_mutex);
+
+        // Update grid cells with new assignments (in-place, no reallocation)
+        for (int i = 0; i < nGridCells; i++) {
+            this->glbGridCell[i].idNUMA = numaConfig[i];
+            this->glbGridCell[i].idCPU = cpuConfig[i];
+        }
+    }  // Lock released here
+
+    cout << "Configuration reloaded successfully. Grid cells updated." << endl;
+}
 
 } // namespace dm
 }  // namespace erebus

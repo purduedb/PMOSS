@@ -332,6 +332,67 @@ void GridManager::printQueryCorrMatrixView(){
     cout << "-------------------------------------------------------------------------------------" << endl;
 }
 
+void GridManager::reload_configuration(string configFile) {
+    // Read new NUMA and CPU assignments from config file
+    ifstream ifs(configFile, std::ifstream::in);
+    if (!ifs.is_open()) {
+        std::cerr << "Error: Unable to open config file: " << configFile << std::endl;
+        return;
+    }
+
+    vector<NUMAID> numaConfig;
+    vector<CPUID> cpuConfig;
+
+    // Read NUMA IDs
+    for (int i = 0; i < nGridCells; i++) {
+        NUMAID nID;
+        ifs >> nID;
+        numaConfig.push_back(nID);
+    }
+
+    // Read CPU IDs
+    for (int i = 0; i < nGridCells; i++) {
+        CPUID cpuID;
+        ifs >> cpuID;
+        cpuConfig.push_back(cpuID);
+    }
+    ifs.close();
+
+    // Update grid cells with unique_lock
+    {
+        std::unique_lock<std::shared_mutex> lock(config_mutex);
+        for (int i = 0; i < nGridCells; i++) {
+            glbGridCell[i].idNUMA = numaConfig[i];
+            glbGridCell[i].idCPU = cpuConfig[i];
+        }
+    }
+
+    std::cout << "Configuration reloaded from: " << configFile << std::endl;
+}
+
+void GridManager::apply_dynamic_scheduling() {
+    // Trigger index node migration based on new NUMA assignments
+    std::shared_lock<std::shared_mutex> lock(config_mutex);
+    
+    for (size_t i = 0; i < MAX_GRID_CELL; i++) {
+        double lx = glbGridCell[i].lx;
+        double hx = glbGridCell[i].hx;
+        double ly = glbGridCell[i].ly;
+        double hy = glbGridCell[i].hy;
+        int numa_id = glbGridCell[i].idNUMA;
+
+        // Migrate index nodes to new NUMA nodes
+        if (STORAGE == 2) { // BTree
+            this->idx_btree->migrate_v1_(lx, this->DataDist[i], numa_id);
+        } else if (STORAGE == 1) { // QuadTree
+            MigrateNodesQuad(this->idx_quadtree, lx, hx, ly, hy, numa_id);
+        }
+        // RTree migration can be added here if needed
+    }
+
+    std::cout << "Dynamic scheduling applied with index migration" << std::endl;
+}
+
 
 } // namespace dm
 }  // namespace erebus

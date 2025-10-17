@@ -3,7 +3,7 @@
 
 // -------------------------------------------------------------------------------------
 #define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // 343901273, 200000000
-#define BTREE_INIT_LIMIT 900000000
+#define BTREE_INIT_LIMIT 680000000
 #define LIMIT 1000                
 #define MAX_GRID_CELL 256
 #define STAMP_LR_PARAM 4            
@@ -12,17 +12,19 @@
 // -------------------------------------------------------------------------------------
 # define USE_MODEL 0 
 // -------------------------------------------------------------------------------------
-#define MACHINE 1   // 0 (BIGDATA), 1(DBSERVER), 2 (AMD 1NPS), 3 (AMD 4NPS), NVIDIA (4), SB (5), SKX(4S4N) 6, 8 (IBM)
+#define MACHINE 0   // 0 (BIGDATA), 1(DBSERVER), 2 (AMD 1NPS), 3 (AMD 4NPS), NVIDIA (4), SB (5), SKX(4S4N) 6, 8 (IBM)
 #define MULTIDIM 0 
 #define STORAGE 2   // RTree(0), QTree(1), BTree
 #define LINUX 0     // 0 (SE 0, SE-NUMA 1, SN-NUMA 2)
 #define PROFILE 0
+#define CLEAR_WORKER_QUEUES 1  // 1 = clear worker queues on pause, 0 = let queues drain naturally
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 
 #include <iostream>
 #include <fstream>
+#include <shared_mutex>
 // -------------------------------------------------------------------------------------
 #include "utils/Misc.hpp"
 #include "storage/index.h"  
@@ -83,6 +85,7 @@ class GridManager
     };
     
     GridCell glbGridCell[MAX_GRID_CELL];
+    std::shared_mutex config_mutex;  // For thread-safe config access
     // -------------------------------------------------------------------------------------
     // Correlation Query Matrix of the grid cells [NUM_GRID_CELLS x NUM_GRID_CELLS]
     // Update: Now each router thread has this
@@ -116,6 +119,9 @@ class GridManager
     
     void printQueryView();
     void printQueryCorrMatrixView();
+    
+    void reload_configuration(string configFile);
+    void apply_dynamic_scheduling();
     
     // void GMMigrate();
 

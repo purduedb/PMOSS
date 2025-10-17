@@ -22,6 +22,13 @@ class Erebus
     erebus::dm::GridManager *glb_gm;
     erebus::scheduler::ResourceManager *glb_rm;
     erebus::tp::TPManager *glb_tpool;
+
+    // Dynamic reconfiguration state
+    struct ReconfigurationState {
+      bool is_reconfiguring = false;
+      std::mutex reconfig_mutex;
+    };
+    ReconfigurationState reconfig_state;
     
     // -------------------------------------------------------------------------------------
     Erebus(erebus::dm::GridManager *gm, erebus::scheduler::ResourceManager *rm);
@@ -33,6 +40,13 @@ class Erebus
     erebus::storage::BTreeOLCIndex<keytype, keycomp>* build_btree(const uint64_t ds, const uint64_t kt, std::vector<keytype> &init_keys, 
       std::vector<uint64_t> &values);
     void register_threadpool(erebus::tp::TPManager *tp);
+
+    // Dynamic reconfiguration methods
+    bool check_for_reconfiguration_request();
+    bool perform_reconfiguration(int new_config_id, int new_workload_id, int round);
+    bool perform_reconfiguration2(int new_config_id, int new_workload_id, int round);
+
+    std::string generate_config_path(int config_id, int workload_id);
 };
 
 }  // namespace erebus

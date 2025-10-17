@@ -41,7 +41,15 @@ void TPManager::init_worker_threads(){
       int cnt = 0;  
       #endif
 
-      while (1) {  
+      while (1) {
+        // Check for pause signal (dynamic reconfiguration support)
+        {
+          std::unique_lock<std::mutex> lock(glb_worker_thrds[worker_cpuids[i]].pause_mutex);
+          while (glb_worker_thrds[worker_cpuids[i]].paused) {
+            glb_worker_thrds[worker_cpuids[i]].pause_cv.wait(lock);
+          }
+        }
+        
         // std::this_thread::sleep_for(std::chrono::milliseconds(50));
         if(!glb_worker_thrds[worker_cpuids[i]].running) {
             break;
@@ -137,11 +145,22 @@ void TPManager::init_ncoresweeper_threads(){
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
       glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].cpuid=ncore_sweeper_cpuids[i];
       int numaID = numa_node_of_cpu(ncore_sweeper_cpuids[i]);
+      
       while (1) 
       {
+        // Check for pause signal (dynamic reconfiguration support)
+        {
+          std::unique_lock<std::mutex> lock(glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].pause_mutex);
+          if (glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].paused) {
+            glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].pause_cv.wait(lock, [this, i]() {
+              return !glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].paused;
+            });
+          }
+        }
+        
         if(!glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].running) 
             break;
-        std::this_thread::sleep_for(std::chrono::milliseconds(40000));  // 80000
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));  // 80000
         
         #if PROFILE == 1
         // First, push the token to the worker cpus to get the DataView
@@ -283,8 +302,9 @@ void TPManager::init_ncoresweeper_threads(){
   }
 }
 
-void TPManager::dump_ncoresweeper_threads(){
+void TPManager::dump_ncoresweeper_threads(int round){
   cout << "==========================DUMPING Core Sweeper Threads=======================" << endl;
+  size_t num_samples = 0;
   for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
 
   string dirName = std::string(PROJECT_SOURCE_DIR);
@@ -295,9 +315,10 @@ void TPManager::dump_ncoresweeper_threads(){
       dirName += "/kb_quad_linux/" + std::to_string(key);
   #elif STORAGE == 2
       // dirName += "/kb_b_linux/" + std::to_string(key);
-      dirName += "/kb_bs_linux/" + std::to_string(key); // <-----
+      // dirName += "/kb_bs_linux/" + std::to_string(key); // <-----
       // dirName += "/kb_bs_linux_4s_4n/" + std::to_string(key); // <-----
       // dirName += "/kb_b/" + std::to_string(key);
+      dirName += "/kb_bs_linux_dynam/" + std::to_string(key); // <-----
   #endif
   #else
   #if STORAGE == 0
@@ -310,19 +331,44 @@ void TPManager::dump_ncoresweeper_threads(){
   #endif
   
   mkdir(dirName.c_str(), 0777);
+  cout << dirName << endl;
   cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+    
+    // OLD APPROACH (commented): Direct access to global reels without clearing
+    // This caused memory bloat as reels grew unbounded during long runs
+    // for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
+    //     ... process glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i] ...
+    // }
+    
+    // NEW APPROACH: Atomically swap vectors to local copies - clears global vectors without contention
+    // This prevents memory bloat and is thread-safe during reconfiguration
+    std::vector<DataDistSnap> localDataDistReel;
+    std::vector<QueryExecSnap> localQueryExecReel;
+    #if PROFILE == 1
+    std::vector<IntelPCMCounter> localDRAMResUsageReel;
+    localDRAMResUsageReel.swap(glb_ncore_sweeper_thrds[key].DRAMResUsageReel);
+    #endif
+    localDataDistReel.swap(glb_ncore_sweeper_thrds[key].dataDistReel);
+    localQueryExecReel.swap(glb_ncore_sweeper_thrds[key].queryExecReel);
+    
+    num_samples = localQueryExecReel.size();
+    
+    cout << "DEBUG: dump_sample_counter = " << this->dump_sample_counter 
+         << ", num_samples = " << num_samples << endl;
+    
     // -------------------------------------------------------------------------------------
     
     #if PROFILE == 1
     // -------------------------------------------------------------------------------------
     ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
     #if MACHINE==0 || MACHINE == 1 || MACHINE == 6
-    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
-        int tReel = i;
+    for(size_t i = 0; i < localDRAMResUsageReel.size(); i++){
+        int tReel = this->dump_sample_counter + i;
         memChannelView << this->gm->config << " ";
         memChannelView << tReel << " ";
         memChannelView << this->gm->wkload << " ";
         memChannelView << this->gm->iam << " ";
+        memChannelView << round << " ";
         /**
          * TODO: Have a global config header file that saves the value of 
          * global hw params
@@ -332,25 +378,25 @@ void TPManager::dump_ncoresweeper_threads(){
         // Dump Read Socket Channel
         for (auto sc = 0; sc < 4; sc++){
             for(auto ch = 0; ch < 6; ch++){
-                memChannelView <<  glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Rd_socket_chan[sc][ch] << " ";
+                memChannelView <<  localDRAMResUsageReel[i].sysParams.iMC_Rd_socket_chan[sc][ch] << " ";
             }
         }
         // Dump Write Socket Channel
         for (auto sc = 0; sc < 4; sc++){
             for(auto ch = 0; ch < 6; ch++){
-                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Wr_socket_chan[sc][ch] << " ";
+                memChannelView << localDRAMResUsageReel[i].sysParams.iMC_Wr_socket_chan[sc][ch] << " ";
             }
         }
         // // Dump Write Socket Channel
         for (auto sc = 0; sc < 4; sc++){
             for(auto ul = 0; ul < 3; ul++){
-                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_incoming[sc][ul] << " ";
+                memChannelView << localDRAMResUsageReel[i].upi_incoming[sc][ul] << " ";
             }
         }
         // Dump Write Socket Channel
         for (auto sc = 0; sc < 4; sc++){
             for(auto ul = 0; ul < 3; ul++){
-                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_outgoing[sc][ul] << " ";
+                memChannelView << localDRAMResUsageReel[i].upi_outgoing[sc][ul] << " ";
             }
         }
         memChannelView << endl;
@@ -358,6 +404,8 @@ void TPManager::dump_ncoresweeper_threads(){
     #endif
     // -------------------------------------------------------------------------------------
     
+    
+
     ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
     const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
     // const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
@@ -365,15 +413,16 @@ void TPManager::dump_ncoresweeper_threads(){
     
     alignas(64) double dataViewScalarDump[scalarDumpSize] = {};
         
-    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].dataDistReel.size(); i++){
-        int tReel = i;
-        DataDistSnap dd = glb_ncore_sweeper_thrds[key].dataDistReel[i];
+    for(size_t i = 0; i < localDataDistReel.size(); i++){
+        int tReel = this->dump_sample_counter + i;
+        DataDistSnap dd = localDataDistReel[i];
 
         dataView << this->gm->config  << " ";
         dataView << tReel << " ";
         dataView << this->gm->wkload << " ";
         dataView << this->gm->iam << " ";
-        
+        dataView << round << " ";
+
         for (auto g = 0; g < MAX_GRID_CELL; g++){
           memcpy(dataViewScalarDump+g*PERF_EVENT_CNT, dd.rawQCounter[g], sizeof(dd.rawQCounter[g]));
         }
@@ -400,41 +449,47 @@ void TPManager::dump_ncoresweeper_threads(){
     #endif 
 
     // -------------------------------------------------------------------------------------
-    ofstream queryView(dirName + "/query_view.txt", std::ifstream::app);
-    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].queryViewReel.size(); i++){
-        int tReel = i;
-        queryView << this->gm->config  << " ";
-        queryView << tReel << " ";
-        queryView << this->gm->wkload << " ";
-        queryView << this->gm->iam << " ";
-        for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
-            for(auto aSize2 = 0; aSize2 < MAX_GRID_CELL; aSize2++){
-                queryView << glb_ncore_sweeper_thrds[key].queryViewReel[i].corrQueryReel[aSize1][aSize2] << " ";
-            }
-        }
-        queryView << endl;
-    }
+    // ofstream queryView(dirName + "/query_view.txt", std::ifstream::app);
+    // for(size_t i = 0; i < localQueryViewReel.size(); i++){
+    //     int tReel = this->dump_sample_counter + i;
+    //     queryView << this->gm->config  << " ";
+    //     queryView << tReel << " ";
+    //     queryView << this->gm->wkload << " ";
+    //     queryView << this->gm->iam << " ";
+    //     for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
+    //         for(auto aSize2 = 0; aSize2 < MAX_GRID_CELL; aSize2++){
+    //             queryView << localQueryViewReel[i].corrQueryReel[aSize1][aSize2] << " ";
+    //         }
+    //     }
+    //     queryView << endl;
+    // }
 
     // -------------------------------------------------------------------------------------
     ofstream queryExecView(dirName + "/query-exec_view.txt", std::ifstream::app);
-    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].queryExecReel.size(); i++){
-        int tReel = i;
+    for(size_t i = 0; i < localQueryExecReel.size(); i++){
+        int tReel = this->dump_sample_counter + i;
         queryExecView << this->gm->config  << " ";
         queryExecView << tReel << " ";
         queryExecView << this->gm->wkload  << " ";
         queryExecView << this->gm->iam  << " ";
+        queryExecView << round << " ";
         for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
-            queryExecView << glb_ncore_sweeper_thrds[key].queryExecReel[i].qExecutedMice[aSize1] << " ";
+            queryExecView << localQueryExecReel[i].qExecutedMice[aSize1] << " ";
             
         }
         queryExecView << endl;
     }
 
+    // Update the sample counter after all dumps are complete
+    
+  
     // -------------------------------------------------------------------------------------
 
     cout << "==========================Finished dumping NCore Sweeper Thread =====> " << key <<  endl;
     cout << "-------------------------------------------------------------------------------------"  << endl;
-}    
+} 
+    this->dump_sample_counter += num_samples;
+    cout << "DEBUG: After increment, dump_sample_counter = " << this->dump_sample_counter << endl;
     cout << "==================================================================" << endl;
 
 }
@@ -500,6 +555,163 @@ void TPManager::terminateTestWorkerThreads(){
     for (const auto & [ key, value ] : testWkload_glb_worker_thrds) {
         testWkload_glb_worker_thrds[key].running = false;
     }
+}
+
+// -------------------------------------------------------------------------------------
+// Dynamic reconfiguration methods - Worker pause/resume
+// -------------------------------------------------------------------------------------
+void TPManager::pause_all_workers() {
+    std::cout << "Pausing all worker threads..." << std::endl;
+    for (const auto & [ key, value ] : glb_worker_thrds) {
+        glb_worker_thrds[key].paused = true;
+    }
+    // Give time for workers to finish current queries and enter paused state
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::cout << "All worker threads paused" << std::endl;
+}
+
+void TPManager::resume_all_workers() {
+    std::cout << "Resuming all worker threads..." << std::endl;
+    for (const auto & [ key, value ] : glb_worker_thrds) {
+        glb_worker_thrds[key].paused = false;
+        glb_worker_thrds[key].pause_cv.notify_one();
+    }
+    std::cout << "All worker threads resumed" << std::endl;
+}
+
+bool TPManager::are_all_workers_idle() {
+    for (const auto & [ key, value ] : glb_worker_thrds) {
+        if (!glb_worker_thrds[key].jobs.empty()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void TPManager::clear_all_worker_queues() {
+    std::cout << "Clearing all worker queues..." << std::endl;
+    for (const auto & [ key, value ] : glb_worker_thrds) {
+        Rectangle query;
+        while (glb_worker_thrds[key].jobs.try_pop(query)) {
+            // Discard the query
+        }
+    }
+    std::cout << "All worker queues cleared" << std::endl;
+}
+
+// -------------------------------------------------------------------------------------
+// Dynamic reconfiguration methods - Router pause/resume
+// -------------------------------------------------------------------------------------
+void TPManager::pause_all_routers() {
+    std::cout << "Pausing all router threads..." << std::endl;
+    for (const auto & [ key, value ] : glb_router_thrds) {
+        glb_router_thrds[key].paused = true;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::cout << "All router threads paused" << std::endl;
+}
+
+void TPManager::resume_all_routers() {
+    std::cout << "Resuming all router threads..." << std::endl;
+    for (const auto & [ key, value ] : glb_router_thrds) {
+        glb_router_thrds[key].paused = false;
+        glb_router_thrds[key].pause_cv.notify_one();
+    }
+    std::cout << "All router threads resumed" << std::endl;
+}
+
+// -------------------------------------------------------------------------------------
+// Dynamic reconfiguration methods - NodeCoreSweeper pause/resume
+// -------------------------------------------------------------------------------------
+void TPManager::pause_all_ncoresweepers() {
+    std::cout << "Pausing all node core sweeper threads..." << std::endl;
+    for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
+        glb_ncore_sweeper_thrds[key].paused = true;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::cout << "All node core sweeper threads paused" << std::endl;
+}
+
+void TPManager::resume_all_ncoresweepers() {
+    std::cout << "Resuming all node core sweeper threads..." << std::endl;
+    for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
+        glb_ncore_sweeper_thrds[key].paused = false;
+        glb_ncore_sweeper_thrds[key].pause_cv.notify_one();
+    }
+    std::cout << "All node core sweeper threads resumed" << std::endl;
+}
+
+// -------------------------------------------------------------------------------------
+// Dynamic reconfiguration methods - Migration tasks
+// -------------------------------------------------------------------------------------
+void TPManager::assign_migration_tasks(int total_cells) {
+    std::cout << "Assigning migration tasks to worker threads..." << std::endl;
+    // This is a placeholder - implement based on your migration strategy
+    // For now, this will be called during reconfiguration
+    std::cout << "Migration tasks assigned for " << total_cells << " cells" << std::endl;
+}
+
+void TPManager::wait_for_migration_completion() {
+    std::cout << "Waiting for migration completion..." << std::endl;
+    bool all_done = false;
+    while (!all_done) {
+        all_done = true;
+        for (const auto & [ key, value ] : glb_worker_thrds) {
+            if (glb_worker_thrds[key].migration_task_pending.load()) {
+                all_done = false;
+                break;
+            }
+        }
+        if (!all_done) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }
+    std::cout << "All migrations completed" << std::endl;
+}
+
+// -------------------------------------------------------------------------------------
+// Dynamic reconfiguration methods - Router workload synchronization
+// -------------------------------------------------------------------------------------
+void TPManager::initiate_workload_change(int new_workload) {
+    std::cout << "Initiating workload change to: " << new_workload << std::endl;
+    
+    // Signal all router threads that workload change is pending
+    for (const auto & [ key, value ] : glb_router_thrds) {
+        glb_router_thrds[key].current_workload.store(new_workload);
+        glb_router_thrds[key].workload_change_pending.store(true);
+    }
+    
+    // All routers are at the barrier, update global workload
+    active_workload.store(new_workload);
+    
+    std::cout << "Workload change initiated. Routers will detect and synchronize." << std::endl;
+}
+
+void TPManager::wait_for_router_sync(int router_id, int new_workload) {
+    std::unique_lock<std::mutex> lock(workload_change_mutex);
+    
+    // Increment ready counter
+    int count = router_ready_count.fetch_add(1) + 1;
+    std::cout << "Router " << router_id << " reached barrier (" << count << "/" << CURR_ROUTER_THREADS << ")" << std::endl;
+    
+    // Notify coordinator
+    workload_change_cv.notify_one();
+    
+    // Wait until all routers are ready and global workload is updated
+    workload_change_cv.wait(lock, [this, new_workload]() {
+        return active_workload.load() == new_workload;
+    });
+    
+    std::cout << "Router " << router_id << " proceeding with new workload" << std::endl;
+}
+
+void TPManager::wait_for_router_sync() {
+    // Coordinator version: wait for all routers to reach barrier
+    std::unique_lock<std::mutex> lock(workload_change_mutex);
+    workload_change_cv.wait(lock, [this]() {
+        return router_ready_count.load() == CURR_ROUTER_THREADS;
+    });
+    std::cout << "All routers synchronized at barrier" << std::endl;
 }
 
 TPManager::~TPManager(){
@@ -693,7 +905,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
   std::mutex router_mutex;
   for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {  
     glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, 
-      &init_keys, &values, machine_name, &router_mutex] {
+      &init_keys, &values, machine_name, &router_mutex] () mutable {
 
     erebus::utils::PinThisThread(router_cpuids[i]);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -1083,9 +1295,111 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     }
 
     // -------------------------------------------------------------------------------------
+    // Initialize rate control tracking
+    // -------------------------------------------------------------------------------------
+    glb_router_thrds[router_cpuids[i]].second_start_time = std::chrono::steady_clock::now();
+    glb_router_thrds[router_cpuids[i]].queries_this_second = 0;
+
+    // -------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------
     while (1) {
+      // ==================================================================================
+      // QUERY RATE CONTROL LOGIC
+      // ==================================================================================
+      if (RATE_CONTROL_ENABLED) {
+        auto current_time = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+            current_time - glb_router_thrds[router_cpuids[i]].second_start_time);
+        
+        // If we've been running for more than 1 second, reset the counter
+        if (elapsed.count() >= 1000) {
+          glb_router_thrds[router_cpuids[i]].second_start_time = current_time;
+          glb_router_thrds[router_cpuids[i]].queries_this_second = 0;
+        }
+        
+        // If we've reached the query limit for this second, sleep until the next second
+        if (glb_router_thrds[router_cpuids[i]].queries_this_second >= QUERIES_PER_SECOND) {
+          auto time_to_sleep = std::chrono::milliseconds(1000) - elapsed;
+          if (time_to_sleep.count() > 0) {
+            std::this_thread::sleep_for(time_to_sleep);
+          }
+          // Reset for the next second
+          glb_router_thrds[router_cpuids[i]].second_start_time = std::chrono::steady_clock::now();
+          glb_router_thrds[router_cpuids[i]].queries_this_second = 0;
+        }
+      }
+      // ==================================================================================
+
+      // Check for pause signal (grid cell update support)
+      {
+        std::unique_lock<std::mutex> lock(glb_router_thrds[router_cpuids[i]].pause_mutex);
+        while (glb_router_thrds[router_cpuids[i]].paused) {
+          glb_router_thrds[router_cpuids[i]].pause_cv.wait(lock);
+        }
+      }
+
+      // Check for workload change (dynamic reconfiguration support)
+      if (glb_router_thrds[router_cpuids[i]].workload_change_pending.load()) {
+        int new_wl = glb_router_thrds[router_cpuids[i]].current_workload.load();
+
+        std::cout << "Router " << i << " detected workload change to " << new_wl << std::endl;
+
+        // All routers proceed together with new workload
+        wl = new_wl;
+
+        // Reinitialize YCSB workload if needed
+        if (wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
+            wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADE1 || wl == SD_YCSB_WKLOADH ||
+            wl == SD_YCSB_WKLOADI || wl == SD_YCSB_WKLOADA1 ||
+            wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE || wl == WIKI_WKLOADI ||
+            wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3 ||
+            wl == OSM_WKLOADA || wl == OSM_WKLOADC || wl == OSM_WKLOADE || wl == OSM_WKLOADH || wl == OSM_WKLOADA0 ||
+            wl == SD_YCSB_WKLOADH1 || wl == SD_YCSB_WKLOADH2 || wl == SD_YCSB_WKLOADH3 || wl == SD_YCSB_WKLOADH4 || wl == SD_YCSB_WKLOADH5 ||
+            wl == SD_YCSB_WKLOADA00 || wl == SD_YCSB_WKLOADA01 || wl == SD_YCSB_WKLOADC1 || wl == SD_YCSB_WKLOADH11 ||
+            wl == SD_YCSB_WKLOADK || wl == SD_YCSB_WKLOADK2 || wl == SD_YCSB_WKLOADK3 || wl == SD_YCSB_WKLOADK4) {
+
+          // Reload YCSB workload configuration
+          // CRITICAL: Create a NEW Properties object to avoid stale properties from previous workload
+          ycsbc::utils::Properties fresh_props;
+          std::ifstream input;
+          std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/" + machine_name + "/";
+
+          // Select appropriate workload file based on new_wl
+          if (wl == SD_YCSB_WKLOADA) wl_config += "ycsb_workloada_" + std::to_string(router_cpuids[i]);
+          else if (wl == SD_YCSB_WKLOADC) wl_config += "ycsb_workloadc";
+          else if (wl == SD_YCSB_WKLOADE) wl_config += "ycsb_workloade_" + std::to_string(router_cpuids[i]);
+          else if (wl == SD_YCSB_WKLOADH) wl_config += "ycsb_workloadh";
+          else if (wl == SD_YCSB_WKLOADF) wl_config += "ycsb_workloadf_" + std::to_string(router_cpuids[i]);
+          else if (wl == SD_YCSB_WKLOADA1) wl_config += "ycsb_workloada1_" + std::to_string(router_cpuids[i]);
+          else if (wl == SD_YCSB_WKLOADK2) wl_config += "ycsb_workloadk2_" + std::to_string(router_cpuids[i]);
+          // Add more as needed...
+          else {
+            std::cerr << "Unsupported dynamic workload change to: " << wl << std::endl;
+          }
+
+          std::cout << "Router " << i << " attempting to load workload file: " << wl_config << std::endl;
+          input.open(wl_config);
+          if (input.is_open()) {
+            fresh_props.Load(input);
+            input.close();
+            ycsb_wl.Init(fresh_props);
+            std::cout << "Router " << i << " successfully reloaded YCSB workload config from: " << wl_config << std::endl;
+            std::cout << "       Properties loaded: readproportion=" << fresh_props.GetProperty("readproportion", "N/A")
+                      << ", scanproportion=" << fresh_props.GetProperty("scanproportion", "N/A") << std::endl;
+          } else {
+            std::cerr << "ERROR: Router " << i << " FAILED to open workload file: " << wl_config << std::endl;
+            std::cerr << "       Workload change ABORTED - router will continue with previous workload!" << std::endl;
+            std::cerr << "       This will cause SEVERE performance degradation!" << std::endl;
+          }
+        } else {
+          std::cout << "Warning: Non-YCSB workload change may not be fully supported" << std::endl;
+        }
+
+        glb_router_thrds[router_cpuids[i]].workload_change_pending.store(false);
+        std::cout << "Router " << i << " completed workload change" << std::endl;
+      }
+
       if(!glb_router_thrds[router_cpuids[i]].running) {
           break;
       }
@@ -1264,8 +1578,18 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       gm->freqQueryDistPushed[glbGridCellInsert]++;
       gm->freqQueryDistCompleted[glbGridCellInsert]++;
         
-      int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
-      glb_worker_thrds[cpuid].jobs.push(query);      
+      // Read CPU ID with shared lock for thread-safe config access
+      int cpuid;
+      {
+        std::shared_lock<std::shared_mutex> lock(gm->config_mutex);
+        cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
+      }
+      glb_worker_thrds[cpuid].jobs.push(query);
+      
+      // Increment query counter for rate control
+      if (RATE_CONTROL_ENABLED) {
+        glb_router_thrds[router_cpuids[i]].queries_this_second++;
+      }
     }           
     });
   }

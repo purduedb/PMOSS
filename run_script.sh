@@ -27,6 +27,17 @@ exec="$current_dir/build/bin/erebus"
 #   done
 # done
 
+round=3
+for wl in 11; do
+  # numactl --interleave=0,2,4,6 "$exec" 501 $wl
+  # for cfg in 500 502 506; do
+  #   "$exec" $cfg $wl
+  # done
+for cfg in 500 502 506; do
+  "$exec" $cfg $wl $round
+done
+numactl --interleave=0,1,2,3,4,5,6,7 "$exec" 501 $wl $round
+done
 
 # AMD EPYC 7543 2S_8N [11, 12, 13, 44, 45, 16]
 # INTEL SKX [44 45 13 12 16 11]
@@ -47,11 +58,11 @@ exec="$current_dir/build/bin/erebus"
 
 # AMD EPYC 7543 2S_2N [11, 12, 13, 44, 45, 16]
 # Intel ICE [44 45 12 16 13]
-for wl in 13; do
-  numactl --interleave=0,1 "$exec" 501 $wl
-  for cfg in 500 502 506; do
-    "$exec" $cfg $wl
-  done
-done
+# for wl in 13; do
+#   numactl --interleave=0,1 "$exec" 501 $wl
+#   for cfg in 500 502 506; do
+#     "$exec" $cfg $wl
+#   done
+# done
 
 

@@ -440,8 +440,8 @@ void TPManager::dump_ncoresweeper_threads(){
       // #if MAX_GRID_CELL != 100
       // dirName += "/kb_b_/" + std::to_string(key);
       // #else
-      // dirName += "/kb_b/" + std::to_string(key);
-      dirName += "/kb_b__/" + std::to_string(key);
+      dirName += "/kb_b/" + std::to_string(key);
+      // dirName += "/kb_b__/" + std::to_string(key);
       // #endif
   #endif
   

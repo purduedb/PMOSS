@@ -30,7 +30,32 @@ exec="$current_dir/build/bin/erebus"
 # cfg=202
 # wl=44
 # "$exec" $cfg $wl
-wl=13
-for cfg in 215;do
-  "$exec" $cfg $wl
+# wl=13
+# for cfg in 215;do
+#   "$exec" $cfg $wl
+# done
+
+
+# wl=(11 11 11 45 45 45)
+# cfg=(12000 13000 11000 12003 13003 11004)
+# for i in "${!wl[@]}"; do
+#   "$exec" ${cfg[$i]} ${wl[$i]}
+# done
+
+# wl=(11 45)
+# cfg=(14000 14003)
+# for i in "${!wl[@]}"; do
+#   "$exec" ${cfg[$i]} ${wl[$i]}
+# done
+
+wl=(11 44 45)
+cfg=(15000 15002 15003)
+for i in "${!wl[@]}"; do
+  "$exec" ${cfg[$i]} ${wl[$i]}
 done
+
+# wl=(12 16 12 16 12 16)
+# cfg=(12001 12004 13001 13004 11001 11002)
+# for i in "${!wl[@]}"; do
+#   "$exec" ${cfg[$i]} ${wl[$i]}
+# done

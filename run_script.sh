@@ -27,7 +27,7 @@ exec="$current_dir/build/bin/erebus"
 #   done
 # done
 
-round=3
+round=5
 for wl in 11; do
   # numactl --interleave=0,2,4,6 "$exec" 501 $wl
   # for cfg in 500 502 506; do

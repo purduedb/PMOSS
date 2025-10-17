@@ -23,6 +23,7 @@ class DiscreteGenerator : public Generator<Value> {
  public:
   DiscreteGenerator() : sum_(0) { }
   void AddValue(Value value, double weight);
+  void Clear();
 
   Value Next();
   Value Last() { return last_; }
@@ -40,6 +41,12 @@ inline void DiscreteGenerator<Value>::AddValue(Value value, double weight) {
   }
   values_.push_back(std::make_pair(value, weight));
   sum_ += weight;
+}
+
+template <typename Value>
+inline void DiscreteGenerator<Value>::Clear() {
+  values_.clear();
+  sum_ = 0;
 }
 
 template <typename Value>

@@ -174,7 +174,8 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	// init_file = "/mnt/nvme/";
 	  
 	if (ds == YCSB) {
-		init_file += "dataset/loade_zipf_int_1000M.dat";
+		// init_file += "dataset/loade_zipf_int_1000M.dat";
+		init_file = "/proj/pmoss-PG0/loade_zipf_int_1000M.dat";
   } 
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";

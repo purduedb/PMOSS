@@ -7,26 +7,26 @@ exec="$current_dir/build/bin/erebus"
 
 # Fix the workload for baseline of AMD_2S_8N
 # [44 45 12 16 13 11]
-for wl in 11; do
-  for cfg in 41 42 43 45 46 47 49; do
-    "$exec" $cfg $wl
-  done
-  # for cfg in 100 101 102; do
-  #   "$exec" $cfg $wl
-  # done
-  # for cfg in {2..30..3}; do
-  #   "$exec" $cfg $wl
-  # done
-  # for cfg in {30..40..4}; do
-  #   "$exec" $cfg $wl
-  # done
-  # for cfg in {40..50..4}; do
-  #   "$exec" $cfg $wl
-  # done
-  # for cfg in {50..59..4}; do
-  #   "$exec" $cfg $wl
-  # done
-done
+# for wl in 11; do
+#   for cfg in 41 42 43 45 46 47 49; do
+#     "$exec" $cfg $wl
+#   done
+#   # for cfg in 100 101 102; do
+#   #   "$exec" $cfg $wl
+#   # done
+#   # for cfg in {2..30..3}; do
+#   #   "$exec" $cfg $wl
+#   # done
+#   # for cfg in {30..40..4}; do
+#   #   "$exec" $cfg $wl
+#   # done
+#   # for cfg in {40..50..4}; do
+#   #   "$exec" $cfg $wl
+#   # done
+#   # for cfg in {50..59..4}; do
+#   #   "$exec" $cfg $wl
+#   # done
+# done
 
 # Learned Models
 # [11 44 45 12 ]
@@ -167,4 +167,9 @@ done
 #     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
 #   done
 # done
-
+wl=(11 44 45)
+cfg=(15000 15002 15003)
+#it should be the corresponding workloads and configs
+for i in "${!wl[@]}"; do
+  "$exec" "${cfg[$i]}" "${wl[$i]}"
+done

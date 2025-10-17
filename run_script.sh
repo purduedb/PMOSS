@@ -27,12 +27,23 @@ exec="$current_dir/build/bin/erebus"
 
 # Learned Models
 # [11]
-for wl in 11 44 45; do
-  for cfg in 11000 11003 11004; do
-    "$exec" $cfg $wl
-  done
+# for wl in 11 44 45; do
+#   for cfg in 11000 11003 11004; do
+#     "$exec" $cfg $wl
+#   done
+# done
+
+wl=(11 11 45 45 44 44)
+cfg=(14000 15000 14003 15003 14002 15002)
+for i in "${!wl[@]}"; do
+  "$exec" "${cfg[$i]}" "${wl[$i]}"
 done
 
+# wl=(12 12 16 16)
+# cfg=(14001 15001 14004 15004)
+# for i in "${!wl[@]}"; do
+#   "$exec" "${cfg[$i]}" "${wl[$i]}"
+# done
 
 ##############################################################################################################
 

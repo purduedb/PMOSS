@@ -54,8 +54,17 @@ exec="$current_dir/build/bin/erebus"
 # done
 
 
-wl=(11)
-cfg=(200)
-for i in "${!wl[@]}"; do
-  "$exec" ${cfg[$i]} ${wl[$i]}
+# wl=(11)
+# cfg=(200)
+# for i in "${!wl[@]}"; do
+#   "$exec" ${cfg[$i]} ${wl[$i]}
+# done
+
+
+round=14
+cfg=(100)
+for wl in 11; do
+  for c in "${cfg[@]}"; do
+    "$exec" $c $wl $round
+  done
 done

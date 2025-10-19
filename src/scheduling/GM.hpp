@@ -14,12 +14,13 @@
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
+#define ENABLE_DYNAMIC_RECONFIGURATION 1
+#define SHARED_MIGRATION 1
 #define PROFILE 1
 #define SIMD 1
 #define PARALLEL_MIGRATION 0  // 1 = use worker threads, 0 = use main thread only
-#define CLEAR_WORKER_QUEUES 1  // 1 = clear worker queues on pause, 0 = let queues drain naturally
 
-#define EVAL_PMOSS 1  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
+#define EVAL_PMOSS 0  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
 #define MACHINE 0     // 0 (BIGDATA), 1(DBSERVER)
 
 #define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // total keys in db       
@@ -78,8 +79,9 @@ class GridManager
       double hy;
       // -------------------------------------------------------------------------------------
       int idNUMA;
-      
-      int idCPU;  
+      int idCPU; 
+      int prev_idNUMA;
+      int prev_idCPU; 
       // -------------------------------------------------------------------------------------
       // Model Parameters for stamping query: Currently we have linear regression
       double lRegCoeff[2][STAMP_LR_PARAM];

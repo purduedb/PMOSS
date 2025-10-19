@@ -48,7 +48,9 @@ class Erebus
 
     // Dynamic reconfiguration methods
     bool check_for_reconfiguration_request();
-    bool perform_reconfiguration(int new_config_id, int new_workload_id);
+    // Can we add a default round value in C++ for the below function definition
+    bool perform_reconfiguration_dynamic(int new_config_id, int new_workload_id, int round);
+    bool perform_reconfiguration_static(int new_config_id, int new_workload_id, int round);
     std::string generate_config_path(int config_id, int workload_id);
 };
 

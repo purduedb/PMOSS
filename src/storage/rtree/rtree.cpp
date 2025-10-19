@@ -21,6 +21,7 @@ Rectangle::Rectangle() {
 	right_ = -1;
 	bottom_ = 1;
 	top_ = -1;
+	qStamp = 0;
 }
 
 Rectangle::Rectangle(const Rectangle& rectangle) {

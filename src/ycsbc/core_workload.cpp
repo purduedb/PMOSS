@@ -107,6 +107,7 @@ void CoreWorkload::Init(const utils::Properties &p) {
 
   field_count_ = std::stoi(p.GetProperty(FIELD_COUNT_PROPERTY, FIELD_COUNT_DEFAULT));
   field_prefix_ = p.GetProperty(FIELD_NAME_PREFIX, FIELD_NAME_PREFIX_DEFAULT);
+  delete field_len_generator_;
   field_len_generator_ = GetFieldLenGenerator(p);
 
   double read_proportion = std::stod(p.GetProperty(READ_PROPORTION_PROPERTY,
@@ -142,6 +143,9 @@ void CoreWorkload::Init(const utils::Properties &p) {
     ordered_inserts_ = true;
   }
 
+  // Clear the op_chooser_ before adding new values to avoid accumulation
+  // when Init is called multiple times (e.g., during dynamic workload changes)
+  op_chooser_.Clear();
 
   if (read_proportion > 0) {
     op_chooser_.AddValue(READ, read_proportion);
@@ -159,9 +163,14 @@ void CoreWorkload::Init(const utils::Properties &p) {
     op_chooser_.AddValue(READMODIFYWRITE, readmodifywrite_proportion);
   }
 
+  // Delete old generators before creating new ones to avoid memory leaks
+  // and stale state when Init is called multiple times
+  delete insert_key_sequence_;
+  delete transaction_insert_key_sequence_;
   insert_key_sequence_ = new CounterGenerator(insert_start);
   transaction_insert_key_sequence_ = new AcknowledgedCounterGenerator(record_count_);
 
+  delete key_chooser_;
   if (request_dist == "uniform") {
     key_chooser_ = new UniformGenerator(0, record_count_ - 1);
 
@@ -180,14 +189,15 @@ void CoreWorkload::Init(const utils::Properties &p) {
       key_chooser_ = new ScrambledZipfianGenerator(record_count_ + new_keys);
     }
   } else if (request_dist == "latest") {
-    // key_chooser_ = new SkewedLatestGenerator(*transaction_insert_key_sequence_);
-    key_chooser_ = new SkewedLatestGenerator(*insert_key_sequence_);
+    key_chooser_ = new SkewedLatestGenerator(*transaction_insert_key_sequence_);
   } else {
     throw utils::Exception("Unknown request distribution: " + request_dist);
   }
 
+  delete field_chooser_;
   field_chooser_ = new UniformGenerator(0, field_count_ - 1);
 
+  delete scan_len_chooser_;
   if (scan_len_dist == "uniform") {
     scan_len_chooser_ = new UniformGenerator(min_scan_len, max_scan_len);
   } else if (scan_len_dist == "zipfian") {

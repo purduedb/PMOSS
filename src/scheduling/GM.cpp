@@ -230,7 +230,7 @@ void GridManager::printQueryDistOstanding(){
 
 void GridManager::buildDataDistIdx(int access_method, std::vector<keytype> &init_keys){
     if (access_method == BTREE){
-      for(unsigned int i = 0; i < BTREE_INIT_LIMIT; i++){
+      for(unsigned int i = 0; i < SINGLE_DIMENSION_KEY_LIMIT; i++){  // BTREE_INIT_LIMIT
           double lx = init_keys[i];
 
           for (auto gc = 0; gc < nGridCells; gc++){
@@ -376,6 +376,8 @@ void GridManager::reload_configuration(string configFile) {
 
         // Update grid cells with new assignments (in-place, no reallocation)
         for (int i = 0; i < nGridCells; i++) {
+            this->glbGridCell[i].prev_idNUMA = this->glbGridCell[i].idNUMA;
+            this->glbGridCell[i].prev_idCPU = this->glbGridCell[i].idCPU;
             this->glbGridCell[i].idNUMA = numaConfig[i];
             this->glbGridCell[i].idCPU = cpuConfig[i];
         }

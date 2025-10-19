@@ -87,7 +87,7 @@ class TPManager{
     static const u64 PERF_STAT_COLLECTION_INTERVAL = 100; // granularity of profiling 
     // -------------------------------------------------------------------------------------
     // Query rate control configuration
-    static const bool RATE_CONTROL_ENABLED = true;  // Enable/disable query rate limiting
+    static const bool RATE_CONTROL_ENABLED = false;  // Enable/disable query rate limiting
     static const int QUERIES_PER_SECOND = 1000000;    // Target queries per second per router thread
     // -------------------------------------------------------------------------------------
     
@@ -122,12 +122,6 @@ class TPManager{
       bool running = true;
       bool job_set = false;
       bool job_done = false;
-      // Dynamic reconfiguration support
-      std::mutex inference_mutex;
-      std::condition_variable inference_cv;
-      bool reconfiguration_requested = false;
-      int new_config_id = -1;
-      int new_workload_id = -1;
     };
     
     struct WorkerThread {
@@ -145,11 +139,6 @@ class TPManager{
       std::mutex pause_mutex;
       std::condition_variable pause_cv;
       bool paused = false;
-      // Migration task support
-      std::atomic<bool> migration_task_pending{false};
-      std::atomic<int> migration_start_cell{-1};
-      std::atomic<int> migration_end_cell{-1};
-      std::atomic<bool> migration_done{false};
     };
 
     struct RouterThread {
@@ -198,12 +187,14 @@ class TPManager{
     std::mutex workload_change_mutex;
     std::condition_variable workload_change_cv;
 
+    // Persistent sample counter for continuous numbering across dumps
+    int dump_sample_counter = 0;
     // -------------------------------------------------------------------------------------
     TPManager();
     TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID> sys_sweeper_cpuids, std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
     void init_worker_threads();
     void init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y, std::vector<keytype> &init_keys, std::vector<uint64_t> &values);
-    void init_megamind_threads();
+    void init_megamind_threads(std::string next_config_path);
     void init_syssweeper_threads();
     void init_ncoresweeper_threads();
 
@@ -244,7 +235,7 @@ class TPManager{
 
     void terminateTestWorkerThreads();
 
-    void dump_ncoresweeper_threads();
+    void dump_ncoresweeper_threads(int round);
     void dump_ncoresweeper_threads_v2();
 
 

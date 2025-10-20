@@ -15,12 +15,11 @@ using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define ENABLE_DYNAMIC_RECONFIGURATION 1
-#define SHARED_MIGRATION 1
+#define SHARED_MIGRATION 0
 #define PROFILE 1
 #define SIMD 1
-#define PARALLEL_MIGRATION 0  // 1 = use worker threads, 0 = use main thread only
 
-#define EVAL_PMOSS 0  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
+#define EVAL_PMOSS 1  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
 #define MACHINE 0     // 0 (BIGDATA), 1(DBSERVER)
 
 #define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // total keys in db       
@@ -115,6 +114,7 @@ class GridManager
     void register_index(erebus::storage::qtree::QuadTree *idx_quadtree);
     void register_index(erebus::storage::BTreeOLCIndex<keytype, keycomp> *idx_btree);
     void enforce_scheduling();
+    void enforce_scheduling_batch();
     void printGM();
     void printQueryDistPushed();
     void printQueryDistCompleted();

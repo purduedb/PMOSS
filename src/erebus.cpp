@@ -415,6 +415,10 @@ bool Erebus::perform_reconfiguration_static(int new_config_id, int new_workload_
 	std::chrono::duration<double> total_elapsed = reconfig_finish - reconfig_start;
 
 	reconfig_state.is_reconfiguring = false;
+
+	cout << "========================================" << endl;
+	cout << "Reconfiguration completed in " << total_elapsed.count() << " seconds" << endl;
+	cout << "========================================" << endl;
 	return true;
 }
 
@@ -701,11 +705,9 @@ int main(int argc, char* argv[])
 	db.register_threadpool(&glb_tpool);
 
 	std::vector<std::pair<int, int>> workload_config_sequence = {
-		{SD_YCSB_WKLOADA, cfgIdx},
-		{SD_YCSB_WKLOADC, 101},
-		{SD_YCSB_WKLOADA, 102},
-		// {SD_YCSB_WKLOADC, 40},
-		// {SD_YCSB_WKLOADK2, 20},
+		{SD_YCSB_WKLOADC, cfgIdx},
+		{SD_YCSB_WKLOADH, 204},
+		{SD_YCSB_WKLOADA, 200},
 	};
 	int current_sequence_index = 0;  // Start at index 0 (initial workload/config)
 

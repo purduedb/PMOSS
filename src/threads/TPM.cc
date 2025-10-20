@@ -143,26 +143,134 @@ struct InferenceResponse {
 };
 
 InferenceResponse query_gilbreth_server(const InferenceRequest& request) {
-    // TODO: Implement actual socket/HTTP communication to Gilbreth inference server
-
-    // TESTING STUB: Trigger reconfiguration on first call
-    static bool first_call = true;
-
     InferenceResponse response;
 
-    if (first_call) {
-        // First call: trigger reconfiguration for testing
-        std::cout << "[TESTING] Gilbreth stub: Triggering test reconfiguration" << std::endl;
-        response.should_reconfigure = true;
-        response.recommended_config = request.current_config + 1; // Try next config
-        response.recommended_workload = SD_YCSB_WKLOADC; // Change to workload C (if currently A)
-        first_call = false;
-    } else {
-        // Subsequent calls: no reconfiguration
-        response.should_reconfigure = false;
-        response.recommended_config = request.current_config;
-        response.recommended_workload = request.current_workload;
+    // Default response in case of error
+    response.should_reconfigure = false;
+    response.recommended_config = request.current_config;
+    response.recommended_workload = request.current_workload;
+
+    // Gilbreth cluster SSH configuration
+    const char* GILBRETH_HOST = "gilbreth.rcac.purdue.edu";
+    const char* GILBRETH_USER = std::getenv("GILBRETH_USER");  // Read from environment
+    const char* GILBRETH_INFERENCE_DIR = std::getenv("GILBRETH_INFERENCE_DIR");  // Remote working directory
+    const char* LOCAL_OUTPUT_DIR = std::getenv("LOCAL_OUTPUT_DIR");  // Local directory to store results
+
+    if (!GILBRETH_USER) {
+        std::cerr << "[Gilbreth] ERROR: GILBRETH_USER environment variable not set" << std::endl;
+        return response;
     }
+    if (!GILBRETH_INFERENCE_DIR) {
+        GILBRETH_INFERENCE_DIR = "~/pmoss_inference";  // Default path
+    }
+    if (!LOCAL_OUTPUT_DIR) {
+        LOCAL_OUTPUT_DIR = "/tmp/pmoss_inference";  // Default path
+    }
+
+    // Create local output directory if it doesn't exist
+    std::stringstream mkdir_cmd;
+    mkdir_cmd << "mkdir -p " << LOCAL_OUTPUT_DIR;
+    system(mkdir_cmd.str().c_str());
+
+    std::cout << "[Gilbreth] Requesting GPU and running inference..." << std::endl;
+
+    // Step 1: Submit SLURM job to request GPU and run inference script
+    // The SLURM script should:
+    //   1. Request GPU resources
+    //   2. Execute the inference shell script with parameters
+    //   3. Generate output file with inference results
+    std::stringstream sbatch_cmd;
+    sbatch_cmd << "ssh -o StrictHostKeyChecking=no " << GILBRETH_USER << "@" << GILBRETH_HOST << " '"
+               << "cd " << GILBRETH_INFERENCE_DIR << " && "
+               << "sbatch --wait --parsable "  // --wait makes it synchronous, --parsable returns job ID
+               << "--gres=gpu:1 "  // Request 1 GPU
+               << "--time=00:10:00 "  // 10 minute timeout
+               << "--output=inference_output_%j.log "
+               << "run_inference.sh "  // The shell script on Gilbreth
+               << request.current_config << " "
+               << request.current_workload << " "
+               << request.avg_throughput << " "
+               << request.avg_latency
+               << "'";
+
+    std::cout << "[Gilbreth] Submitting SLURM job: " << sbatch_cmd.str() << std::endl;
+
+    FILE* sbatch_pipe = popen(sbatch_cmd.str().c_str(), "r");
+    if (!sbatch_pipe) {
+        std::cerr << "[Gilbreth] ERROR: Failed to submit SLURM job" << std::endl;
+        return response;
+    }
+
+    // Read job ID from sbatch output
+    char buffer[256];
+    std::string job_id;
+    if (fgets(buffer, sizeof(buffer), sbatch_pipe) != nullptr) {
+        job_id = buffer;
+        // Remove trailing newline
+        job_id.erase(job_id.find_last_not_of(" \n\r\t") + 1);
+    }
+
+    int sbatch_exit = pclose(sbatch_pipe);
+    if (sbatch_exit != 0) {
+        std::cerr << "[Gilbreth] ERROR: SLURM job submission failed" << std::endl;
+        return response;
+    }
+
+    std::cout << "[Gilbreth] SLURM job completed. Job ID: " << job_id << std::endl;
+
+    // Step 2: Transfer the result file from Gilbreth to local system using scp
+    std::string remote_result_file = "inference_result_" + job_id + ".txt";
+    std::stringstream scp_cmd;
+    scp_cmd << "scp -o StrictHostKeyChecking=no "
+            << GILBRETH_USER << "@" << GILBRETH_HOST << ":"
+            << GILBRETH_INFERENCE_DIR << "/" << remote_result_file << " "
+            << LOCAL_OUTPUT_DIR << "/";
+
+    std::cout << "[Gilbreth] Transferring result file: " << scp_cmd.str() << std::endl;
+
+    int scp_result = system(scp_cmd.str().c_str());
+    if (scp_result != 0) {
+        std::cerr << "[Gilbreth] ERROR: Failed to transfer result file" << std::endl;
+        return response;
+    }
+
+    // Step 3: Read and parse the local result file
+    std::string local_result_path = std::string(LOCAL_OUTPUT_DIR) + "/" + remote_result_file;
+    std::ifstream result_file(local_result_path);
+    if (!result_file.is_open()) {
+        std::cerr << "[Gilbreth] ERROR: Could not open result file: " << local_result_path << std::endl;
+        return response;
+    }
+
+    // Expected format in result file:
+    // Line 1: RECONFIGURE or NO_CHANGE
+    // Line 2: recommended_config (if RECONFIGURE)
+    // Line 3: recommended_workload (if RECONFIGURE)
+    std::string action;
+    std::getline(result_file, action);
+
+    if (action == "RECONFIGURE") {
+        response.should_reconfigure = true;
+        result_file >> response.recommended_config >> response.recommended_workload;
+        std::cout << "[Gilbreth] Inference recommends reconfiguration: config="
+                  << response.recommended_config << ", workload="
+                  << response.recommended_workload << std::endl;
+    } else if (action == "NO_CHANGE") {
+        response.should_reconfigure = false;
+        std::cout << "[Gilbreth] Inference recommends no change" << std::endl;
+    } else {
+        std::cerr << "[Gilbreth] ERROR: Invalid response format in file: " << action << std::endl;
+    }
+
+    result_file.close();
+
+    // Optionally: Clean up remote files
+    std::stringstream cleanup_cmd;
+    cleanup_cmd << "ssh " << GILBRETH_USER << "@" << GILBRETH_HOST << " '"
+                << "rm -f " << GILBRETH_INFERENCE_DIR << "/" << remote_result_file
+                << " " << GILBRETH_INFERENCE_DIR << "/inference_output_" << job_id << ".log"
+                << "'";
+    system(cleanup_cmd.str().c_str());
 
     return response;
 }
@@ -174,12 +282,31 @@ void TPManager::init_megamind_threads(string next_config_path){
   std::thread migration_thread([this, next_config_path]() {
     CPUID migration_cpu = megamind_cpuids[0]; // Use first megamind CPU
     erebus::utils::PinThisThread(migration_cpu);
-    int numaID = numa_node_of_cpu(migration_cpu);
     
     // Sleep to simulate inference delay
-    const int DELAY = 10; // 10 milliseconds to simulate inference delay
+    const int DELAY = 40000; // 40 seconds to simulate inference delay
     std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
-    
+
+    // // Query Gilbreth inference server for reconfiguration decision
+    // InferenceRequest inf_request;
+    // inf_request.current_config = this->gm->config;
+    // inf_request.current_workload = this->gm->wkload;
+    // inf_request.avg_throughput = 0.0;  // TODO: Collect actual throughput metrics
+    // inf_request.avg_latency = 0.0;     // TODO: Collect actual latency metrics
+
+    // std::cout << "[Megamind] Querying Gilbreth inference server..." << std::endl;
+    // InferenceResponse inf_response = query_gilbreth_server(inf_request);
+
+    // if (!inf_response.should_reconfigure) {
+    //     std::cout << "[Megamind] Inference suggests no reconfiguration needed. Thread exiting." << std::endl;
+    //     return;
+    // }
+
+    // std::cout << "[Megamind] Inference recommends reconfiguration to config="
+    //           << inf_response.recommended_config << ", workload="
+    //           << inf_response.recommended_workload << std::endl;
+
+
     auto migration_start = std::chrono::high_resolution_clock::now();
     this->pause_all_routers();
     this->gm->reload_configuration(next_config_path);
@@ -205,6 +332,7 @@ void TPManager::init_megamind_threads(string next_config_path){
     // Pause all the router threads and worker threads
     this->pause_all_workers();
     this->gm->enforce_scheduling();
+    // this->gm->enforce_scheduling_batch();
     this->resume_all_workers();
     #endif
 
@@ -348,7 +476,7 @@ void TPManager::init_ncoresweeper_threads(){
           }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(60000));  //  60000
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));  //  60000
         
         // First, push the token to the worker cpus to get the DataView
         #if PROFILE==1

@@ -121,6 +121,7 @@ void GridManager::register_grid_cells(string configFile){
 
 void GridManager::enforce_scheduling(){
   auto start = std::chrono::high_resolution_clock::now();
+  
   for(size_t i = 0; i < MAX_GRID_CELL; i++){
     // auto start1 = std::chrono::high_resolution_clock::now();
     double lx = this->glbGridCell[i].lx;
@@ -147,6 +148,37 @@ void GridManager::enforce_scheduling(){
   cout << "Checkpoint: INDEX_MIGRATION_COMPLETED: " << elapsed.count() << endl;
   
 }
+
+
+void GridManager::enforce_scheduling_batch(){
+    auto start = std::chrono::high_resolution_clock::now();
+    // We want to get the ids of the grid cells that have the same numa id
+    std::unordered_map<int, std::vector<int>> numa_map;
+    for(size_t i = 0; i < MAX_GRID_CELL; i++){
+        numa_map[this->glbGridCell[i].idNUMA].push_back(i);
+    }
+    for(auto &pair : numa_map){
+        int numa_id = pair.first;
+        std::vector<int> &cell_ids = pair.second;
+        std::vector<std::tuple<uint64_t, int>> bounds;
+        for(auto &cid : cell_ids)
+            bounds.push_back(std::make_tuple(
+                this->glbGridCell[cid].lx,
+                this->DataDist[cid]
+            ));
+        // Now we can migrate all nodes in these bounds to the same numa node
+        this->idx_btree->migrate_batch(bounds, numa_id);
+    }
+  
+    // auto finish1 = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double> elapsed1 = finish1 - start1;
+    // cout << "Checkpoint: SINGLE_MIGRATION_COMPLETED: " << elapsed1.count() << endl;
+  auto finish = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = finish - start;
+  cout << "Checkpoint: INDEX_MIGRATION_COMPLETED: " << elapsed.count() << endl;
+  
+}
+
 
 void GridManager::register_index(erebus::storage::rtree::RTree * idx)
 {

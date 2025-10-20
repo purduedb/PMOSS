@@ -252,6 +252,61 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
     return count;
   }
 
+  uint64_t migrate_batch(std::vector<std::tuple<KeyType, int>> bounds, int destNUMA) {
+    // Allocate results array on heap instead of stack to avoid stack overflow
+    int acc_range = 0;
+    for (auto &b : bounds) {
+      acc_range += std::get<1>(b);
+    }
+    uint64_t* results = new uint64_t[acc_range];
+    std::vector<void*> nodes_to_migrate;
+
+    for (auto &b : bounds) {
+      KeyType key = std::get<0>(b);
+      int range = std::get<1>(b); 
+      uint64_t count = idx.migratory_scan3_(key, range, results, destNUMA, -1, -1, nodes_to_migrate);
+      // cout << count << endl;
+      if (count==0) {
+        delete[] results;
+        return 0;
+      }
+
+      while (count < range) {
+        KeyType nextKey = *reinterpret_cast<KeyType*>(results[count-1]);
+        // ISSUE: issue a range scan for the 3rd largest key and range_size = 100
+        //  what will happen is count = 3, enter the while loop, nextkey will get you to an invalid value
+        //  that does not exist
+        //  One solution: the range size have to be less than what you can get
+        incKey(nextKey); // hack: this only works for fixed-size keys
+
+        // uint64_t nextCount = idx.migratory_scan_(nextKey, range - count, results + count, destNUMA);
+        uint64_t nextCount = idx.migratory_scan3_(nextKey, range - count, results + count, destNUMA, -1, -1, nodes_to_migrate);
+        // uint64_t nextCount = idx.migratory_scan2_(nextKey, range - count, results + count, destNUMA, MIGRATE_MODE, BATCH_SIZE);
+        if (nextCount==0)
+          break; // no more entries
+        count += nextCount;
+      }
+      // Update the results pointer to avoid overwriting
+      results += count;
+    }
+
+    int num_nodes = nodes_to_migrate.size();
+    void** nodes_array = nodes_to_migrate.data();
+    int* status = new int[num_nodes];
+    // int* status = new int[num_nodes];
+    std::fill(status, status + num_nodes, -1); // Using std::fill to set all elements to -1
+
+    int* destNodes = new int[num_nodes];
+    std::fill(destNodes, destNodes + num_nodes, destNUMA);
+
+    int ret_code = move_pages(0, num_nodes, nodes_array, destNodes, status, 0);
+    // count = 0;
+    delete[] status;
+    delete[] destNodes;
+    delete[] results;
+
+    return ret_code;
+  }
   int64_t getMemory() const {
     return 0;
   }

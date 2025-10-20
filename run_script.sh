@@ -62,7 +62,7 @@ exec="$current_dir/build/bin/erebus"
 
 
 round=24
-cfg=(201)
+cfg=(-5)
 for wl in 12; do
   for c in "${cfg[@]}"; do
     "$exec" $c $wl $round

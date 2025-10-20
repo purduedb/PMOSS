@@ -168,6 +168,10 @@ class TPManager{
       bool job_done = false; 
     };
     
+    struct InferenceRequest {
+      int required_config;
+      int required_workload;
+    };
     // -------------------------------------------------------------------------------------
     std::unordered_map<CPUID, NodeCoreSweeperThread> glb_ncore_sweeper_thrds; 
     std::unordered_map<CPUID, SysSweeperThread> glb_sys_sweeper_thrds; 
@@ -194,7 +198,7 @@ class TPManager{
     TPManager(std::vector<CPUID> ncore_sweeper_cpuids, std::vector<CPUID> sys_sweeper_cpuids, std::vector<CPUID> megamind_cpuids, std::vector<CPUID> worker_cpuids, std::vector<CPUID> router_cpuids, dm::GridManager *gm, scheduler::ResourceManager *rm);
     void init_worker_threads();
     void init_router_threads(int ds, int wl, double min_x, double max_x, double min_y, double max_y, std::vector<keytype> &init_keys, std::vector<uint64_t> &values);
-    void init_megamind_threads(std::string next_config_path);
+    void init_megamind_threads(int next_config, int next_workload, std::string next_config_path);
     void init_syssweeper_threads();
     void init_ncoresweeper_threads();
 
@@ -242,6 +246,8 @@ class TPManager{
     void dumpTestGridHWCounters(vector<CPUID> cpuIds);
 
     void testInterferenceInitWorkerThreads(vector<CPUID> worker_cpuids, int nWThreads);
+    static bool query_gilbreth_server(const InferenceRequest& request);
+    
     ~TPManager();
     // -------------------------------------------------------------------------------------
 };

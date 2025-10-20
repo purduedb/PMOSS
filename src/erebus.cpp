@@ -450,6 +450,7 @@ std::string get_cpu_vendor() {
 
 int main(int argc, char* argv[])
 {	
+	
 	auto start = std::chrono::high_resolution_clock::now();
 	int cfgIdx = 1;
 	int ds = YCSB;
@@ -796,7 +797,7 @@ int main(int argc, char* argv[])
 			if (ENABLE_DYNAMIC_RECONFIGURATION) {
 				string next_config_path = db.generate_config_path(next_config, next_workload);
 				cout << "Dynamic reconfiguration to: Workload " << next_workload << ", Config" << next_config << endl;
-				glb_tpool.init_megamind_threads(next_config_path); // Ensure megamind is running
+				glb_tpool.init_megamind_threads(next_config, next_workload, next_config_path); // Ensure megamind is running
 				
 			} 
 			// Reset run timer

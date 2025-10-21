@@ -314,10 +314,6 @@ void TPManager::dump_ncoresweeper_threads(int round){
   #elif STORAGE == 1
       dirName += "/kb_quad_linux/" + std::to_string(key);
   #elif STORAGE == 2
-      // dirName += "/kb_b_linux/" + std::to_string(key);
-      // dirName += "/kb_bs_linux/" + std::to_string(key); // <-----
-      // dirName += "/kb_bs_linux_4s_4n/" + std::to_string(key); // <-----
-      // dirName += "/kb_b/" + std::to_string(key);
       dirName += "/kb_bs_linux_dynam/" + std::to_string(key); // <-----
   #endif
   #else
@@ -1304,32 +1300,6 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     // -------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------
     while (1) {
-      // ==================================================================================
-      // QUERY RATE CONTROL LOGIC
-      // ==================================================================================
-      if (RATE_CONTROL_ENABLED) {
-        auto current_time = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-            current_time - glb_router_thrds[router_cpuids[i]].second_start_time);
-        
-        // If we've been running for more than 1 second, reset the counter
-        if (elapsed.count() >= 1000) {
-          glb_router_thrds[router_cpuids[i]].second_start_time = current_time;
-          glb_router_thrds[router_cpuids[i]].queries_this_second = 0;
-        }
-        
-        // If we've reached the query limit for this second, sleep until the next second
-        if (glb_router_thrds[router_cpuids[i]].queries_this_second >= QUERIES_PER_SECOND) {
-          auto time_to_sleep = std::chrono::milliseconds(1000) - elapsed;
-          if (time_to_sleep.count() > 0) {
-            std::this_thread::sleep_for(time_to_sleep);
-          }
-          // Reset for the next second
-          glb_router_thrds[router_cpuids[i]].second_start_time = std::chrono::steady_clock::now();
-          glb_router_thrds[router_cpuids[i]].queries_this_second = 0;
-        }
-      }
-      // ==================================================================================
 
       // Check for pause signal (grid cell update support)
       {
@@ -1384,9 +1354,9 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
             fresh_props.Load(input);
             input.close();
             ycsb_wl.Init(fresh_props);
-            std::cout << "Router " << i << " successfully reloaded YCSB workload config from: " << wl_config << std::endl;
-            std::cout << "       Properties loaded: readproportion=" << fresh_props.GetProperty("readproportion", "N/A")
-                      << ", scanproportion=" << fresh_props.GetProperty("scanproportion", "N/A") << std::endl;
+            // std::cout << "Router " << i << " successfully reloaded YCSB workload config from: " << wl_config << std::endl;
+            // std::cout << "       Properties loaded: readproportion=" << fresh_props.GetProperty("readproportion", "N/A")
+            //           << ", scanproportion=" << fresh_props.GetProperty("scanproportion", "N/A") << std::endl;
           } else {
             std::cerr << "ERROR: Router " << i << " FAILED to open workload file: " << wl_config << std::endl;
             std::cerr << "       Workload change ABORTED - router will continue with previous workload!" << std::endl;

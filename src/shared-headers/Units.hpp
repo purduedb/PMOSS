@@ -158,6 +158,7 @@ enum {
   WIKI,
   FB,
   OSM_CELLIDS,
+  YCSB_2000M
 };
 
 enum {

@@ -152,7 +152,16 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 		#else
 		init_file += "dataset/loade_zipf_int_1000M.dat";
 		#endif		
-  }  
+  } 
+	else if(ds == YCSB_2000M) {
+		#if MACHINE==0 || MACHINE == 6
+		init_file += "loade_zipf_int_2000M.dat";
+		#elif MACHINE==8 || MACHINE == 4 || MACHINE == 1
+		init_file = "/proj/pmoss-PG0/loade_zipf_int_2000M.dat";
+		#else
+		init_file += "dataset/loade_zipf_int_2000M.dat";
+		#endif		
+	}	
 	else if (ds == WIKI){
 		init_file += "dataset/wiki_ts_200M_uint64.dat";
 	}
@@ -273,27 +282,6 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 	this->glb_tpool = tp;
 }
 
-bool Erebus::check_for_reconfiguration_request() {
-	// Check if megamind thread has signaled reconfiguration
-	if (this->glb_tpool->glb_megamind_thrds.empty()) {
-		return false;
-	}
-
-	auto& megamind = this->glb_tpool->glb_megamind_thrds.begin()->second;
-
-	std::lock_guard<std::mutex> lock(megamind.inference_mutex);
-	if (megamind.reconfiguration_requested) {
-		int new_config = megamind.new_config_id;
-		int new_workload = megamind.new_workload_id;
-		megamind.reconfiguration_requested = false; // Clear flag
-
-		// Perform reconfiguration
-		return perform_reconfiguration(new_config, new_workload, 0);
-	}
-
-	return false;
-}
-
 std::string Erebus::generate_config_path(int config_id, int workload_id) {
 	std::string config_file;
 	int iam = this->glb_gm->iam;
@@ -328,10 +316,7 @@ std::string Erebus::generate_config_path(int config_id, int workload_id) {
 	return config_file;
 }
 
-bool Erebus::perform_reconfiguration(int new_config_id, int new_workload_id, int round) {
-	std::lock_guard<std::mutex> lock(reconfig_state.reconfig_mutex);
-	reconfig_state.is_reconfiguring = true;
-
+bool Erebus::perform_reconfiguration_static(int new_config_id, int new_workload_id, int round) {
 	cout << "========================================" << endl;
 	cout << "STARTING RECONFIGURATION" << endl;
 	cout << "  Current Config: " << this->glb_gm->config << " -> New Config: " << new_config_id << endl;
@@ -340,250 +325,45 @@ bool Erebus::perform_reconfiguration(int new_config_id, int new_workload_id, int
 
 	auto reconfig_start = std::chrono::high_resolution_clock::now();
 
-	// Pause core_sweeper threads during reconfiguration to prevent interference
-	cout << "Pausing core_sweeper threads during reconfiguration..." << endl;
-	this->glb_tpool->pause_all_ncoresweepers();
-
 	// Step 0: Dump performance statistics from previous configuration
-	cout << "[0/4] Dumping performance statistics for previous configuration..." << endl;
+	cout << "[0/2] Dumping performance statistics for previous configuration..." << endl;
 	auto step0_start = std::chrono::high_resolution_clock::now();
 	this->glb_tpool->dump_ncoresweeper_threads(round);
 	auto step0_end = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> step0_elapsed = step0_end - step0_start;
-	cout << "  Stats dump completed in " << step0_elapsed.count() << " seconds" << endl;
-
-	// Step 1: Load new configuration
-	// This is not dynamic, all along we will maintain the same policy
-	cout << "[1/4] Pausing router threads and loading new configuration..." << endl;
-	cout << "[1/4] NOT REQUIRED ..." << endl;
-	// auto step1_start = std::chrono::high_resolution_clock::now();
-	// this->glb_tpool->pause_all_routers();
-	// std::string config_file = generate_config_path(new_config_id, new_workload_id);
-	// cout << "  Config file: " << config_file << endl;
-	// this->glb_gm->reload_configuration(config_file);
-	// this->glb_tpool->resume_all_routers();
-	// auto step1_end = std::chrono::high_resolution_clock::now();
-	// std::chrono::duration<double> step1_elapsed = step1_end - step1_start;
-	// cout << "  Config reload completed in " << step1_elapsed.count() << " seconds" << endl;
-
-	// #if CLEAR_WORKER_QUEUES == 0
-	// // Only resume routers if we're not clearing queues
-	// // If clearing queues, keep routers paused to prevent new queries from being enqueued
-	// this->glb_tpool->resume_all_routers();
-	// #endif
 	
-
-	// Step 2: Migrate index pages to new NUMA nodes
-	auto step2_start = std::chrono::high_resolution_clock::now();
-	// Use parallel migration with worker threads
-	cout << "[2/4] Pausing workers and migrating index pages in parallel..." << endl;
-	this->glb_tpool->pause_all_workers();
-	#if CLEAR_WORKER_QUEUES == 1
-	cout << "  Clearing worker queues (CLEAR_WORKER_QUEUES=1, routers remain paused)..." << endl;
-	this->glb_tpool->clear_all_worker_queues();
-	#endif
-	auto migration_start = std::chrono::high_resolution_clock::now();
-	this->glb_tpool->assign_migration_tasks(this->glb_gm->nGridCells);
-	this->glb_tpool->wait_for_migration_completion();
-	auto migration_end = std::chrono::high_resolution_clock::now();
-	this->glb_tpool->resume_all_workers();
-	#if CLEAR_WORKER_QUEUES == 1
-	// Resume routers after migration is complete (they were kept paused during queue clearing)
-	this->glb_tpool->resume_all_routers();
-	#endif
-	std::chrono::duration<double> migration_elapsed = migration_end - migration_start;
-	cout << "  Migration completed by " << this->glb_tpool->CURR_WORKER_THREADS << " workers in " << migration_elapsed.count() << " seconds" << endl;
-
-	// Use single-threaded migration on main thread
-	cout << "[2/4] Pausing workers and clearing the queues..." << endl;
-	
-	#if CLEAR_WORKER_QUEUES == 1
-	cout << "  Clearing worker queues (CLEAR_WORKER_QUEUES=1, routers remain paused)..." << endl;
-	this->glb_tpool->pause_all_routers();
-	this->glb_tpool->pause_all_workers();
-	this->glb_tpool->clear_all_worker_queues();
-	this->glb_tpool->resume_all_workers();
-	// this->glb_tpool->resume_all_routers();
-	#endif
-	
-	
-	auto step2_end = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> step2_elapsed = step2_end - step2_start;
-	cout << "  Total step 2 time (pause + clear worker queues + resume): " << step2_elapsed.count() << " seconds" << endl;
-
-	// Step 3: Update router threads with new workload (if changed)
-	auto step3_start = std::chrono::high_resolution_clock::now();
-	if (new_workload_id != this->glb_gm->wkload) {
-		cout << "[3/4] Synchronizing router thread workload change..." << endl;
-		cout << "  Initiating barrier synchronization for " << this->glb_tpool->CURR_ROUTER_THREADS << " routers" << endl;
-		this->glb_tpool->initiate_workload_change(new_workload_id);
-		this->glb_gm->wkload = new_workload_id;
-		cout << "  Workload change completed" << endl;
-	} else {
-		cout << "[3/4] Workload unchanged, skipping router synchronization" << endl;
-	}
-	
-	this->glb_tpool->resume_all_routers();
-	
-	auto step3_end = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> step3_elapsed = step3_end - step3_start;
-	cout << "  Step 3 completed in " << step3_elapsed.count() << " seconds" << endl;
-
-	// Step 4: Update config ID and finalize
-	cout << "[4/4] Finalizing reconfiguration..." << endl;
-	this->glb_gm->config = new_config_id;
-
-	// Resume core_sweeper threads
-	cout << "Resuming core_sweeper threads..." << endl;
-	this->glb_tpool->resume_all_ncoresweepers();
-
-	auto reconfig_finish = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> total_elapsed = reconfig_finish - reconfig_start;
-
-	cout << "========================================" << endl;
-	cout << "RECONFIGURATION COMPLETED" << endl;
-	cout << "  Total time: " << total_elapsed.count() << " seconds" << endl;
-	cout << "  Breakdown:" << endl;
-	cout << "    Step 0 (Stats dump):     " << step0_elapsed.count() << "s" << endl;
-	// cout << "    Step 1 (Config reload):  " << step1_elapsed.count() << "s" << endl;
-	cout << "    Step 2 (Migration):      " << step2_elapsed.count() << "s" << endl;
-	cout << "    Step 3 (Workload sync):  " << step3_elapsed.count() << "s" << endl;
-	cout << "  New Config: " << new_config_id << endl;
-	cout << "  New Workload: " << new_workload_id << endl;
-	cout << "========================================" << endl;
-
-	reconfig_state.is_reconfiguring = false;
-
-	return true;
-}
-
-bool Erebus::perform_reconfiguration2(int new_config_id, int new_workload_id, int round) {
 	std::lock_guard<std::mutex> lock(reconfig_state.reconfig_mutex);
 	reconfig_state.is_reconfiguring = true;
 
-	cout << "========================================" << endl;
-	cout << "STARTING RECONFIGURATION" << endl;
-	cout << "  Current Config: " << this->glb_gm->config << " -> New Config: " << new_config_id << endl;
-	cout << "  Current Workload: " << this->glb_gm->wkload << " -> New Workload: " << new_workload_id << endl;
-	cout << "========================================" << endl;
-
-	auto reconfig_start = std::chrono::high_resolution_clock::now();
-
-	// Pause core_sweeper threads during reconfiguration to prevent interference
-	// cout << "Pausing core_sweeper threads during reconfiguration..." << endl;
-	// this->glb_tpool->pause_all_ncoresweepers();
-
-	// Step 0: Dump performance statistics from previous configuration
-	cout << "[0/4] Dumping performance statistics for previous configuration..." << endl;
-	auto step0_start = std::chrono::high_resolution_clock::now();
-	this->glb_tpool->dump_ncoresweeper_threads(round);
-	auto step0_end = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> step0_elapsed = step0_end - step0_start;
-	cout << "  Stats dump completed in " << step0_elapsed.count() << " seconds" << endl;
-
-	// Step 1: Load new configuration
-	// This is not dynamic, all along we will maintain the same policy
-	// cout << "[1/4] Pausing router threads and loading new configuration..." << endl;
-	// cout << "[1/4] NOT REQUIRED ..." << endl;
-	// auto step1_start = std::chrono::high_resolution_clock::now();
-	// this->glb_tpool->pause_all_routers();
-	// std::string config_file = generate_config_path(new_config_id, new_workload_id);
-	// cout << "  Config file: " << config_file << endl;
-	// this->glb_gm->reload_configuration(config_file);
-	// this->glb_tpool->resume_all_routers();
-	// auto step1_end = std::chrono::high_resolution_clock::now();
-	// std::chrono::duration<double> step1_elapsed = step1_end - step1_start;
-	// cout << "  Config reload completed in " << step1_elapsed.count() << " seconds" << endl;
-
-	// #if CLEAR_WORKER_QUEUES == 0
-	// // Only resume routers if we're not clearing queues
-	// // If clearing queues, keep routers paused to prevent new queries from being enqueued
-	// this->glb_tpool->resume_all_routers();
-	// #endif
-	
-
-	// Step 2: Migrate index pages to new NUMA nodes
-	// auto step2_start = std::chrono::high_resolution_clock::now();
-	// // Use parallel migration with worker threads
-	// cout << "[2/4] Pausing workers and migrating index pages in parallel..." << endl;
-	// this->glb_tpool->pause_all_workers();
-	// #if CLEAR_WORKER_QUEUES == 1
-	// cout << "  Clearing worker queues (CLEAR_WORKER_QUEUES=1, routers remain paused)..." << endl;
-	// this->glb_tpool->clear_all_worker_queues();
-	// #endif
-	// auto migration_start = std::chrono::high_resolution_clock::now();
-	// this->glb_tpool->assign_migration_tasks(this->glb_gm->nGridCells);
-	// this->glb_tpool->wait_for_migration_completion();
-	// auto migration_end = std::chrono::high_resolution_clock::now();
-	// this->glb_tpool->resume_all_workers();
-	// #if CLEAR_WORKER_QUEUES == 1
-	// // Resume routers after migration is complete (they were kept paused during queue clearing)
-	// this->glb_tpool->resume_all_routers();
-	// #endif
-	// std::chrono::duration<double> migration_elapsed = migration_end - migration_start;
-	// cout << "  Migration completed by " << this->glb_tpool->CURR_WORKER_THREADS << " workers in " << migration_elapsed.count() << " seconds" << endl;
-
-	// // Use single-threaded migration on main thread
-	// cout << "[2/4] Pausing workers and clearing the queues..." << endl;
-	
-	// #if CLEAR_WORKER_QUEUES == 1
-	// cout << "  Clearing worker queues (CLEAR_WORKER_QUEUES=1, routers remain paused)..." << endl;
-	// this->glb_tpool->pause_all_routers();
-	// this->glb_tpool->pause_all_workers();
-	// this->glb_tpool->clear_all_worker_queues();
-	// this->glb_tpool->resume_all_workers();
-	// // this->glb_tpool->resume_all_routers();
-	// #endif
-	
-	
-	// auto step2_end = std::chrono::high_resolution_clock::now();
-	// std::chrono::duration<double> step2_elapsed = step2_end - step2_start;
-	// cout << "  Total step 2 time (pause + clear worker queues + resume): " << step2_elapsed.count() << " seconds" << endl;
-
-	// Step 3: Update router threads with new workload (if changed)
-	auto step3_start = std::chrono::high_resolution_clock::now();
-	this->glb_tpool->pause_all_routers();
+	// Step 1: Update router threads with new workload (if changed)
+	auto step1_start = std::chrono::high_resolution_clock::now();
+	// Can we move this after the checking if the new workload has been already changed or not
 	if (new_workload_id != this->glb_gm->wkload) {
-		cout << "[3/4] Synchronizing router thread workload change..." << endl;
-		cout << "  Initiating barrier synchronization for " << this->glb_tpool->CURR_ROUTER_THREADS << " routers" << endl;
+		this->glb_tpool->pause_all_routers();
+		cout << "[1/2] Initiate router thread workload change..." << endl;
 		this->glb_tpool->initiate_workload_change(new_workload_id);
 		this->glb_gm->wkload = new_workload_id;
-		cout << "  Workload change completed" << endl;
+		cout << "[1/2] Workload change completed" << endl;
 	} else {
-		cout << "[3/4] Workload unchanged, skipping router synchronization" << endl;
+		cout << "[1/2] Workload unchanged, skipping router synchronization" << endl;
 	}
-	
 	this->glb_tpool->resume_all_routers();
+
+	auto step1_end = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> step1_elapsed = step1_end - step1_start;
 	
-	auto step3_end = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> step3_elapsed = step3_end - step3_start;
-	cout << "  Step 3 completed in " << step3_elapsed.count() << " seconds" << endl;
-
 	// Step 4: Update config ID and finalize
-	cout << "[4/4] Finalizing reconfiguration..." << endl;
+	cout << "[2/2] Finalizing reconfiguration..." << endl;
 	this->glb_gm->config = new_config_id;
-
-	// // Resume core_sweeper threads
-	// cout << "Resuming core_sweeper threads..." << endl;
-	// this->glb_tpool->resume_all_ncoresweepers();
 
 	auto reconfig_finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> total_elapsed = reconfig_finish - reconfig_start;
 
-	cout << "========================================" << endl;
-	cout << "RECONFIGURATION COMPLETED" << endl;
-	cout << "  Total time: " << total_elapsed.count() << " seconds" << endl;
-	cout << "  Breakdown:" << endl;
-	cout << "    Step 0 (Stats dump):     " << step0_elapsed.count() << "s" << endl;
-	// cout << "    Step 1 (Config reload):  " << step1_elapsed.count() << "s" << endl;
-	// cout << "    Step 2 (Migration):      " << step2_elapsed.count() << "s" << endl;
-	cout << "    Step 3 (Workload sync):  " << step3_elapsed.count() << "s" << endl;
-	cout << "  New Config: " << new_config_id << endl;
-	cout << "  New Workload: " << new_workload_id << endl;
-	cout << "========================================" << endl;
-
 	reconfig_state.is_reconfiguring = false;
 
+	cout << "========================================" << endl;
+	cout << "Reconfiguration completed in " << total_elapsed.count() << " seconds" << endl;
+	cout << "========================================" << endl;
 	return true;
 }
 
@@ -592,24 +372,26 @@ bool Erebus::perform_reconfiguration2(int new_config_id, int new_workload_id, in
 int main(int argc, char* argv[])
 {	
 	int cfgIdx = 506;
-	int ds = YCSB;
+	int ds = YCSB_2000M;
 	int wl = SD_YCSB_WKLOADK;
 	int iam = BTREE;
 	int round = 0;
-	// int cfgIdx = 1;
-	// int ds = OSM_USNE;
-	// int wl = MD_RS_HOT7;
-	// int iam = RTREE;
+	int run_duration_ms = 60000; // Default: 60 seconds
+	
 
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
 		wl = std::atoi(argv[2]);
 		round = std::atoi(argv[3]);
+		if (argc > 4) {
+			run_duration_ms = std::atoi(argv[4]);
+		}
 	}
 	
 	cout << "CONFIG=" << cfgIdx << endl;
 	cout << "WKLOAD="  << wl << endl;
-
+	cout << "ROUND="  << round << endl;
+	cout << "RUN_DURATION_MS=" << run_duration_ms << endl;
 	
 	// Keys in database 
 	std::vector<keytype> init_keys;
@@ -633,6 +415,9 @@ int main(int argc, char* argv[])
 		// min_x = 36296660289; max_x = 9223371933865469581; min_y = -1; max_y = -1; 
 		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
 		//500M and 1000M
+		min_x = 734139722786418736; max_x = 6075995071374232121; min_y = -1; max_y = -1; 
+	}
+	else if (ds == YCSB_2000M){
 		min_x = 734139722786418736; max_x = 6075995071374232121; min_y = -1; max_y = -1; 
 	}
 	else if (ds == WIKI){
@@ -967,15 +752,14 @@ int main(int argc, char* argv[])
 	// The system STARTS with the initial wl and cfgIdx from above
 	// This sequence defines what happens AFTER each run completes
 	std::vector<std::pair<int, int>> workload_config_sequence = {
-		{SD_YCSB_WKLOADK2, cfgIdx},
-		{SD_YCSB_WKLOADH, cfgIdx},
 		{SD_YCSB_WKLOADC, cfgIdx},
+		{SD_YCSB_WKLOADH, cfgIdx},
+		{SD_YCSB_WKLOADA, cfgIdx},
 	};
+	
 	int current_sequence_index = 0;  // Start at index 0 (initial workload/config)
-
-	const int RUN_DURATION_MS = 60000; // 400 seconds per workload
 	const int CHECK_INTERVAL_MS = 5000; // Check every 5 seconds
-	const int MAX_PASSES = 4; // Number of complete passes through the workload sequence before terminating
+	const int MAX_PASSES = 1; // Number of complete passes through the workload sequence before terminating
 
 	bool keep_running = true;
 	int iteration_count = 0;
@@ -984,10 +768,11 @@ int main(int argc, char* argv[])
 	
 	cout << "========================================" << endl;
 	cout << "P-MOSS: Continuous Execution Mode" << endl;
-	cout << "  Run duration per workload: " << RUN_DURATION_MS/1000 << " seconds" << endl;
+	cout << "  Run duration per workload: " << run_duration_ms/1000 << " seconds" << endl;
 	cout << "  Initial configuration: Workload " << wl << ", Config " << cfgIdx << endl;
 	cout << "  Maximum passes through sequence: " << MAX_PASSES << endl;
 	cout << "  Workload-Config sequence: ";
+	
 	for (size_t i = 0; i < workload_config_sequence.size(); i++) {
 		cout << "[W" << workload_config_sequence[i].first << ",C" << workload_config_sequence[i].second << "]";
 		if (i < workload_config_sequence.size() - 1) cout << " -> ";
@@ -1008,7 +793,7 @@ int main(int argc, char* argv[])
 		auto elapsed_since_run_start = std::chrono::duration_cast<std::chrono::milliseconds>(
 			current_time - run_start_time).count();
 		
-		if (elapsed_since_run_start >= RUN_DURATION_MS) {
+		if (elapsed_since_run_start >= run_duration_ms) {
 			workload_run_count++;
 			
 			cout << "========================================" << endl;
@@ -1041,7 +826,7 @@ int main(int argc, char* argv[])
 			cout << " (Sequence index: " << current_sequence_index << ", Pass: " << (sequence_passes + 1) << ")" << endl;
 
 			// Trigger reconfiguration with paired workload and config
-			bool success = db.perform_reconfiguration2(next_config, next_workload, round);
+			bool success = db.perform_reconfiguration_static(next_config, next_workload, round);
 
 			if (success) {
 				cout << "Reconfiguration successful. Continuing with next run..." << endl;

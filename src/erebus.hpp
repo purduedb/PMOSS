@@ -43,9 +43,8 @@ class Erebus
 
     // Dynamic reconfiguration methods
     bool check_for_reconfiguration_request();
-    bool perform_reconfiguration(int new_config_id, int new_workload_id, int round);
-    bool perform_reconfiguration2(int new_config_id, int new_workload_id, int round);
-
+    bool perform_reconfiguration_static(int new_config_id, int new_workload_id, int round);
+    
     std::string generate_config_path(int config_id, int workload_id);
 };
 

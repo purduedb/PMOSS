@@ -2,8 +2,8 @@
 #define PMOSS_GRIDMANAGER_H_
 
 // -------------------------------------------------------------------------------------
-#define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // 343901273, 200000000
-#define BTREE_INIT_LIMIT 680000000
+#define SINGLE_DIMENSION_KEY_LIMIT 2000000000 // 343901273, 200000000
+#define BTREE_INIT_LIMIT 1000000000
 #define LIMIT 1000                
 #define MAX_GRID_CELL 256
 #define STAMP_LR_PARAM 4            

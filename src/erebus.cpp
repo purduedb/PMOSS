@@ -101,29 +101,33 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	std::vector<keytype> &init_keys, std::vector<uint64_t> &values){
 	this->idx_btree = new erebus::storage::BTreeOLCIndex<keytype, keycomp>(kt);
 
-	std::vector<keytype> keys;
-	std::vector<int> ranges;
-	std::vector<int> ops; 
+	// std::vector<keytype> keys;
+	// std::vector<int> ranges;
+	// std::vector<int> ops; 
+	
 	int max_init_key = -1;
 	static const uint64_t value_type=1; // 0 = random pointers, 1 = pointers to keys
 
-	keys.reserve(10000000);
-	ranges.reserve(10000000);
-	ops.reserve(10000000);
+	// keys.reserve(10000000);
+	// ranges.reserve(10000000);
+	// ops.reserve(10000000);
 
 	memset(&init_keys[0], 0x00, SINGLE_DIMENSION_KEY_LIMIT * sizeof(keytype));
 	memset(&values[0], 0x00, SINGLE_DIMENSION_KEY_LIMIT * sizeof(uint64_t));
-	memset(&keys[0], 0x00, 10000000 * sizeof(keytype));
-	memset(&ranges[0], 0x00, 10000000 * sizeof(int));
-	memset(&ops[0], 0x00, 10000000 * sizeof(int));
+	// memset(&keys[0], 0x00, 10000000 * sizeof(keytype));
+	// memset(&ranges[0], 0x00, 10000000 * sizeof(int));
+	// memset(&ops[0], 0x00, 10000000 * sizeof(int));
 
 	std::string init_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   
 	if (ds == YCSB) {
 		init_file = "/scratch1/yrayhan/loade_zipf_int_1000M.dat";
-		// txn_file += "workloads/txnse_zipf_int_100M.dat";
-  } else if (ds == WIKI) {
+  } 
+	else if (ds == YCSB_2000M){
+		init_file = "/scratch1/yrayhan/loade_zipf_int_2000M.dat";
+	}
+	else if (ds == WIKI) {
     init_file = "/scratch1/yrayhan/wiki_ts_200M_uint64.dat";
   } else if (ds == OSM_CELLIDS) {
     init_file = "/scratch1/yrayhan/osm_cellids_200M_uint64.dat";
@@ -151,20 +155,40 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string scan("SCAN");
 
   int count = 0;
+  // while ((count < SINGLE_DIMENSION_KEY_LIMIT)) {
+  //   infile_load >> op >> key;
+  //   if (op.compare(insert) != 0) {
+  //     std::cout << "READING LOAD FILE FAIL!\n";
+  //     break;
+  //   }
+  //   init_keys.push_back(key);
+  //   count++;
+
+  //   // If we have reached the max init key limit then just break
+  //   if(max_init_key > 0 && count == max_init_key) {
+  //     break;
+  //   }
+  // }
+  
+  init_keys.resize(SINGLE_DIMENSION_KEY_LIMIT);
+  
   while ((count < SINGLE_DIMENSION_KEY_LIMIT)) {
     infile_load >> op >> key;
     if (op.compare(insert) != 0) {
       std::cout << "READING LOAD FILE FAIL!\n";
       break;
     }
-    init_keys.push_back(key);
+    init_keys[count] = key;
     count++;
 
-    // If we have reached the max init key limit then just break
     if(max_init_key > 0 && count == max_init_key) {
       break;
     }
   }
+  
+  // if (count < SINGLE_DIMENSION_KEY_LIMIT) {
+  //   init_keys.resize(count);
+  // }
   
   fprintf(stderr, "Loaded %d keys\n", count);
 
@@ -453,14 +477,17 @@ int main(int argc, char* argv[])
 	
 	auto start = std::chrono::high_resolution_clock::now();
 	int cfgIdx = 1;
-	int ds = YCSB;
+	int ds = YCSB_2000M;
 	int wl = SD_YCSB_WKLOADA;
 	int iam = BTREE;
 	int round = 0;
+	int run_duration_ms = 60000; // Default: 60 seconds
+
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
 		wl = std::atoi(argv[2]);
 		round = std::atoi(argv[3]);
+		run_duration_ms = std::atoi(argv[4]);
 	}
 	
 	cout << "CONFIG=" << cfgIdx << endl;
@@ -489,6 +516,10 @@ int main(int argc, char* argv[])
 		// min_x = 36296660289; max_x = 		9223371933865469581; min_y = -1; max_y = -1; 
 		// min_x = 36296660289; max_x = 9223371992761358200; min_y = -1; max_y = -1; //100M and 200M Points and inserts
 		//500M 
+		min_x = 734139722786418736; max_x = 6075995071374232121; min_y = -1; max_y = -1; 
+	}
+	else if (ds == YCSB_2000M){
+		//1000M and 2000M
 		min_x = 734139722786418736; max_x = 6075995071374232121; min_y = -1; max_y = -1; 
 	}
 	else if (ds == WIKI){
@@ -687,14 +718,15 @@ int main(int argc, char* argv[])
 	glb_gm.buildDataDistIdx(iam, init_keys);
 	// glb_gm.printDataDistIdx();
 	glb_gm.enforce_scheduling();
+	// glb_gm.enforce_scheduling_mt();
 	
 	// #if STORAGE == 2
 	// 	db.idx_btree->count_numa_division(min_x, max_x, 100000);
 	// #elif STORAGE == 0
 	// 	glb_gm.idx->NUMAStatus();
 	// #endif
-	glb_gm.printGM();
-
+	// glb_gm.printGM();
+	// exit(0);
 	// -------------------------------------------------------------------------------------
 	
 	erebus::tp::TPManager glb_tpool(ncore_cpuids, ss_cpuids, mm_cpuids, wrk_cpuids, rt_cpuids, &glb_gm, &glb_rm);
@@ -705,14 +737,23 @@ int main(int argc, char* argv[])
 	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	db.register_threadpool(&glb_tpool);
 
+	#if ENABLE_DYNAMIC_RECONFIGURATION
 	std::vector<std::pair<int, int>> workload_config_sequence = {
 		{SD_YCSB_WKLOADC, cfgIdx},
-		{SD_YCSB_WKLOADH, 204},
-		{SD_YCSB_WKLOADA, 200},
+		{SD_YCSB_WKLOADH, 11},
+		{SD_YCSB_WKLOADA, 41},
+
 	};
+	#else
+	std::vector<std::pair<int, int>> workload_config_sequence = {
+		{SD_YCSB_WKLOADC, cfgIdx},
+		{SD_YCSB_WKLOADH, cfgIdx},
+		{SD_YCSB_WKLOADA, cfgIdx},
+	};
+	#endif
+
 	int current_sequence_index = 0;  // Start at index 0 (initial workload/config)
 
-	const int RUN_DURATION_MS = 900000; // 900 seconds per workload
 	const int CHECK_INTERVAL_MS = 5000; // Check every 5 seconds
 	const int MAX_PASSES = 1; // Number of complete passes through the workload sequence before terminating
 
@@ -723,7 +764,7 @@ int main(int argc, char* argv[])
 	
 	cout << "========================================" << endl;
 	cout << "P-MOSS: Continuous Execution Mode" << endl;
-	cout << "  Run duration per workload: " << RUN_DURATION_MS/1000 << " seconds" << endl;
+	cout << "  Run duration per workload: " << run_duration_ms/1000 << " seconds" << endl;
 	cout << "  Initial configuration: Workload " << wl << ", Config " << cfgIdx << endl;
 	cout << "  Maximum passes through sequence: " << MAX_PASSES << endl;
 	cout << "  Workload-Config sequence: ";
@@ -737,7 +778,8 @@ int main(int argc, char* argv[])
 	
 	
 	auto run_start_time = std::chrono::high_resolution_clock::now();
-	
+	const int runtime_for_wkload_ch = 120000;
+
 	while (keep_running) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(CHECK_INTERVAL_MS));
 		iteration_count++;
@@ -746,8 +788,14 @@ int main(int argc, char* argv[])
 		auto current_time = std::chrono::high_resolution_clock::now();
 		auto elapsed_since_run_start = std::chrono::duration_cast<std::chrono::milliseconds>(
 			current_time - run_start_time).count();
+
+		if (elapsed_since_run_start >= run_duration_ms 
+			// || 
+			// (elapsed_since_run_start >= runtime_for_wkload_ch && 
+			// 	(workload_config_sequence[current_sequence_index].first == SD_YCSB_WKLOADC || workload_config_sequence[current_sequence_index].first == SD_YCSB_WKLOADH)
+			// )
 		
-		if (elapsed_since_run_start >= RUN_DURATION_MS) {
+		) {
 			workload_run_count++;
 			
 			cout << "========================================" << endl;
@@ -797,7 +845,7 @@ int main(int argc, char* argv[])
 			if (ENABLE_DYNAMIC_RECONFIGURATION) {
 				string next_config_path = db.generate_config_path(next_config, next_workload);
 				cout << "Dynamic reconfiguration to: Workload " << next_workload << ", Config" << next_config << endl;
-				glb_tpool.init_megamind_threads(next_config, next_workload, next_config_path); // Ensure megamind is running
+				glb_tpool.init_megamind_threads(next_config, next_workload, next_config_path, round); // Ensure megamind is running
 				
 			} 
 			// Reset run timer

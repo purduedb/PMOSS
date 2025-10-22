@@ -259,15 +259,16 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
       acc_range += std::get<1>(b);
     }
     uint64_t* results = new uint64_t[acc_range];
+    uint64_t* results_original = results; // Keep track of the original pointer for deletion
     std::vector<void*> nodes_to_migrate;
 
     for (auto &b : bounds) {
       KeyType key = std::get<0>(b);
-      int range = std::get<1>(b); 
+      int range = std::get<1>(b);
       uint64_t count = idx.migratory_scan3_(key, range, results, destNUMA, -1, -1, nodes_to_migrate);
       // cout << count << endl;
       if (count==0) {
-        delete[] results;
+        delete[] results_original;
         return 0;
       }
 
@@ -291,21 +292,42 @@ class BTreeOLCIndex : public Index<KeyType, KeyComparator>
     }
 
     int num_nodes = nodes_to_migrate.size();
+
+    // OPTIMIZATION: Pre-fault pages by touching them to reduce dirty page overhead
+    // This brings pages into cache and can reduce migration stalls
+    #ifdef PREFAULT_BEFORE_MIGRATION
+    for (int i = 0; i < num_nodes; i++) {
+      __builtin_prefetch(nodes_to_migrate[i], 0, 3); // prefetch for read, high temporal locality
+      volatile char dummy = *((char*)nodes_to_migrate[i]); // touch the page
+      (void)dummy; // avoid unused variable warning
+    }
+    #endif
+
     void** nodes_array = nodes_to_migrate.data();
     int* status = new int[num_nodes];
-    // int* status = new int[num_nodes];
-    std::fill(status, status + num_nodes, -1); // Using std::fill to set all elements to -1
+    std::fill(status, status + num_nodes, -1);
 
     int* destNodes = new int[num_nodes];
     std::fill(destNodes, destNodes + num_nodes, destNUMA);
 
-    int ret_code = move_pages(0, num_nodes, nodes_array, destNodes, status, 0);
-    // count = 0;
+    // OPTIMIZATION: Batch migration in smaller chunks to reduce blocking time
+    const int MIGRATION_BATCH_SIZE = 256; // Tune this based on page size and workload
+    int total_migrated = 0;
+
+    for (int offset = 0; offset < num_nodes; offset += MIGRATION_BATCH_SIZE) {
+      int batch_size = std::min(MIGRATION_BATCH_SIZE, num_nodes - offset);
+      int ret_code = move_pages(0, batch_size, nodes_array + offset,
+                                destNodes + offset, status + offset, 0);
+      if (ret_code == 0) {
+        total_migrated += batch_size;
+      }
+    }
+
     delete[] status;
     delete[] destNodes;
-    delete[] results;
+    delete[] results_original;
 
-    return ret_code;
+    return total_migrated;
   }
   int64_t getMemory() const {
     return 0;

@@ -130,6 +130,7 @@ void TPManager::init_worker_threads(){
 
 
 bool TPManager::query_gilbreth_server(const TPManager::InferenceRequest& request) {
+    // Before this the code should send the files that it has accumulated so far 
     // SSH into yrayhan@gilbreth.rcac.purdue.edu and run inference with GPU
     const std::string GILBRETH_USER = "yrayhan";
     const std::string GILBRETH_HOST = "gilbreth.rcac.purdue.edu";
@@ -199,15 +200,29 @@ bool TPManager::query_gilbreth_server(const TPManager::InferenceRequest& request
 
 // -------------------------------------------------------------------------------------
 
-void TPManager::init_megamind_threads(int next_config, int next_workload, string next_config_path){
+void TPManager::init_megamind_threads(int next_config, int next_workload, string next_config_path, int round){
   // Spawn a temporary detached thread for one-time delayed migration
-  std::thread migration_thread([this, next_config, next_workload, next_config_path]() {
+  std::thread migration_thread([this, next_config, next_workload, next_config_path, round]() {
     CPUID migration_cpu = megamind_cpuids[0]; // Use first megamind CPU
     erebus::utils::PinThisThread(migration_cpu);
-    
+    // Delay to get the ncore sweeper and sys sweeper threads warmed up
+    // const int WARMUP_DELAY = 0; // 70 seconds warmup
+    // std::this_thread::sleep_for(std::chrono::milliseconds(WARMUP_DELAY));
+    // Then send the contents 
+    // this->pause_all_ncoresweepers();
+    // this->dump_ncoresweeper_threads(round);
+    // this->resume_all_ncoresweepers();
+    // // an ssh command to send data to gilbreth server:rsync -aP /scratch/gilbreth/yrayhan/kbs/intel/skx_4s_8n/kb_b_dynam/ /homes/yrayhan/works/PMOSS/kb_bs_dynam/  
+    // std::string ssh_cmd = "rsync -aP /scratch/gilbreth/yrayhan/kbs/intel/skx_4s_8n/kb_b_dynam/ /homes/yrayhan/works/PMOSS/kb_bs_dynam/";
+    // int ssh_result = system(ssh_cmd.c_str());
+    // if (ssh_result != 0) {
+    //     std::cerr << "[Gilbreth] ERROR: SSH command failed with exit code " << ssh_result << std::endl;
+    //     return -1;
+    // }
+    // const int SEND_DELAY = 0;
     // Sleep to simulate inference delay
-    const int DELAY = 120000; // 120 seconds to simulate inference delay
-    // std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
+    const int INFERENCE_DELAY = 0; // 70 seconds to simulate inference delay
+    std::this_thread::sleep_for(std::chrono::milliseconds(INFERENCE_DELAY));
     // InferenceRequest request;
     // request.required_config = next_config;
     // request.required_workload = next_workload;
@@ -239,7 +254,7 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     // Pause all the router threads and worker threads
     this->pause_all_workers();
     this->gm->enforce_scheduling();
-    // this->gm->enforce_scheduling_batch();
+    // this->gm->enforce_scheduling_mt();
     this->resume_all_workers();
     #endif
 

@@ -19,11 +19,11 @@ using std::ofstream;
 #define PROFILE 1
 #define SIMD 1
 
-#define EVAL_PMOSS 1  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
+#define EVAL_PMOSS 0  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
 #define MACHINE 0     // 0 (BIGDATA), 1(DBSERVER)
 
-#define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // total keys in db       
-#define BTREE_INIT_LIMIT 1000000000 // initial number of keys in btree   680000000  800000000
+#define SINGLE_DIMENSION_KEY_LIMIT 1500000000 // total keys in db       
+#define BTREE_INIT_LIMIT 500000000 // initial number of keys in btree   680000000  800000000
 #define LIMIT 1000        
 
 #define MAX_GRID_CELL 256 // total number of index slices = MAX_XPAR*MAX_YPAR
@@ -114,6 +114,7 @@ class GridManager
     void register_index(erebus::storage::qtree::QuadTree *idx_quadtree);
     void register_index(erebus::storage::BTreeOLCIndex<keytype, keycomp> *idx_btree);
     void enforce_scheduling();
+    void enforce_scheduling_mt();
     void enforce_scheduling_batch();
     void printGM();
     void printQueryDistPushed();

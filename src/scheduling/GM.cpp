@@ -129,6 +129,10 @@ void GridManager::enforce_scheduling(){
     double ly = this->glbGridCell[i].ly;
     double hy = this->glbGridCell[i].hy;
     int numa_id = this->glbGridCell[i].idNUMA;
+    int prev_numa_id = this->glbGridCell[i].prev_idNUMA;
+    if (numa_id == prev_numa_id) {
+        continue; // Skip migration if already on the correct NUMA node
+    }
     #if LINUX != 0
 		#if STORAGE == 0
 			MigrateNodes(this->idx, lx, hx, ly, hy, numa_id);    
@@ -148,6 +152,62 @@ void GridManager::enforce_scheduling(){
   cout << "Checkpoint: INDEX_MIGRATION_COMPLETED: " << elapsed.count() << endl;
   
 }
+
+
+void GridManager::enforce_scheduling_mt(){
+  auto start = std::chrono::high_resolution_clock::now();
+
+  const int NUM_THREADS = 8;
+  const int CELLS_PER_THREAD = MAX_GRID_CELL / NUM_THREADS; // 256 / 8 = 32 cells per thread
+
+  std::vector<std::thread> threads;
+  threads.reserve(NUM_THREADS);
+
+  // Lambda function for each thread to process its assigned grid cells
+  auto migrate_worker = [this](int start_idx, int end_idx) {
+    for(int i = start_idx; i < end_idx; i++){
+      double lx = this->glbGridCell[i].lx;
+      double hx = this->glbGridCell[i].hx;
+      double ly = this->glbGridCell[i].ly;
+      double hy = this->glbGridCell[i].hy;
+      int numa_id = this->glbGridCell[i].idNUMA;
+      int prev_numa_id = this->glbGridCell[i].prev_idNUMA;
+      if (numa_id == prev_numa_id) {
+          continue; // Skip migration if already on the correct NUMA node
+      }
+            
+      #if LINUX != 0
+        #if STORAGE == 0
+          MigrateNodes(this->idx, lx, hx, ly, hy, numa_id);
+        #elif STORAGE == 1
+          MigrateNodesQuad(this->idx_quadtree, lx, hx, ly, hy, numa_id);
+        #elif STORAGE == 2
+          // this->idx_btree->migrate_(lx, this->DataDist[i], numa_id);
+          this->idx_btree->migrate_v1_(lx, this->DataDist[i], numa_id);
+        #endif
+      #endif
+    }
+  };
+
+  // Launch threads, each handling a portion of the grid cells
+  for(int t = 0; t < NUM_THREADS; t++){
+    int start_idx = t * CELLS_PER_THREAD;
+    int end_idx = (t == NUM_THREADS - 1) ? MAX_GRID_CELL : (t + 1) * CELLS_PER_THREAD;
+    threads.emplace_back(migrate_worker, start_idx, end_idx);
+  }
+
+  // Wait for all threads to complete
+  for(auto &thread : threads){
+    thread.join();
+  }
+
+  auto finish = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = finish - start;
+  cout << "Checkpoint: INDEX_MIGRATION_COMPLETED (MT): " << elapsed.count() << endl;
+
+}
+
+
 
 
 void GridManager::enforce_scheduling_batch(){
@@ -261,19 +321,52 @@ void GridManager::printQueryDistOstanding(){
 }
 
 void GridManager::buildDataDistIdx(int access_method, std::vector<keytype> &init_keys){
+    // Clear existing distribution
+    std::fill(DataDist.begin(), DataDist.end(), 0);
+    
     if (access_method == BTREE){
-      for(unsigned int i = 0; i < SINGLE_DIMENSION_KEY_LIMIT; i++){  // BTREE_INIT_LIMIT
+      const int NUM_THREADS = 56;
+      const unsigned int KEYS_PER_THREAD = BTREE_INIT_LIMIT / NUM_THREADS;
+      
+      // Thread-local counters to avoid false sharing and contention
+      std::vector<std::vector<int>> thread_local_dists(NUM_THREADS, std::vector<int>(nGridCells, 0));
+      
+      std::vector<std::thread> threads;
+      threads.reserve(NUM_THREADS);
+      
+      auto count_worker = [&](int thread_id, unsigned int start_idx, unsigned int end_idx) {
+        for(unsigned int i = start_idx; i < end_idx; i++){
           double lx = init_keys[i];
-
+          
           for (auto gc = 0; gc < nGridCells; gc++){
             double glx = glbGridCell[gc].lx;
             double ghx = glbGridCell[gc].hx;
-      
-            if (lx <= ghx && lx >= glx)
-              DataDist[gc]++;
-            else 
-              continue;       
+            
+            if (lx <= ghx && lx >= glx) {
+              thread_local_dists[thread_id][gc]++;
+              break; // Key can only be in one grid cell
+            }
           }
+        }
+      };
+      
+      // Launch threads
+      for(int t = 0; t < NUM_THREADS; t++){
+        unsigned int start_idx = t * KEYS_PER_THREAD;
+        unsigned int end_idx = (t == NUM_THREADS - 1) ? SINGLE_DIMENSION_KEY_LIMIT : (t + 1) * KEYS_PER_THREAD;
+        threads.emplace_back(count_worker, t, start_idx, end_idx);
+      }
+      
+      // Wait for all threads
+      for(auto &thread : threads){
+        thread.join();
+      }
+      
+      // Aggregate thread-local results into DataDist
+      for(int t = 0; t < NUM_THREADS; t++){
+        for(auto gc = 0; gc < nGridCells; gc++){
+          DataDist[gc] += thread_local_dists[t][gc];
+        }
       }
     }
     else{

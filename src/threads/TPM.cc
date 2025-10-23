@@ -252,7 +252,7 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
         // First grid cells get highest priority, later ones get lower priority
         query.qStamp = std::numeric_limits<int>::max() - i;
         query.aGrid = i;
-        this->glb_worker_thrds[cpu_id].jobs.push(query);
+        this->glb_worker_thrds[prev_cpu].jobs.push(query);
         if (this->gm->wkload == SD_YCSB_WKLOADA && i % 32 == 0) {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }

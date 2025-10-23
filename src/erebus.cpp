@@ -387,12 +387,7 @@ bool Erebus::perform_reconfiguration_dynamic(int new_config_id, int new_workload
 
 
 
-bool Erebus::perform_reconfiguration_static(int new_config_id, int new_workload_id, int round) {
-	if (ENABLE_DYNAMIC_RECONFIGURATION) {
-		string next_config_path = this->generate_config_path(new_config_id, new_workload_id);
-		cout << "Dynamic reconfiguration to: Workload " << new_workload_id << ", Config" << new_config_id << endl;
-		this->glb_tpool->init_megamind_threads(new_config_id, new_workload_id, next_config_path, round); // Ensure megamind is running
-	} 
+bool Erebus::perform_reconfiguration_static(int new_config_id, int new_workload_id, int round) { 
 	cout << "========================================" << endl;
 	cout << "STARTING RECONFIGURATION" << endl;
 	cout << "  Current Config: " << this->glb_gm->config << " -> New Config: " << new_config_id << endl;
@@ -408,6 +403,12 @@ bool Erebus::perform_reconfiguration_static(int new_config_id, int new_workload_
 	auto step0_end = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> step0_elapsed = step0_end - step0_start;
 	
+	if (ENABLE_DYNAMIC_RECONFIGURATION) {
+		string next_config_path = this->generate_config_path(new_config_id, new_workload_id);
+		cout << "Dynamic reconfiguration to: Workload " << new_workload_id << ", Config" << new_config_id << endl;
+		this->glb_tpool->init_megamind_threads(new_config_id, new_workload_id, next_config_path, round); // Ensure megamind is running
+	}
+
 	std::lock_guard<std::mutex> lock(reconfig_state.reconfig_mutex);
 	reconfig_state.is_reconfiguring = true;
 
@@ -802,8 +803,8 @@ int main(int argc, char* argv[])
 
 	#if ENABLE_DYNAMIC_RECONFIGURATION
 	std::vector<std::pair<int, int>> workload_config_sequence = {
-		{SD_YCSB_WKLOADC, 100},
-		{SD_YCSB_WKLOADH, 11},
+		{SD_YCSB_WKLOADC, 9000},
+		{SD_YCSB_WKLOADH, 9001},
 		{SD_YCSB_WKLOADA, 41},
 
 	};

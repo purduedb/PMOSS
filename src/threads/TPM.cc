@@ -221,7 +221,7 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     // }
     // const int SEND_DELAY = 0;
     // Sleep to simulate inference delay
-    const int INFERENCE_DELAY = 70000; // 70 seconds to simulate inference delay
+    const int INFERENCE_DELAY = 120000; // 120 seconds to simulate inference delay
     std::this_thread::sleep_for(std::chrono::milliseconds(INFERENCE_DELAY));
     // InferenceRequest request;
     // request.required_config = next_config;

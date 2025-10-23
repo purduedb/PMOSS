@@ -17,7 +17,6 @@
 #define STORAGE 2   // RTree(0), QTree(1), BTree
 #define LINUX 0     // 0 (SE 0, SE-NUMA 1, SN-NUMA 2)
 #define PROFILE 0
-#define CLEAR_WORKER_QUEUES 1  // 1 = clear worker queues on pause, 0 = let queues drain naturally
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------
 // -------------------------------------------------------------------------------------

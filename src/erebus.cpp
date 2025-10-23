@@ -147,7 +147,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	if (ds == YCSB) {
 		#if MACHINE==0 || MACHINE == 6
 		init_file += "loade_zipf_int_1000M.dat";
-		#elif MACHINE==8 || MACHINE == 4 || MACHINE == 1
+		#elif MACHINE==8 || MACHINE == 4 || MACHINE == 1 || MACHINE == 2 || MACHINE == 3
 		init_file = "/proj/pmoss-PG0/loade_zipf_int_1000M.dat";
 		#else
 		init_file += "dataset/loade_zipf_int_1000M.dat";
@@ -156,7 +156,7 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
 	else if(ds == YCSB_2000M) {
 		#if MACHINE==0 || MACHINE == 6
 		init_file += "loade_zipf_int_2000M.dat";
-		#elif MACHINE==8 || MACHINE == 4 || MACHINE == 1
+		#elif MACHINE==8 || MACHINE == 4 || MACHINE == 1 || MACHINE == 2 || MACHINE == 3
 		init_file = "/proj/pmoss-PG0/loade_zipf_int_2000M.dat";
 		#else
 		init_file += "dataset/loade_zipf_int_2000M.dat";

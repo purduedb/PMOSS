@@ -221,7 +221,7 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     // }
     // const int SEND_DELAY = 0;
     // Sleep to simulate inference delay
-    const int INFERENCE_DELAY = 0; // 70 seconds to simulate inference delay
+    const int INFERENCE_DELAY = 70000; // 70 seconds to simulate inference delay
     std::this_thread::sleep_for(std::chrono::milliseconds(INFERENCE_DELAY));
     // InferenceRequest request;
     // request.required_config = next_config;
@@ -232,6 +232,7 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     auto migration_start = std::chrono::high_resolution_clock::now();
     this->pause_all_routers();
     this->gm->reload_configuration(next_config_path);
+    this->gm->config = next_config;
     this->resume_all_routers();
     
     // Start timing the migration
@@ -246,18 +247,24 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
         query.right_= this->gm->DataDist[i];
         query.bottom_ = numa_id;
         query.op = ycsbc::Operation::MIGRATE;
-        query.qStamp = std::numeric_limits<int>::max(); // Highest priority - jump to head of queue
+        // Assign priority based on grid cell index for staggered execution
+        // First grid cells get highest priority, later ones get lower priority
+        query.qStamp = std::numeric_limits<int>::max() - i;
         query.aGrid = i;
         this->glb_worker_thrds[cpu_id].jobs.push(query);
+        if (i % 32 == 0)
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));  
       }  
     #else
     // Pause all the router threads and worker threads
     this->pause_all_workers();
-    this->gm->enforce_scheduling();
-    // this->gm->enforce_scheduling_mt();
+    // this->gm->enforce_scheduling();
+    this->gm->enforce_scheduling_mt();
     this->resume_all_workers();
     #endif
-
+    // Moved the routers to here 
+    // this->resume_all_routers();
+    
     // Calculate migration time
     auto migration_end = std::chrono::high_resolution_clock::now();
     auto migration_duration = std::chrono::duration_cast<std::chrono::milliseconds>(migration_end - migration_start);
@@ -1358,6 +1365,10 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/sb_4s_4n/";  // this should be nvidia
       #elif MACHINE==6
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/skx_4s_4n/";
+      #elif MACHINE==2 || MACHINE == 7
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/epyc7543_2s_2n/";
+      #elif MACHINE==3
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/epyc7543_2s_2n/";
       #endif
 
       if (wl == SD_YCSB_WKLOADA){
@@ -1544,7 +1555,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       // ==================================================================================
       // QUERY RATE CONTROL LOGIC
       // ==================================================================================
-      // if (RATE_CONTROL_ENABLED) {
+      // if (RATE_CONTROL_ENABLED and wl==SD_YCSB_WKLOADA) {  // Enable rate control only for specific workloads
       //   auto current_time = std::chrono::steady_clock::now();
       //   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
       //       current_time - glb_router_thrds[router_cpuids[i]].second_start_time);
@@ -1606,6 +1617,10 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
           std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/sb_4s_4n/";
           #elif MACHINE==6
           std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/skx_4s_4n/";
+          #elif MACHINE==2 || MACHINE == 7
+          std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/epyc7543_2s_2n/";
+          #elif MACHINE==3
+          std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_8n/";
           #endif
 
           // Select appropriate workload file based on new_wl
@@ -1718,14 +1733,72 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
           }
       }
       
-      // Push the query to the correct worker thread's job queue
-      std::mt19937 genInt(rd());
-      std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
-      int insert_tid = dq(genInt);
 
-      int glbGridCellInsert = valid_gcells[insert_tid];
-                
+      if(this->gm->config == 506){
+        std::vector<std::vector<int>> sn_numa;
+        #if MACHINE==0
+          // sn_numa={{ 0 , 31 }, { 32 , 63 }, { 64 , 95 }, { 96 , 127 }, { 128 , 159 }, { 160 , 191 }, { 192 , 223 }, { 224 , 255 }};
+          sn_numa ={
+            {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 ,10 ,11 ,12 ,13 ,14 ,15 ,16 ,17 ,18 ,19 ,20 ,21 ,22 ,23 ,24 ,25 ,26 ,27 ,28 ,29 ,30 ,31}, 
+            {32 ,33 ,34 ,35 ,36 ,37 ,38 ,39 ,40 ,41 ,42 ,43 ,44 ,45 ,46 ,47 ,48 ,49 ,50 ,51 ,52 ,53 ,54 ,55 ,56 ,57 ,58 ,59 ,60 ,61 ,62 ,63}, 
+            {64 ,65 ,66 ,67 ,68 ,69 ,70 ,71 ,72 ,73 ,74 ,75 ,76 ,77 ,78 ,79 ,80 ,81 ,82 ,83 ,84 ,85 ,86 ,87 ,88 ,89 ,90 ,91 ,92 ,93 ,94 ,95}, 
+            {96 ,97 ,98 ,99 ,100 ,101 ,102 ,103 ,104 ,105 ,106 ,107 ,108 ,109 ,110 ,111 ,112 ,113 ,114 ,115 ,116 ,117 ,118 ,119 ,120 ,121 ,122 ,123 ,124 ,125 ,126 ,127}, 
+            {128 ,129 ,130 ,131 ,132 ,133 ,134 ,135 ,136 ,137 ,138 ,139 ,140 ,141 ,142 ,143 ,144 ,145 ,146 ,147 ,148 ,149 ,150 ,151 ,152 ,153 ,154 ,155 ,156 ,157 ,158 ,159}, 
+            {160 ,161 ,162 ,163 ,164 ,165 ,166 ,167 ,168 ,169 ,170 ,171 ,172 ,173 ,174 ,175 ,176 ,177 ,178 ,179 ,180 ,181 ,182 ,183 ,184 ,185 ,186 ,187 ,188 ,189 ,190 ,191}, 
+            {192 ,193 ,194 ,195 ,196 ,197 ,198 ,199 ,200 ,201 ,202 ,203 ,204 ,205 ,206 ,207 ,208 ,209 ,210 ,211 ,212 ,213 ,214 ,215 ,216 ,217 ,218 ,219 ,220 ,221 ,222 ,223}, 
+            {224 ,225 ,226 ,227 ,228 ,229 ,230 ,231 ,232 ,233 ,234 ,235 ,236 ,237 ,238 ,239 ,240 ,241 ,242 ,243 ,244 ,245 ,246 ,247 ,248 ,249 ,250 ,251 ,252 ,253 ,254 ,255}
+          };
+        #elif MACHINE==1
+          // sn_numa={{ 0 , 127 }, { 128 , 255 }};
+          sn_numa = {
+            {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 ,10 ,11 ,12 ,13 ,14 ,15 ,16 ,17 ,18 ,19 ,20 ,21 ,22 ,23 ,24 ,25 ,26 ,27 ,28 ,29 ,30 ,31 ,32 ,33 ,34 ,35 ,36 ,37 ,38 ,39 ,40 ,41 ,42 ,43 ,44 ,45 ,46 ,47 ,48 ,49 ,50 ,51 ,52 ,53 ,54 ,55 ,56 ,57 ,58 ,59 ,60 ,61 ,62 ,63 ,64 ,65 ,66 ,67 ,68 ,69 ,70 ,71 ,72 ,73 ,74 ,75 ,76 ,77 ,78 ,79 ,80 ,81 ,82 ,83 ,84 ,85 ,86 ,87 ,88 ,89 ,90 ,91 ,92 ,93 ,94 ,95 ,96 ,97 ,98 ,99 ,100 ,101 ,102 ,103 ,104 ,105 ,106 ,107 ,108 ,109 ,110 ,111 ,112 ,113 ,114 ,115 ,116 ,117 ,118 ,119 ,120 ,121 ,122 ,123 ,124 ,125 ,126 ,127}, 
+            {128 ,129 ,130 ,131 ,132 ,133 ,134 ,135 ,136 ,137 ,138 ,139 ,140 ,141 ,142 ,143 ,144 ,145 ,146 ,147 ,148 ,149 ,150 ,151 ,152 ,153 ,154 ,155 ,156 ,157 ,158 ,159 ,160 ,161 ,162 ,163 ,164 ,165 ,166 ,167 ,168 ,169 ,170 ,171 ,172 ,173 ,174 ,175 ,176 ,177 ,178 ,179 ,180 ,181 ,182 ,183 ,184 ,185 ,186 ,187 ,188 ,189 ,190 ,191 ,192 ,193 ,194 ,195 ,196 ,197 ,198 ,199 ,200 ,201 ,202 ,203 ,204 ,205 ,206 ,207 ,208 ,209 ,210 ,211 ,212 ,213 ,214 ,215 ,216 ,217 ,218 ,219 ,220 ,221 ,222 ,223 ,224 ,225 ,226 ,227 ,228 ,229 ,230 ,231 ,232 ,233 ,234 ,235 ,236 ,237 ,238 ,239 ,240 ,241 ,242 ,243 ,244 ,245 ,246 ,247 ,248 ,249 ,250 ,251 ,252 ,253 ,254 ,255}
+          };
+        #elif MACHINE==2 || MACHINE == 7 || MACHINE == 8
+          // sn_numa={{ 0 , 127 }, { 128 , 255 }};
+          sn_numa = {
+            {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 ,10 ,11 ,12 ,13 ,14 ,15 ,16 ,17 ,18 ,19 ,20 ,21 ,22 ,23 ,24 ,25 ,26 ,27 ,28 ,29 ,30 ,31 ,32 ,33 ,34 ,35 ,36 ,37 ,38 ,39 ,40 ,41 ,42 ,43 ,44 ,45 ,46 ,47 ,48 ,49 ,50 ,51 ,52 ,53 ,54 ,55 ,56 ,57 ,58 ,59 ,60 ,61 ,62 ,63 ,64 ,65 ,66 ,67 ,68 ,69 ,70 ,71 ,72 ,73 ,74 ,75 ,76 ,77 ,78 ,79 ,80 ,81 ,82 ,83 ,84 ,85 ,86 ,87 ,88 ,89 ,90 ,91 ,92 ,93 ,94 ,95 ,96 ,97 ,98 ,99 ,100 ,101 ,102 ,103 ,104 ,105 ,106 ,107 ,108 ,109 ,110 ,111 ,112 ,113 ,114 ,115 ,116 ,117 ,118 ,119 ,120 ,121 ,122 ,123 ,124 ,125 ,126 ,127}, 
+            {128 ,129 ,130 ,131 ,132 ,133 ,134 ,135 ,136 ,137 ,138 ,139 ,140 ,141 ,142 ,143 ,144 ,145 ,146 ,147 ,148 ,149 ,150 ,151 ,152 ,153 ,154 ,155 ,156 ,157 ,158 ,159 ,160 ,161 ,162 ,163 ,164 ,165 ,166 ,167 ,168 ,169 ,170 ,171 ,172 ,173 ,174 ,175 ,176 ,177 ,178 ,179 ,180 ,181 ,182 ,183 ,184 ,185 ,186 ,187 ,188 ,189 ,190 ,191 ,192 ,193 ,194 ,195 ,196 ,197 ,198 ,199 ,200 ,201 ,202 ,203 ,204 ,205 ,206 ,207 ,208 ,209 ,210 ,211 ,212 ,213 ,214 ,215 ,216 ,217 ,218 ,219 ,220 ,221 ,222 ,223 ,224 ,225 ,226 ,227 ,228 ,229 ,230 ,231 ,232 ,233 ,234 ,235 ,236 ,237 ,238 ,239 ,240 ,241 ,242 ,243 ,244 ,245 ,246 ,247 ,248 ,249 ,250 ,251 ,252 ,253 ,254 ,255}
+          };
+        #elif MACHINE==3
+          // sn_numa={{ 0 , 31 }, { 32 , 63 }, { 64 , 95 }, { 96 , 127 }, { 128 , 159 }, { 160 , 191 }, { 192 , 223 }, { 224 , 255 }};
+          sn_numa ={
+            {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 ,10 ,11 ,12 ,13 ,14 ,15 ,16 ,17 ,18 ,19 ,20 ,21 ,22 ,23 ,24 ,25 ,26 ,27 ,28 ,29 ,30 ,31}, 
+            {32 ,33 ,34 ,35 ,36 ,37 ,38 ,39 ,40 ,41 ,42 ,43 ,44 ,45 ,46 ,47 ,48 ,49 ,50 ,51 ,52 ,53 ,54 ,55 ,56 ,57 ,58 ,59 ,60 ,61 ,62 ,63}, 
+            {64 ,65 ,66 ,67 ,68 ,69 ,70 ,71 ,72 ,73 ,74 ,75 ,76 ,77 ,78 ,79 ,80 ,81 ,82 ,83 ,84 ,85 ,86 ,87 ,88 ,89 ,90 ,91 ,92 ,93 ,94 ,95}, 
+            {96 ,97 ,98 ,99 ,100 ,101 ,102 ,103 ,104 ,105 ,106 ,107 ,108 ,109 ,110 ,111 ,112 ,113 ,114 ,115 ,116 ,117 ,118 ,119 ,120 ,121 ,122 ,123 ,124 ,125 ,126 ,127}, 
+            {128 ,129 ,130 ,131 ,132 ,133 ,134 ,135 ,136 ,137 ,138 ,139 ,140 ,141 ,142 ,143 ,144 ,145 ,146 ,147 ,148 ,149 ,150 ,151 ,152 ,153 ,154 ,155 ,156 ,157 ,158 ,159}, 
+            {160 ,161 ,162 ,163 ,164 ,165 ,166 ,167 ,168 ,169 ,170 ,171 ,172 ,173 ,174 ,175 ,176 ,177 ,178 ,179 ,180 ,181 ,182 ,183 ,184 ,185 ,186 ,187 ,188 ,189 ,190 ,191}, 
+            {192 ,193 ,194 ,195 ,196 ,197 ,198 ,199 ,200 ,201 ,202 ,203 ,204 ,205 ,206 ,207 ,208 ,209 ,210 ,211 ,212 ,213 ,214 ,215 ,216 ,217 ,218 ,219 ,220 ,221 ,222 ,223}, 
+            {224 ,225 ,226 ,227 ,228 ,229 ,230 ,231 ,232 ,233 ,234 ,235 ,236 ,237 ,238 ,239 ,240 ,241 ,242 ,243 ,244 ,245 ,246 ,247 ,248 ,249 ,250 ,251 ,252 ,253 ,254 ,255}
+          };
+        #elif MACHINE==4
+          sn_numa={{
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255
+          }};
+        #elif MACHINE==5 || MACHINE == 6
+          // sn_numa = {{ 0 , 63 }, { 64 , 127 }, { 128 , 191 }, { 192 , 255 }};
+          sn_numa = {
+            {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 ,10 ,11 ,12 ,13 ,14 ,15 ,16 ,17 ,18 ,19 ,20 ,21 ,22 ,23 ,24 ,25 ,26 ,27 ,28 ,29 ,30 ,31 ,32 ,33 ,34 ,35 ,36 ,37 ,38 ,39 ,40 ,41 ,42 ,43 ,44 ,45 ,46 ,47 ,48 ,49 ,50 ,51 ,52 ,53 ,54 ,55 ,56 ,57 ,58 ,59 ,60 ,61 ,62 ,63}, 
+            {64 ,65 ,66 ,67 ,68 ,69 ,70 ,71 ,72 ,73 ,74 ,75 ,76 ,77 ,78 ,79 ,80 ,81 ,82 ,83 ,84 ,85 ,86 ,87 ,88 ,89 ,90 ,91 ,92 ,93 ,94 ,95 ,96 ,97 ,98 ,99 ,100 ,101 ,102 ,103 ,104 ,105 ,106 ,107 ,108 ,109 ,110 ,111 ,112 ,113 ,114 ,115 ,116 ,117 ,118 ,119 ,120 ,121 ,122 ,123 ,124 ,125 ,126 ,127}, 
+            {128 ,129 ,130 ,131 ,132 ,133 ,134 ,135 ,136 ,137 ,138 ,139 ,140 ,141 ,142 ,143 ,144 ,145 ,146 ,147 ,148 ,149 ,150 ,151 ,152 ,153 ,154 ,155 ,156 ,157 ,158 ,159 ,160 ,161 ,162 ,163 ,164 ,165 ,166 ,167 ,168 ,169 ,170 ,171 ,172 ,173 ,174 ,175 ,176 ,177 ,178 ,179 ,180 ,181 ,182 ,183 ,184 ,185 ,186 ,187 ,188 ,189 ,190 ,191}, 
+            {192 ,193 ,194 ,195 ,196 ,197 ,198 ,199 ,200 ,201 ,202 ,203 ,204 ,205 ,206 ,207 ,208 ,209 ,210 ,211 ,212 ,213 ,214 ,215 ,216 ,217 ,218 ,219 ,220 ,221 ,222 ,223 ,224 ,225 ,226 ,227 ,228 ,229 ,230 ,231 ,232 ,233 ,234 ,235 ,236 ,237 ,238 ,239 ,240 ,241 ,242 ,243 ,244 ,245 ,246 ,247 ,248 ,249 ,250 ,251 ,252 ,253 ,254 ,255}
+          }; 
+        #endif 
+        
+        // std::uniform_int_distribution<int> dqt(0, valid_gcells.size()-1);  // you choose the numa node 
+        // int choose_numa = dqt(gen);
+        int choose_numa = gm->glbGridCell[valid_gcells[0]].idNUMA;
+        valid_gcells=sn_numa[choose_numa];
+        
+      }
 
+        // Push the query to the correct worker thread's job queue
+        std::mt19937 genInt(rd());
+        std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
+        int insert_tid = dq(genInt);
+        int glbGridCellInsert = valid_gcells[insert_tid];
+              
         // -------------------------------------------------------------------------------------
         query.aGrid = glbGridCellInsert;
         // -------------------------------------------------------------------------------------
@@ -1747,14 +1820,13 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         glb_worker_thrds[cpuid].jobs.push(query);
         // -------------------------------------------------------------------------------------
         // Increment query counter for rate control
-        if (RATE_CONTROL_ENABLED) {
-          glb_router_thrds[router_cpuids[i]].queries_this_second++;
-        }
+        // if (RATE_CONTROL_ENABLED) {
+        //   glb_router_thrds[router_cpuids[i]].queries_this_second++;
+        // }
         // -------------------------------------------------------------------------------------
         // Use it as a throttling factor
         // std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      }
-            
+      }           
     });
   }
 }

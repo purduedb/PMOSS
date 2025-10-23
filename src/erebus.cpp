@@ -122,15 +122,27 @@ erebus::storage::BTreeOLCIndex<keytype, keycomp>* Erebus::build_btree(const uint
   std::string txn_file = std::string(PROJECT_SOURCE_DIR) + "/src/";
   
 	if (ds == YCSB) {
+		#if MACHINE == 0
 		init_file = "/scratch1/yrayhan/loade_zipf_int_1000M.dat";
+		#elif MACHINE == 2 || MACHINE == 3
+		init_file = "/proj/pmoss-PG0/loade_zipf_int_1000M.dat";
+		#endif 
   } 
 	else if (ds == YCSB_2000M){
+		#if MACHINE == 0
 		init_file = "/scratch1/yrayhan/loade_zipf_int_2000M.dat";
+		#elif MACHINE == 2 || MACHINE == 3
+		init_file = "/proj/pmoss-PG0/loade_zipf_int_2000M.dat";
+		#endif
 	}
 	else if (ds == WIKI) {
+		#if MACHINE == 0
     init_file = "/scratch1/yrayhan/wiki_ts_200M_uint64.dat";
+		#endif 
   } else if (ds == OSM_CELLIDS) {
+		#if MACHINE == 0
     init_file = "/scratch1/yrayhan/osm_cellids_200M_uint64.dat";
+		#endif 
   } 
 	else {
     fprintf(stderr, "Unknown workload type or key type: %d, %d\n", ds, kt);
@@ -278,54 +290,34 @@ std::string Erebus::generate_config_path(int config_id, int workload_id) {
 	if (iam == BTREE) {
 		#if EVAL_PMOSS == 0
 		#if MACHINE==0
-			#if MAX_GRID_CELL == 100
-			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_8n/c_" + std::to_string(config_id) + ".txt";
-			#else
 			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_8n/c_" + std::to_string(config_id) + "_" +
 				std::to_string(MAX_GRID_CELL) + ".txt";
-			#endif
 		#elif MACHINE==6
-			#if MAX_GRID_CELL == 100
-			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_4n/c_" + std::to_string(config_id) + ".txt";
-			#else
 			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_4n/c_" + std::to_string(config_id) + "_" +
 				std::to_string(MAX_GRID_CELL) + ".txt";
-			#endif
+		#elif MACHINE == 2 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
+		#elif MACHINE==3
+			std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
 		#endif
 		#else
 		#if MACHINE==0
-			#if MAX_GRID_CELL == 100
-			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(workload_id)
-				+ "/c_" + std::to_string(config_id) + ".txt";
-			#else
 			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(workload_id)
 				+ "/c_" + std::to_string(config_id) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";
-			#endif
 		#elif MACHINE==6
-			#if MAX_GRID_CELL == 100
-			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_4n/" + std::to_string(workload_id)
-				+ "/c_" + std::to_string(config_id) + ".txt";
-			#else
 			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_4n/" + std::to_string(workload_id)
 				+ "/c_" + std::to_string(config_id) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";
-			#endif
+		#elif MACHINE == 2 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_2n/" + std::to_string(wl) 
+			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
+		#elif MACHINE==3
+			std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_8n/" + std::to_string(wl) 
+			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
 		#endif
 		#endif
-	} else if (iam == RTREE) {
-		// R-tree config paths
-		#if EVAL_PMOSS == 0
-		#if MACHINE==0
-			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_8n/c_" + std::to_string(config_id) + "_" +
-				std::to_string(MAX_GRID_CELL) + "_r.txt";
-		#endif
-		#else
-		#if MACHINE==0
-			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(workload_id)
-				+ "/c_" + std::to_string(config_id) + "_" + std::to_string(MAX_GRID_CELL) + "_r.txt";
-		#endif
-		#endif
-	}
-
+	} 
 	return config_file;
 }
 
@@ -396,6 +388,11 @@ bool Erebus::perform_reconfiguration_dynamic(int new_config_id, int new_workload
 
 
 bool Erebus::perform_reconfiguration_static(int new_config_id, int new_workload_id, int round) {
+	if (ENABLE_DYNAMIC_RECONFIGURATION) {
+		string next_config_path = this->generate_config_path(new_config_id, new_workload_id);
+		cout << "Dynamic reconfiguration to: Workload " << new_workload_id << ", Config" << new_config_id << endl;
+		this->glb_tpool->init_megamind_threads(new_config_id, new_workload_id, next_config_path, round); // Ensure megamind is running
+	} 
 	cout << "========================================" << endl;
 	cout << "STARTING RECONFIGURATION" << endl;
 	cout << "  Current Config: " << this->glb_gm->config << " -> New Config: " << new_config_id << endl;
@@ -476,12 +473,12 @@ int main(int argc, char* argv[])
 {	
 	
 	auto start = std::chrono::high_resolution_clock::now();
-	int cfgIdx = 1;
+	int cfgIdx = 100;
 	int ds = YCSB_2000M;
-	int wl = SD_YCSB_WKLOADA;
+	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
-	int round = 0;
-	int run_duration_ms = 60000; // Default: 60 seconds
+	int round = 71;
+	int run_duration_ms = 900000; // Default: 60 seconds
 
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
@@ -568,6 +565,14 @@ int main(int argc, char* argv[])
 		num_workers = 10;  
 		ss_cpuids.push_back(0);
 		mm_cpuids.push_back(24);
+	#elif MACHINE == 2
+		num_workers = 29;  // Change the CURR_WORKER_THREADS in TPM.hpp
+		ss_cpuids.push_back(0);
+		mm_cpuids.push_back(32);
+	#elif MACHINE == 3 
+		num_workers = 6; 
+		ss_cpuids.push_back(2);
+		mm_cpuids.push_back(10);
 	#else
 		num_workers = 7;  
 	#endif
@@ -611,7 +616,35 @@ int main(int argc, char* argv[])
 				cnt++;
 				if (cnt == num_workers) break;
 			}
-		}	
+		}
+	#elif MACHINE ==2 
+		for(auto n=0; n < num_NUMA_nodes; n++){
+			rt_cpuids.push_back(cPool[n][1]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][1]});
+			
+			ncore_cpuids.push_back(cPool[n][2]);
+			
+			int cnt = 1;
+			for(size_t j = 3; j < cPool[n].size(); j++, cnt++){
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
+		}
+	#elif MACHINE==3 	
+		for(auto n=0; n < num_NUMA_nodes; n++){
+			rt_cpuids.push_back(cPool[n][0]);
+			glb_gm.NUMAToRoutingCPUs.insert({n, cPool[n][0]});	
+			ncore_cpuids.push_back(cPool[n][1]);
+			int cnt = 1;
+			for(size_t j = 2; j < cPool[n].size(); j++, cnt++){
+				if(cPool[n][j] == 2 || cPool[n][j] == 10) 
+					continue; // skip ss and mm cores
+				wrk_cpuids.push_back(cPool[n][j]);
+				glb_gm.NUMAToWorkerCPUs.insert({n, cPool[n][j]});
+				if (cnt == num_workers) break;
+			}
+	}	
 	#else
 	for(auto n=0; n < num_NUMA_nodes; n++){
 		rt_cpuids.push_back(cPool[n][1]);
@@ -673,6 +706,20 @@ int main(int argc, char* argv[])
 		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_4n/c_" + std::to_string(cfgIdx) + "_" + 
 			std::to_string(MAX_GRID_CELL) + ".txt";
 		#endif 
+	#elif MACHINE == 2 
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
+		#endif
+	#elif MACHINE==3
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
+		#endif  
 	#endif
 	#else 
 	#if MACHINE==0
@@ -695,6 +742,22 @@ int main(int argc, char* argv[])
 		#else 
 		config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_4n/" + std::to_string(wl)
 			+ "/c_" + std::to_string(cfgIdx)+ "_" + std::to_string(MAX_GRID_CELL) + ".txt";
+		#endif 
+	#elif MACHINE == 2 
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_2n/" + std::to_string(wl)
+			+ "/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_2n/" + std::to_string(wl) 
+			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
+		#endif 
+	#elif MACHINE==3
+		#if MAX_GRID_CELL == 100
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_8n/" + std::to_string(wl)
+			+ "/c_" + std::to_string(cfgIdx) + ".txt";
+		#else 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_8n/" + std::to_string(wl) 
+			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
 		#endif 
 	#endif
 	#endif
@@ -739,7 +802,7 @@ int main(int argc, char* argv[])
 
 	#if ENABLE_DYNAMIC_RECONFIGURATION
 	std::vector<std::pair<int, int>> workload_config_sequence = {
-		{SD_YCSB_WKLOADC, cfgIdx},
+		{SD_YCSB_WKLOADC, 100},
 		{SD_YCSB_WKLOADH, 11},
 		{SD_YCSB_WKLOADA, 41},
 
@@ -752,14 +815,14 @@ int main(int argc, char* argv[])
 	};
 	#endif
 
-	int current_sequence_index = 0;  // Start at index 0 (initial workload/config)
+	int current_sequence_index = -1;  // Start at index -1 (initial workload/config)
 
 	const int CHECK_INTERVAL_MS = 5000; // Check every 5 seconds
 	const int MAX_PASSES = 1; // Number of complete passes through the workload sequence before terminating
 
 	bool keep_running = true;
 	int iteration_count = 0;
-	int workload_run_count = 0;
+	int workload_run_count = -1;
 	int sequence_passes = 0;  // Track complete passes through the workload_config_sequence
 	
 	cout << "========================================" << endl;
@@ -778,8 +841,8 @@ int main(int argc, char* argv[])
 	
 	
 	auto run_start_time = std::chrono::high_resolution_clock::now();
-	const int runtime_for_wkload_ch = 120000;
-
+	const int runtime_for_wkload_ch = 20000;
+	const int runtime_for_init = 35000; // Initial run duration before first change
 	while (keep_running) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(CHECK_INTERVAL_MS));
 		iteration_count++;
@@ -790,11 +853,11 @@ int main(int argc, char* argv[])
 			current_time - run_start_time).count();
 
 		if (elapsed_since_run_start >= run_duration_ms 
+			|| (workload_run_count == -1 && elapsed_since_run_start >= runtime_for_init)
 			// || 
 			// (elapsed_since_run_start >= runtime_for_wkload_ch && 
 			// 	(workload_config_sequence[current_sequence_index].first == SD_YCSB_WKLOADC || workload_config_sequence[current_sequence_index].first == SD_YCSB_WKLOADH)
 			// )
-		
 		) {
 			workload_run_count++;
 			
@@ -809,7 +872,7 @@ int main(int argc, char* argv[])
 			current_sequence_index = (current_sequence_index + 1) % workload_config_sequence.size();
 
 			// Check if we've completed a full pass through the sequence
-			if (current_sequence_index == 0) {
+			if (current_sequence_index == 0 && workload_run_count > 0) {
 				sequence_passes++;
 				cout << "Completed pass #" << sequence_passes << " through workload sequence" << endl;
 
@@ -838,18 +901,10 @@ int main(int argc, char* argv[])
 				cout << "Reconfiguration failed. Keeping current configuration." << endl;
 			}
 			
-			// How to make sure this if code is executed but the loop continues on, its just that the system 
-			// will figure that there is a workload change and do some other stuff here in the background and then
-			// call the dynamic function
-			
-			if (ENABLE_DYNAMIC_RECONFIGURATION) {
-				string next_config_path = db.generate_config_path(next_config, next_workload);
-				cout << "Dynamic reconfiguration to: Workload " << next_workload << ", Config" << next_config << endl;
-				glb_tpool.init_megamind_threads(next_config, next_workload, next_config_path, round); // Ensure megamind is running
-				
-			} 
 			// Reset run timer
-			run_start_time = std::chrono::high_resolution_clock::now();
+			if (workload_run_count != 0) 
+				run_start_time = std::chrono::high_resolution_clock::now();
+			
 		}
 	}
 	

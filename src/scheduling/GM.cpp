@@ -157,8 +157,8 @@ void GridManager::enforce_scheduling(){
 void GridManager::enforce_scheduling_mt(){
   auto start = std::chrono::high_resolution_clock::now();
 
-  const int NUM_THREADS = 8;
-  const int CELLS_PER_THREAD = MAX_GRID_CELL / NUM_THREADS; // 256 / 8 = 32 cells per thread
+  const int NUM_THREADS = 40;
+  const int CELLS_PER_THREAD = MAX_GRID_CELL / NUM_THREADS; // 256 / 40 = 6 cells per thread
 
   std::vector<std::thread> threads;
   threads.reserve(NUM_THREADS);

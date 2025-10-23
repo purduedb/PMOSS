@@ -65,9 +65,15 @@ class TPManager{
 #elif MACHINE == 2
     static const int CURR_NCORE_SWEEPER_THREADS = 2;
     static const int CURR_SYS_SWEEPER_THREADS = 1;
-    static const int CURR_MEGAMIND_THREADS = 1;
+    static const int CURR_MEGAMIND_THREADS = 1;   //For ycsb-insert realted set it to 1
     static const int CURR_ROUTER_THREADS = 2;
-	  static const int CURR_WORKER_THREADS = 56;
+	  static const int CURR_WORKER_THREADS = 58;
+#elif MACHINE == 3
+    static const int CURR_NCORE_SWEEPER_THREADS = 8;
+    static const int CURR_SYS_SWEEPER_THREADS = 1;
+    static const int CURR_MEGAMIND_THREADS = 1;
+    static const int CURR_ROUTER_THREADS = 8;
+	  static const int CURR_WORKER_THREADS = 46;
 #elif MACHINE == 5
     static const int CURR_NCORE_SWEEPER_THREADS = 4;
     static const int CURR_SYS_SWEEPER_THREADS = 1;
@@ -87,8 +93,8 @@ class TPManager{
     static const u64 PERF_STAT_COLLECTION_INTERVAL = 100; // granularity of profiling 
     // -------------------------------------------------------------------------------------
     // Query rate control configuration
-    static const bool RATE_CONTROL_ENABLED = false;  // Enable/disable query rate limiting
-    static const int QUERIES_PER_SECOND = 1000000;    // Target queries per second per router thread
+    static const bool RATE_CONTROL_ENABLED = true;  // Enable/disable query rate limiting
+    static const int QUERIES_PER_SECOND = 1000;    // Target queries per second per router thread
     // -------------------------------------------------------------------------------------
     
     struct SysSweeperThread {

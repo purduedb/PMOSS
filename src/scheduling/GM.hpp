@@ -15,12 +15,12 @@ using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define ENABLE_DYNAMIC_RECONFIGURATION 1
-#define SHARED_MIGRATION 1
+#define SHARED_MIGRATION 0
 #define PROFILE 1
 #define SIMD 1
 
 #define EVAL_PMOSS 0  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
-#define MACHINE 0     // 0 (BIGDATA), 1(DBSERVER)
+#define MACHINE 2     // 0 (BIGDATA), 1(DBSERVER)
 
 #define SINGLE_DIMENSION_KEY_LIMIT 1500000000 // total keys in db       
 #define BTREE_INIT_LIMIT 500000000 // initial number of keys in btree   680000000  800000000

@@ -100,7 +100,11 @@ class TPManager{
     struct SysSweeperThread {
       std::thread th;
       u64 cpuid;
+      #if INTEL_CPU
       oneapi::tbb::concurrent_queue<IntelPCMCounter> pcmCounters;
+      #else
+      int pcmCounters; // Placeholder for non-Intel
+      #endif
       bool running = true;
       bool job_set = false;   
       bool job_done = false; 
@@ -110,7 +114,11 @@ class TPManager{
       std::thread th;
       u64 cpuid;
       vector <DataDistSnap> dataDistReel;
+      #if INTEL_CPU
       vector<IntelPCMCounter> DRAMResUsageReel;
+      #else
+      int DRAMResUsageReel; // Placeholder for non-Intel
+      #endif
       vector<QueryExecSnap> queryExecReel;
       bool running = true;
       bool job_set = false;

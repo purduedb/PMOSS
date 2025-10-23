@@ -2,7 +2,9 @@
 #include <immintrin.h>
 // -------------------------------------------------------------------------------------
 #include "shared-headers/PerfEvent.hpp"
+#if INTEL_CPU
 #include "PCMMem.hpp"
+#endif
 // -------------------------------------------------------------------------------------
 #define QUERY_THRESHOLD_INS 9
 #define QUERY_THRESHOLD_ACC 9
@@ -34,7 +36,7 @@ struct HWCounterStats{
 };
 
 struct DataDistSnap{
-    #if SIMD == 1
+    #if SIMD == 1 && defined(__AVX512F__)
     __m512d rawQCounter[MAX_GRID_CELL][int(PERF_EVENT_CNT/8)+1];  // This gets copied to the main array
     #else 
     double rawQCounter[MAX_GRID_CELL][PERF_EVENT_CNT];  // This gets copied to the main array
@@ -65,6 +67,7 @@ enum WKLOAD_DIST{
     UNIFORM, SINGLE_HOTSPOT, FOUR_HOTSPOT
 };
 
+#if INTEL_CPU
 struct IntelPCMCounter
 {
     memdata_t sysParams;
@@ -75,5 +78,6 @@ struct IntelPCMCounter
 
     // You will need to write copy constructor for
 };
+#endif
 
 }  // namespace erebus

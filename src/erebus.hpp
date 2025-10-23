@@ -1,7 +1,6 @@
 #ifndef PMOSS_INIT_H_
 #define PMOSS_INIT_H_
 
-#define INTEL_CPU 1
 #include <numa.h>
 // -------------------------------------------------------------------------------------
 #include "threads/TPM.hpp"

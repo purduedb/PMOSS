@@ -1,3 +1,8 @@
+#ifndef PCMMEM_HPP
+#define PCMMEM_HPP
+
+#if INTEL_CPU
+
 #include <iostream>
 #ifdef _MSC_VER
 #include <windows.h>
@@ -116,3 +121,6 @@ void calculate_bandwidth_rank(PCM *m, const std::vector<ServerUncoreCounterState
 
 void readState(std::vector<ServerUncoreCounterState>& state);
 
+#endif // INTEL_CPU
+
+#endif // PCMMEM_HPP

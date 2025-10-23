@@ -15,9 +15,24 @@ SET(CMAKE_C_FLAGS                 "${CMAKE_C_FLAGS} ${CMAKE_COMPILE_FLAGS}")
 SET(CMAKE_CXX_FLAGS               "-std=c++17 ${CMAKE_CXX_FLAGS} ${CMAKE_COMPILE_FLAGS}")
 SET(CMAKE_CXX_STANDARD_LIBRARIES  "-lnuma")
 
+# Detect CPU vendor
+execute_process(
+  COMMAND bash -c "lscpu | grep 'Vendor ID' | awk '{print $3}'"
+  OUTPUT_VARIABLE CPU_VENDOR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
-# Third party
-include_directories(third-party/pcm)
+# Detect Intel CPU and conditionally include PCM
+if(CPU_VENDOR STREQUAL "GenuineIntel")
+  add_definitions(-DINTEL_CPU=1)
+  message(STATUS "Intel CPU detected (${CPU_VENDOR}) - enabling PCM support")
+  if(EXISTS ${CMAKE_SOURCE_DIR}/third-party/pcm/src)
+    include_directories(third-party/pcm)
+  endif()
+else()
+  add_definitions(-DINTEL_CPU=0)
+  message(STATUS "Non-Intel CPU detected (${CPU_VENDOR}) - PCM support disabled")
+endif()
 
 # Directories
 include_directories(src)
@@ -36,7 +51,6 @@ set(SOURCE_FILES
   src/utils/Misc.cpp
   src/scheduling/RM.cpp
   src/scheduling/GM.cpp
-  src/profiling/PCMMem.cpp
   src/utils/ZipfGenerator.cpp
   src/utils/RandomGenerator.cpp
   src/utils/ScrambledZipfGenerator.cpp
@@ -46,12 +60,20 @@ set(SOURCE_FILES
   src/ycsbc/acknowledged_counter_generator.cc
 )
 
+# Add PCM source only for Intel and if PCM exists
+if(CPU_VENDOR STREQUAL "GenuineIntel" AND EXISTS ${CMAKE_SOURCE_DIR}/third-party/pcm/src)
+  list(APPEND SOURCE_FILES src/profiling/PCMMem.cpp)
+endif()
+
 add_definitions(-DPROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
 # Executables
 add_executable(erebus ${SOURCE_FILES})
-target_link_libraries(erebus 
-  TBB::tbb
-  ${CMAKE_SOURCE_DIR}/third-party/pcm/build/lib/libpcm.so
-  -fsanitize=address
-)
+# Link libraries conditionally
+set(LINK_LIBS TBB::tbb -fsanitize=address)
+
+if(CPU_VENDOR STREQUAL "GenuineIntel" AND EXISTS ${CMAKE_SOURCE_DIR}/third-party/pcm/build/lib/libpcm.so)
+  list(APPEND LINK_LIBS ${CMAKE_SOURCE_DIR}/third-party/pcm/build/lib/libpcm.so)
+endif()
+
+target_link_libraries(erebus ${LINK_LIBS})

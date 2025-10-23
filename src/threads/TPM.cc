@@ -277,6 +277,7 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
 }
 
 void TPManager::init_syssweeper_threads(){
+#if INTEL_CPU
   // -------------------------------------------------------------------------------------
   for (unsigned i = 0; i < CURR_SYS_SWEEPER_THREADS; ++i) {
     glb_sys_sweeper_thrds[sys_sweeper_cpuids[i]].th = std::thread([i, this] {
@@ -380,6 +381,7 @@ void TPManager::init_syssweeper_threads(){
         }
         });
   }
+#endif // INTEL_CPU
 }
 
 
@@ -419,11 +421,13 @@ void TPManager::init_ncoresweeper_threads(){
         }
         
         // Then, push the token to the system_sweeper cpu to get the System View (MemChannel)
+        #if INTEL_CPU
         if (i == 0){
           IntelPCMCounter iPCMCnt;
           iPCMCnt.qType = SYNC_TOKEN;
           glb_sys_sweeper_thrds[sys_sweeper_cpuids[0]].pcmCounters.push(iPCMCnt);
         }
+        #endif // INTEL_CPU
         #endif 
         
         // Take a snapshot of the DataView from the  threads
@@ -442,8 +446,8 @@ void TPManager::init_ncoresweeper_threads(){
                     break;
                 }
                 
-                #if SIMD == 1
-                // Use SIMD to compute the DataView
+                #if SIMD == 1 && defined(__AVX512F__)
+                // Use SIMD to compute the DataView (requires AVX-512)
                 ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
                 __m512d rawQCounter[nQCounterCline];
                 __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
@@ -488,7 +492,7 @@ void TPManager::init_ncoresweeper_threads(){
 
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the System View (Memory Channel View)
-        #if PROFILE == 1
+        #if PROFILE == 1 && INTEL_CPU
         if (i == 0){
             bool token_found = false;                    
             // memdata_t DRAMResUsageSnap;
@@ -527,11 +531,7 @@ void TPManager::dump_ncoresweeper_threads(int round){
   #elif STORAGE == 1
       dirName += "/kb_quad/" + std::to_string(key);
   #elif STORAGE == 2
-      // dirName += "/kb_b__/" + std::to_string(key);  // This is for testing purpose 
-      // dirName += "/kb_bs__/" + std::to_string(key);
       dirName += "/kb_bs_dynam/" + std::to_string(key);
-      // dirName += "/kb_bs_profile/" + std::to_string(key);
-      // dirName += "/kb_bs_4s_4n/" + std::to_string(key);
   #endif
   #elif PROFILE == 0
   dirName = std::string(PROJECT_SOURCE_DIR);
@@ -551,7 +551,7 @@ void TPManager::dump_ncoresweeper_threads(int round){
   cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
   std::vector<DataDistSnap> localDataDistReel;
   std::vector<QueryExecSnap> localQueryExecReel;
-  #if PROFILE == 1
+  #if PROFILE == 1 && INTEL_CPU
   std::vector<IntelPCMCounter> localDRAMResUsageReel;
   localDRAMResUsageReel.swap(glb_ncore_sweeper_thrds[key].DRAMResUsageReel);
   #endif
@@ -563,7 +563,7 @@ void TPManager::dump_ncoresweeper_threads(int round){
   cout << "DEBUG: dump_sample_counter = " << this->dump_sample_counter << ", num_samples = " << num_samples << endl;
 
         // -------------------------------------------------------------------------------------
-    #if PROFILE == 1
+    #if PROFILE == 1 && INTEL_CPU
     ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
     for(size_t i = 0; i < localDRAMResUsageReel.size(); i++){
         int tReel = this->dump_sample_counter + i;
@@ -625,8 +625,8 @@ void TPManager::dump_ncoresweeper_threads(int round){
         dataView << this->gm->iam << " ";
         dataView << round << " ";
 
-        #if SIMD == 1
-        // Load the SIMD values in a memory address
+        #if SIMD == 1 && defined(__AVX512F__)
+        // Load the SIMD values in a memory address (requires AVX-512)
         for (auto g = 0; g < MAX_GRID_CELL; g++){
             for (auto cLine = 0; cLine < nQCounterCline; cLine++){
                 _mm512_store_pd(dataViewScalarDump + (g*nQCounterCline*8)+(cLine*8), dd.rawQCounter[g][cLine]);
@@ -724,7 +724,7 @@ void TPManager::dump_ncoresweeper_threads_v2(){
     // Atomically swap vectors to local copies - clears global vectors without contention
     std::vector<DataDistSnap> localDataDistReel;
     std::vector<QueryExecSnap> localQueryExecReel;
-    #if PROFILE == 1
+    #if PROFILE == 1 && INTEL_CPU
     std::vector<IntelPCMCounter> localDRAMResUsageReel;
     localDRAMResUsageReel.swap(glb_ncore_sweeper_thrds[key].DRAMResUsageReel);
     #endif
@@ -732,7 +732,7 @@ void TPManager::dump_ncoresweeper_threads_v2(){
     localQueryExecReel.swap(glb_ncore_sweeper_thrds[key].queryExecReel);
 
     // -------------------------------------------------------------------------------------
-    #if PROFILE == 1
+    #if PROFILE == 1 && INTEL_CPU
     ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
     for(size_t i = 0; i < localDRAMResUsageReel.size(); i++){
         int tReel = i;
@@ -786,8 +786,8 @@ void TPManager::dump_ncoresweeper_threads_v2(){
         dataView << this->gm->wkload << " ";
         dataView << this->gm->iam << " ";
 
-        #if SIMD == 1
-        // Load the SIMD values in a memory address
+        #if SIMD == 1 && defined(__AVX512F__)
+        // Load the SIMD values in a memory address (requires AVX-512)
         for (auto g = 0; g < MAX_GRID_CELL; g++){
             for (auto cLine = 0; cLine < nQCounterCline; cLine++){
                 _mm512_store_pd(dataViewScalarDump + (g*nQCounterCline*8)+(cLine*8), dd.rawQCounter[g][cLine]);
@@ -1172,179 +1172,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     } 
     
 
-
-    if (wl == MD_RS_UNIFORM){
-      dlx_ureal = std::uniform_real_distribution<>(min_x, max_x);
-      dly_ureal = std::uniform_real_distribution<>(min_y, max_y);
-      dLength_ureal = std::uniform_real_distribution<> (1, max_length);
-      dWidth_ureal = std::uniform_real_distribution<> (1, max_width);
-    }
-    else if (wl == MD_RS_NORMAL){
-      double avg_x, avg_y, dev_x, dev_y;
-      if (ds == OSM_USNE){
-        avg_x = (max_x + min_x) / 2;
-        avg_y = (max_y + min_y) / 2;
-        dev_x = (max_x - min_x) / 6;
-        dev_y = (max_y - min_y) / 6;
-      }
-      else if (ds == GEOLITE){
-        avg_x = 130;
-        avg_y = 30;
-        dev_x = 7;
-        dev_y = 7;
-      }
-      dlx_norm = std::normal_distribution<double> (avg_x, dev_x);
-      dly_norm = std::normal_distribution<double> (avg_y, dev_y);
-      dLength_ureal = std::uniform_real_distribution<> (1, max_length);
-      dWidth_ureal = std::uniform_real_distribution<> (1, max_width);	
-    }
-    else if (wl == MD_LK_UNIFORM){
-      int max_objects = this->gm->idx->objects_.size();
-      dob_uint = std::uniform_int_distribution<>(0, max_objects-1);
-    }  
-    else if (wl == MD_RS_ZIPF){
-      dlx_zipint = erebus::utils::zipfian_int_distribution<int>(min_x, max_x, 0.4);
-      dly_zipint = erebus::utils::zipfian_int_distribution<int>(min_y, max_y, 0.4);
-      max_length = 6;
-      max_width = 6;
-      dLength_ureal = std::uniform_real_distribution<> (1, max_length);
-      dWidth_ureal = std::uniform_real_distribution<> (1, max_width);	
-    }
-    else if (wl == MD_RS_HOT3){
-      const int nHotSpots =3;
-      std::vector <std::tuple<double, double>> nPoints;
-      std::tuple<double, double> stdDevs;
-      if (ds == OSM_USNE){
-          // -------------------------------US-NORTHEAST---------------------------------------
-          nPoints = {{-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396}};
-          stdDevs = {0.880170200000002, 0.4350911999999987};
-      }
-      for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
-          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
-          GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
-      }
-      w = discrete_dist{0.25, 0.25, 0.25, 0.25};
-      dlx_ureal = std::uniform_real_distribution<> (min_x, max_x);
-      dly_ureal = std::uniform_real_distribution<> (min_y, max_y);
-      dLength_ureal = std::uniform_real_distribution<> (1, 3);
-      dWidth_ureal = std::uniform_real_distribution<> (1, 3);	
-
-    }
-    else if (wl == MD_RS_HOT5){
-      std::vector <std::tuple<double, double>> nPoints;
-      std::tuple<double, double> stdDevs;
-
-      const int nHotSpots = 5;
-      if (ds == OSM_USNE){
-          // -------------------------------US-NORTHEAST---------------------------------------
-          nPoints = {
-              {-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396},
-              {-72.9166716, 44.0109044}, {-69.3959908, 45.7512692}
-              };
-          stdDevs = {0.880170200000002, 0.4350911999999987};
-      }
-      for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
-          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
-          GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
-      }
-      w = discrete_dist{0.15, 0.15, 0.15, 0.15, 0.15, 0.25};
-      dlx_ureal = std::uniform_real_distribution<> (min_x, max_x);
-      dly_ureal = std::uniform_real_distribution<> (min_y, max_y);
-      dLength_ureal = std::uniform_real_distribution<> (1, 3);
-      dWidth_ureal = std::uniform_real_distribution<> (1, 3);	
-    }        
-    else if (wl == MD_RS_HOT7){
-      std::vector <std::tuple<double, double>> nPoints;
-      std::tuple<double, double> stdDevs;
-      const int nHotSpots = 7;
-      if (ds == OSM_USNE){
-          // -------------------------------US-NORTHEAST---------------------------------------
-          nPoints = {
-              {-79.9580332, 41.4003572}, {-74.677012, 41.4003572}, {-71.1563312, 42.2705396},
-              {-72.9166716, 44.0109044}, {-69.3959908, 45.7512692},
-              {-78.1976928, 43.140722}, {-76.4373524, 40.5301748}
-              };
-          stdDevs = {0.880170200000002, 0.4350911999999987};
-      }
-      
-      for (int spIdx = 0; spIdx < nHotSpots; spIdx++){
-          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs)};
-          GY[spIdx] = normal_dist{get<1>(nPoints[spIdx]), get<1>(stdDevs)};
-      }
-      w = discrete_dist{0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.13, 0.09};
-      dlx_ureal = std::uniform_real_distribution<> (min_x, max_x);
-      dly_ureal = std::uniform_real_distribution<> (min_y, max_y);
-      dLength_ureal = std::uniform_real_distribution<> (1, 3);
-      dWidth_ureal = std::uniform_real_distribution<> (1, 3);	
-    }    
-    else if (wl == MD_LK_RS_25_75){
-      w = discrete_dist{0.25, 0.75};
-
-      std::vector <std::tuple<double, double>> nPoints = {
-              {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
-              };
-        std::vector <std::tuple<double, double>> stdDevs = {
-              {11.0, 1.3}, {11.0, 4.0}
-              };
-      
-      for (int spIdx = 0; spIdx < 2; spIdx++){
-          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-          GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-      }
-    }
-    else if(wl == MD_LK_RS_50_50){
-      w = discrete_dist{0.50, 0.50};
-
-      std::vector <std::tuple<double, double>> nPoints = {
-              {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
-              };
-        std::vector <std::tuple<double, double>> stdDevs = {
-              {11.0, 1.3}, {11.0, 4.0}
-              };
-      
-      for (int spIdx = 0; spIdx < 2; spIdx++){
-          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-          GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-      }
-    }
-    else if (wl == MD_LK_RS_75_25){
-      w = discrete_dist{0.75, 0.25};
-
-      std::vector <std::tuple<double, double>> nPoints = {
-              {-71.9796328, 26.5272116}, {36.0103276, 39.2688054}
-              };
-      std::vector <std::tuple<double, double>> stdDevs = {
-            {11.0, 1.3}, {11.0, 4.0}
-            };
-      
-      for (int spIdx = 0; spIdx < 2; spIdx++){
-          GX[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-          GY[spIdx] = normal_dist{get<0>(nPoints[spIdx]), get<0>(stdDevs[spIdx])};
-      }
-    }
-    else if (wl == MD_RS_LOGNORMAL){
-      double avg_x, avg_y, dev_x, dev_y;
-      if (ds == OSM_USNE){
-        
-        avg_x = (log(pseudo_max_x) + log(pseudo_min_x)) / 2;
-        avg_y = (log(max_y) + log(min_y)) / 2;
-
-        dev_x = (log(pseudo_max_x) - log(pseudo_min_x)) / 6;
-        dev_y = (log(max_y) - log(min_y)) / 6;
-      }
-      else if (ds == GEOLITE){
-        // double avg_x = 130;
-        // double avg_y = 30;
-        
-        // double dev_x = 10;
-        // double dev_y = 10;
-      }
-      dlx_lnorm = std::lognormal_distribution<double> (avg_x, dev_x);
-      dly_lnorm = std::lognormal_distribution<double> (avg_y, dev_y);
-      dLength_ureal  = std::uniform_real_distribution<> (1, max_length);
-      dWidth_ureal = std::uniform_real_distribution<> (1, max_width);
-    }
-    else if (
+    if (
       wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
       wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADE1 || wl == SD_YCSB_WKLOADH || 
       wl == SD_YCSB_WKLOADI || wl == SD_YCSB_WKLOADA1 || 
@@ -1368,9 +1196,9 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       #elif MACHINE==2 || MACHINE == 7
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/epyc7543_2s_2n/";
       #elif MACHINE==3
-      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/epyc7543_2s_2n/";
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/epyc7543_2s_8n/";
       #endif
-
+      
       if (wl == SD_YCSB_WKLOADA){
         wl_config += "ycsb_workloada_" + to_string(router_cpuids[i]);
         input.open(wl_config);
@@ -1507,6 +1335,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         cerr << "ycsb workload not recognized" << endl;
       }
       
+      cout << "Router " << i << " loading workload config from: " << wl_config << endl;
+      
       try {
         props.Load(input);
       } catch (const std::string &message) {
@@ -1515,37 +1345,7 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       input.close();
       ycsb_wl.Init(props);
     }
-    else if (wl == SD_YCSB_WKLOADX1){
-      const int num_hspots = 8;
-      std::vector<int> x_list = utils::linspace<int>(0, BTREE_INIT_LIMIT, num_hspots+1);
-      int std_dev = 300000;
-      
-      for (int spIdx = 0; spIdx < num_hspots; spIdx++){
-          int mean_x = int((x_list[spIdx] + x_list[spIdx+1])/2);
-          b_GX[spIdx] = normal_dist{static_cast<double>(mean_x), static_cast<double>(std_dev)};
-          
-      }
-      w = discrete_dist{0.12, 0.12, 0.12, 0.16, 0.12, 0.12, 0.12, 0.12};
-      dslength_uint64 = std::uniform_int_distribution<> (1, 30000); //default ycsb value
-      
-    } 
-    else if (wl == SD_YCSB_WKLOADX2){
-      const int num_hspots = 8;
-      std::vector<double> x_list = utils::linspace<double>(min_x, max_x, num_hspots+1);
-      int std_dev = 36028796474878160;
-      
-      for (int spIdx = 0; spIdx < num_hspots; spIdx++){
-          double mean_x = (x_list[spIdx] + x_list[spIdx+1])/2;
-          b_GX[spIdx] = normal_dist{static_cast<double>(mean_x), static_cast<double>(std_dev)};
-          
-      }
-      w = discrete_dist{0.12, 0.12, 0.12, 0.16, 0.12, 0.12, 0.12, 0.12};
-      dslength_uint64 = std::uniform_int_distribution<> (1, 30000); //default ycsb value
-      
-    } 
-
-    // -------------------------------------------------------------------------------------
-    // -------------------------------------------------------------------------------------
+    
     // -------------------------------------------------------------------------------------
     // Initialize rate control tracking
     glb_router_thrds[router_cpuids[i]].second_start_time = std::chrono::steady_clock::now();

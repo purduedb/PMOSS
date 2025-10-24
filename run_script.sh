@@ -9,7 +9,7 @@ echo "Current directory: $current_dir"
 exec="$current_dir/build/bin/erebus"
 
 
-round=10
+round=20
 wl_span=1800000
 for wl in 12; do
   for cfg in 500 502 506; do

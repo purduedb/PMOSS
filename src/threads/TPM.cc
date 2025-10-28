@@ -1603,6 +1603,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         int glbGridCellInsert = valid_gcells[insert_tid];
               
         // -------------------------------------------------------------------------------------
+        // Check the grid has been migrated or not, if not you add a migration query as well
+        
         query.aGrid = glbGridCellInsert;
         // -------------------------------------------------------------------------------------
         // Update the query view of each cell

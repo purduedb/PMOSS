@@ -237,7 +237,11 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     // Start timing the migration
     #if SHARED_MIGRATION == 1
       this->resume_all_routers();
-      for(size_t i = 0; i < MAX_GRID_CELL; i++){
+      size_t i = 0;
+      if (next_workload == SD_YCSB_WKLOADA)
+        i = 33;  // Staggered start for YCSB-A
+
+      for(i; i < MAX_GRID_CELL; i++){
         double lx = this->gm->glbGridCell[i].lx;
         int numa_id = this->gm->glbGridCell[i].idNUMA;
         int prev_cpu = this->gm->glbGridCell[i].prev_idCPU;
@@ -252,8 +256,8 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
         query.qStamp = std::numeric_limits<int>::max() - i;
         query.aGrid = i;
         this->glb_worker_thrds[cpu_id].jobs.push(query);
-        if (i % 32 == 0 && next_workload == SD_YCSB_WKLOADA) 
-          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
+        if (i % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(120000));   // prev 100
       }  
     #else
     // Pause all the router threads and worker threads

@@ -35,7 +35,7 @@ exec="$current_dir/build/bin/erebus"
 # done
 
 
-round=43
+round=47
 cfg=(506)
 wl_span=1800000
 for wl in 12; do

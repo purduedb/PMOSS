@@ -42,3 +42,15 @@ if (i % 32 == 0 && next_workload == SD_YCSB_WKLOADA)
 42
 if (i % 32 == 0 && next_workload == SD_YCSB_WKLOADA) 
           std::this_thread::sleep_for(std::chrono::milliseconds(120000));   // prev 100
+
+45
+if (i % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(120000));   // prev 100
+
+46
+if (i % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(90000));   // prev 100
+
+47
+if (i % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(120000));   // prev 100

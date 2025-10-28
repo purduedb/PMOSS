@@ -429,8 +429,8 @@ bool Erebus::perform_reconfiguration_static(int new_config_id, int new_workload_
 	std::chrono::duration<double> step1_elapsed = step1_end - step1_start;
 	
 	// Step 4: Update config ID and finalize
-	cout << "[2/2] Finalizing reconfiguration..." << endl;
-	this->glb_gm->config = new_config_id;
+	// cout << "[2/2] Finalizing reconfiguration..." << endl;
+	// this->glb_gm->config = new_config_id;
 
 	auto reconfig_finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> total_elapsed = reconfig_finish - reconfig_start;
@@ -802,9 +802,9 @@ int main(int argc, char* argv[])
 
 	#if ENABLE_DYNAMIC_RECONFIGURATION
 	std::vector<std::pair<int, int>> workload_config_sequence = {
-		{SD_YCSB_WKLOADC, 100},
-		{SD_YCSB_WKLOADH, 11},
-		{SD_YCSB_WKLOADA, 41},
+		{SD_YCSB_WKLOADC, 20001},
+		{SD_YCSB_WKLOADH, 20004},
+		{SD_YCSB_WKLOADA, 20000},
 
 	};
 	#else
@@ -842,7 +842,7 @@ int main(int argc, char* argv[])
 	
 	auto run_start_time = std::chrono::high_resolution_clock::now();
 	const int runtime_for_wkload_ch = 20000;
-	const int runtime_for_init = 35000; // Initial run duration before first change
+	const int runtime_for_init = 100000; // Initial run duration before first change
 	while (keep_running) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(CHECK_INTERVAL_MS));
 		iteration_count++;

@@ -1,3 +1,44 @@
 kb_b__ : for demo data and testing purposes 
 kb_bs__: What we require
 kb_bs_4s_4n: Version
+
+
+samples
+34: 
+if (i % 32 == 0 && next_workload == SD_YCSB_WKLOADA) 
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));   // prev 100
+
+33 
+if (i % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));   // prev 100
+
+35 
+if (i % 8 == 0 && next_workload == SD_YCSB_WKLOADA) 
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));   // prev 100
+
+36
+if (i % 8 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(1000));   // prev 100
+
+
+38 
+if (i % 32 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
+
+
+39
+if (i % 64 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
+
+
+40
+if (i % 32 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(60000));   // prev 100
+
+41
+if (i % 32 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(120000));   // prev 100
+
+42
+if (i % 32 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(120000));   // prev 100

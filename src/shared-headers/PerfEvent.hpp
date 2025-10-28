@@ -44,7 +44,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#define PERF_EVENT_CNT 16  
+#define PERF_EVENT_CNT 16  // Previously 13 +2 (LLC-misses, memory-misses, memory-accesses, LLC-write-misses, memory-write-misses)
 
 struct PerfEvent {
    
@@ -80,17 +80,36 @@ struct PerfEvent {
       registerCounter("instructions", PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
       registerCounter("L1D-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1D|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
       registerCounter("L1I-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_L1I|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
-      registerCounter("LLC-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_LL|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
+      
+      // registerCounter("LLC-misses", PERF_TYPE_RAW, 0x10002);
+      // registerCounter("LLC-misses", PERF_TYPE_RAW, 0x53ff9a);
+      registerCounter("DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM:EXT_CACHE_LCL", PERF_TYPE_RAW, 0x530443);
+
       registerCounter("branch-misses", PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_MISSES);
-      registerCounter("memory-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_NODE|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
+      
+      // registerCounter("memory-misses", PERF_TYPE_RAW, 0x10006);
+      registerCounter("DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM:EXT_CACHE_RMT", PERF_TYPE_RAW, 0x531043);
+      
       registerCounter("DTLB-Miss", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_DTLB|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
-      registerCounter("memory-accesses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_NODE|(PERF_COUNT_HW_CACHE_OP_READ<<8)|(PERF_COUNT_HW_CACHE_RESULT_ACCESS<<16));
-      registerCounter("LLC-write-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_LL|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16)); 
-      registerCounter("memory-write-misses", PERF_TYPE_HW_CACHE, PERF_COUNT_HW_CACHE_NODE|(PERF_COUNT_HW_CACHE_OP_WRITE<<8)|(PERF_COUNT_HW_CACHE_RESULT_MISS<<16));
-      registerCounter("MEM_LOAD_L3_MISS_RETIRED:LOCAL_DRAM", PERF_TYPE_RAW, 0x5301d3);
-      registerCounter("MEM_LOAD_L3_MISS_RETIRED:REMOTE_DRAM", PERF_TYPE_RAW, 0x5302d3);
-      registerCounter("CYCLE_ACTIVITY.CYCLES_L3_MISS", PERF_TYPE_RAW, 0x25302a3);
-      registerCounter("CYCLE_ACTIVITY.CYCLES_MEM_ANY", PERF_TYPE_RAW, 0x105310a3);
+      
+      // registerCounter("memory-accesses", PERF_TYPE_RAW, 0x6);
+      // registerCounter("DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM:LCL_L2", PERF_TYPE_RAW, 0x530143);
+      registerCounter("DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM:INT_CACHE", PERF_TYPE_RAW, 0x530243);
+      
+      // registerCounter("LLC-write-misses", PERF_TYPE_RAW, 0x10102); 
+      registerCounter("REQUESTS_TO_L2_GROUP1:RD_BLK_X", PERF_TYPE_RAW, 0x534060);
+      
+
+      registerCounter("memory-write-misses", PERF_TYPE_RAW, 0x10106);
+      
+      registerCounter("DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM:MEM_IO_LCL", PERF_TYPE_RAW, 0x530843);
+      registerCounter("DEMAND_DATA_CACHE_FILLS_FROM_SYSTEM:MEM_IO_RMT", PERF_TYPE_RAW, 0x534043);
+      
+      // registerCounter("CYCLE_ACTIVITY.CYCLES_L3_MISS", PERF_TYPE_RAW, 0x25302a3);
+      // registerCounter("CYCLE_ACTIVITY.CYCLES_MEM_ANY", PERF_TYPE_RAW, 0x105310a3)
+      registerCounter("UNC_L3_MISS_LATENCY", PERF_TYPE_RAW, 0x530090);
+      registerCounter("CYCLES_NOT_IN_HALT", PERF_TYPE_RAW, 0x530076);
+      
       registerCounter("task-clock", PERF_TYPE_SOFTWARE, PERF_COUNT_SW_TASK_CLOCK);
       
       for (unsigned i=0; i<events.size(); i++) {

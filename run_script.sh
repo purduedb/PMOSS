@@ -25,7 +25,17 @@ exec="$current_dir/build/bin/erebus"
 #   done
 # done
 
-round=1
+# round=4
+# cfg=(506)
+# wl_span=1800000
+# for wl in 12; do
+#   for c in "${cfg[@]}"; do
+#     "$exec" $c $wl $round $wl_span
+#   done
+# done
+
+
+round=43
 cfg=(506)
 wl_span=1800000
 for wl in 12; do
@@ -33,5 +43,3 @@ for wl in 12; do
     "$exec" $c $wl $round $wl_span
   done
 done
-
-

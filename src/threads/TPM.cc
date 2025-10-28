@@ -221,7 +221,7 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     // }
     // const int SEND_DELAY = 0;
     // Sleep to simulate inference delay
-    const int INFERENCE_DELAY = 70000; // 70 seconds to simulate inference delay
+    const int INFERENCE_DELAY = 120000; // 120 seconds to simulate inference delay
     std::this_thread::sleep_for(std::chrono::milliseconds(INFERENCE_DELAY));
     // InferenceRequest request;
     // request.required_config = next_config;
@@ -233,10 +233,10 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     this->pause_all_routers();
     this->gm->reload_configuration(next_config_path);
     this->gm->config = next_config;
-    this->resume_all_routers();
     
     // Start timing the migration
     #if SHARED_MIGRATION == 1
+      this->resume_all_routers();
       for(size_t i = 0; i < MAX_GRID_CELL; i++){
         double lx = this->gm->glbGridCell[i].lx;
         int numa_id = this->gm->glbGridCell[i].idNUMA;
@@ -252,8 +252,8 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
         query.qStamp = std::numeric_limits<int>::max() - i;
         query.aGrid = i;
         this->glb_worker_thrds[cpu_id].jobs.push(query);
-        if (i % 32 == 0)
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));  
+        if (i % 32 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
       }  
     #else
     // Pause all the router threads and worker threads
@@ -261,9 +261,8 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     // this->gm->enforce_scheduling();
     this->gm->enforce_scheduling_mt();
     this->resume_all_workers();
+    this->resume_all_routers();
     #endif
-    // Moved the routers to here 
-    // this->resume_all_routers();
     
     // Calculate migration time
     auto migration_end = std::chrono::high_resolution_clock::now();

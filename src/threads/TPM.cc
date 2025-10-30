@@ -221,7 +221,7 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     // }
     // const int SEND_DELAY = 0;
     // Sleep to simulate inference delay
-    const int INFERENCE_DELAY = 120000; // 120 seconds to simulate inference delay
+    const int INFERENCE_DELAY = 90000; // 90 seconds to simulate inference delay
     std::this_thread::sleep_for(std::chrono::milliseconds(INFERENCE_DELAY));
     // InferenceRequest request;
     // request.required_config = next_config;
@@ -236,6 +236,7 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     
     
     // Start timing the migration
+    int cnt_migrated = 0;
     #if SHARED_MIGRATION == 1
       this->resume_all_routers();
       for(size_t i = 0; i < MAX_GRID_CELL; i++){
@@ -253,15 +254,18 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
         query.qStamp = std::numeric_limits<int>::max() - i;
         query.aGrid = i;
         this->glb_worker_thrds[prev_cpu].jobs.push(query);
-        if (this->gm->wkload == SD_YCSB_WKLOADA && i % 32 == 0) {
-          std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
+        // if (this->gm->wkload == SD_YCSB_WKLOADA && i % 32 == 0) {
+        //   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        // }
+        cnt_migrated++;
+        if (cnt_migrated % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
       }
     #else
     // Pause all the router threads and worker threads
     this->pause_all_workers();
-    // this->gm->enforce_scheduling();
-    this->gm->enforce_scheduling_mt();
+    this->gm->enforce_scheduling();
+    // this->gm->enforce_scheduling_mt();
     this->resume_all_workers();
     this->resume_all_routers();
     #endif
@@ -533,6 +537,7 @@ void TPManager::dump_ncoresweeper_threads(int round){
       // dirName += "/kb_b__/" + std::to_string(key);  // This is for testing purpose 
       // dirName += "/kb_bs__/" + std::to_string(key);
       dirName += "/kb_bs_dynam/" + std::to_string(key);
+      // dirName += "/kb_bs_dynam_/" + std::to_string(key);
       // dirName += "/kb_bs_profile/" + std::to_string(key);
       // dirName += "/kb_bs_4s_4n/" + std::to_string(key);
   #endif

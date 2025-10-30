@@ -7,6 +7,13 @@ ALL folders (2/, 14/, 26/, etc.) and keeps only those common rows.
 
 from pathlib import Path
 from typing import List, Dict, Tuple
+# write a class like thing to store filter criteria
+class RowFilter:
+    def __init__(self, round, wl, cfg, cnt):
+        self.round = round
+        self.wl = wl
+        self.cfg = cfg
+        self.cnt = cnt
 
 
 def parse_row_key(row: str, num_values: int = 5) -> Tuple:
@@ -163,12 +170,10 @@ def write_synchronized_files(input_folder: Path, output_folder: Path, filename: 
 
 
 def synchronize_folders(input_folder: str, output_folder: str,
-                       filenames: List[str] = None, num_key_values: int = 5):
+                       filenames: List[str] = None, num_key_values: int = 5,
+                       filter_criteria: RowFilter = None):
     """
     Synchronize multiple files across all subfolders.
-
-    Special handling: mem-channel_view.txt uses the keys from query-exec_view.txt
-    to ensure matching rows.
 
     Args:
         input_folder: Path to the input folder (e.g., 'kb_bs_dynam')
@@ -197,33 +202,85 @@ def synchronize_folders(input_folder: str, output_folder: str,
     print(f"  Row key:       First {num_key_values} values")
     print("=" * 80)
 
-    # First, process query-exec_view.txt to get the reference keys
-    query_exec_keys = None
-    if 'query-exec_view.txt' in filenames:
-        common_rows = find_common_rows_across_folders(input_path, 'query-exec_view.txt', num_key_values)
-        if common_rows:
-            query_exec_keys = list(common_rows.keys())
-            write_synchronized_files(input_path, output_path, 'query-exec_view.txt', query_exec_keys, num_key_values)
-        else:
-            print(f"  Skipping query-exec_view.txt - no common rows found")
+    # Store the common keys from query-exec_view.txt to use for mem-channel_view.txt
+    reference_common_keys = None
 
-    # Process other files
     for filename in filenames:
-        if filename == 'query-exec_view.txt':
-            continue  # Already processed above
+        # Special handling for mem-channel_view.txt: use reference keys from query-exec_view.txt
+        if filename == 'mem-channel_view.txt' and reference_common_keys is not None:
+            print(f"\nProcessing {filename} (only in folder 2, matching keys from query-exec_view.txt)...")
 
-        # Special handling: mem-channel_view.txt matches against query-exec keys
-        if filename == 'mem-channel_view.txt' and query_exec_keys is not None:
-            print(f"\nProcessing {filename} using query-exec_view.txt keys...")
-            write_synchronized_files(input_path, output_path, filename, query_exec_keys, num_key_values)
-        else:
-            # Normal processing for other files
-            common_rows = find_common_rows_across_folders(input_path, filename, num_key_values)
-            if common_rows:
+            # Read only from folder 2
+            folder_2_path = input_path / '2' / filename
+            if folder_2_path.exists():
+                folder_2_data = read_file_with_keys(folder_2_path, num_key_values)
+                print(f"  2/{filename}: {len(folder_2_data)} rows")
+
+                # Filter to only keys that match reference_common_keys
+                common_rows = {}
+                for key in reference_common_keys:
+                    if key in folder_2_data:
+                        common_rows[key] = folder_2_data[key]
+
+                print(f"  → Rows matching query-exec_view keys: {len(common_rows)}")
                 common_keys = list(common_rows.keys())
-                write_synchronized_files(input_path, output_path, filename, common_keys, num_key_values)
             else:
-                print(f"  Skipping {filename} - no common rows found")
+                print(f"  ERROR: 2/{filename} not found!")
+                common_keys = []
+        else:
+            # Find common rows across all folders for this file
+            common_rows = find_common_rows_across_folders(input_path, filename, num_key_values)
+
+            if common_rows:
+                # Extract the keys from common_rows, preserving insertion order
+                common_keys = list(common_rows.keys())
+
+                # Save reference keys from query-exec_view.txt for later use with mem-channel_view.txt
+                if filename == 'query-exec_view.txt':
+                    reference_common_keys = common_keys.copy()
+            else:
+                common_keys = []
+
+        if common_keys:
+            # Add filtering here if needed (e.g., only keys with specific criteria)
+            if filter_criteria:
+                filtered_keys = []
+                for key in common_keys:
+                    if (int(key[0]) == filter_criteria.cfg and
+                        int(key[2]) == filter_criteria.wl and
+                        int(key[4]) == filter_criteria.round):
+                        filtered_keys.append(key)
+                # Use the count to get only the first 'cnt' entries
+                if filter_criteria.cnt != -1:
+                    filtered_keys = filtered_keys[:filter_criteria.cnt]
+                common_keys = filtered_keys
+                print(f"  → After filtering: {len(common_keys)} rows match criteria")
+
+                # Update reference keys after filtering if this is query-exec_view.txt
+                if filename == 'query-exec_view.txt':
+                    reference_common_keys = common_keys.copy()
+
+            print(common_keys[:5])  # Print first 5 common keys for verification
+
+            # Special handling for mem-channel_view.txt: only write to folder 2
+            if filename == 'mem-channel_view.txt':
+                output_subfolder = output_path / '2'
+                output_subfolder.mkdir(parents=True, exist_ok=True)
+                output_file = output_subfolder / filename
+
+                folder_2_path = input_path / '2' / filename
+                if folder_2_path.exists():
+                    folder_2_data = read_file_with_keys(folder_2_path, num_key_values)
+                    with open(output_file, 'w') as f:
+                        for key in common_keys:
+                            if key in folder_2_data:
+                                f.write(folder_2_data[key] + '\n')
+                    print(f"\n  ✓ 2/{filename}: {len(common_keys)} rows")
+            else:
+                # Write synchronized files to output folder for all folders
+                write_synchronized_files(input_path, output_path, filename, common_keys, num_key_values)
+        else:
+            print(f"  Skipping {filename} - no common rows found")
 
     print("\n" + "=" * 80)
     print(f"COMPLETE! Synchronized files written to: {output_folder}")
@@ -248,9 +305,16 @@ def main():
     input_folder = sys.argv[1]
     output_folder = sys.argv[2]
     num_key_values = int(sys.argv[3]) if len(sys.argv) > 3 else 5
-
-    synchronize_folders(input_folder, output_folder, num_key_values=num_key_values)
+    filter_criteria = RowFilter(
+        round=112,
+        wl=11, 
+        cfg=20000, 
+        cnt=10
+        )
+    synchronize_folders(input_folder, output_folder, num_key_values=num_key_values,
+                        filter_criteria=filter_criteria)
 
 
 if __name__ == "__main__":
     main()
+

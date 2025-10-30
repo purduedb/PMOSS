@@ -429,10 +429,6 @@ bool Erebus::perform_reconfiguration_static(int new_config_id, int new_workload_
 	auto step1_end = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> step1_elapsed = step1_end - step1_start;
 	
-	// Step 4: Update config ID and finalize
-	cout << "[2/2] Finalizing reconfiguration..." << endl;
-	this->glb_gm->config = new_config_id;
-
 	auto reconfig_finish = std::chrono::high_resolution_clock::now();
 	std::chrono::duration<double> total_elapsed = reconfig_finish - reconfig_start;
 
@@ -474,12 +470,12 @@ int main(int argc, char* argv[])
 {	
 	
 	auto start = std::chrono::high_resolution_clock::now();
-	int cfgIdx = 100;
+	int cfgIdx = 506;
 	int ds = YCSB_2000M;
-	int wl = SD_YCSB_WKLOADC;
+	int wl = SD_YCSB_WKLOADA;
 	int iam = BTREE;
 	int round = 71;
-	int run_duration_ms = 900000; // Default: 60 seconds
+	int run_duration_ms = 18000; // Default: 60 seconds
 
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
@@ -803,10 +799,9 @@ int main(int argc, char* argv[])
 
 	#if ENABLE_DYNAMIC_RECONFIGURATION
 	std::vector<std::pair<int, int>> workload_config_sequence = {
-		{SD_YCSB_WKLOADC, 9000},
-		{SD_YCSB_WKLOADH, 9001},
-		{SD_YCSB_WKLOADA, 41},
-
+		{SD_YCSB_WKLOADC, 20001},
+		{SD_YCSB_WKLOADH, 20014},
+		{SD_YCSB_WKLOADA, 20010},
 	};
 	#else
 	std::vector<std::pair<int, int>> workload_config_sequence = {
@@ -843,7 +838,7 @@ int main(int argc, char* argv[])
 	
 	auto run_start_time = std::chrono::high_resolution_clock::now();
 	const int runtime_for_wkload_ch = 20000;
-	const int runtime_for_init = 35000; // Initial run duration before first change
+	const int runtime_for_init = 30000; // Initial run duration before first change
 	while (keep_running) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(CHECK_INTERVAL_MS));
 		iteration_count++;

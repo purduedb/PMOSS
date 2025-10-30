@@ -735,11 +735,12 @@ struct BTree {
     uint64_t versionParent;
 
     // std::vector<void*> nodes_to_migrate;
-
+    int level_ = 0;
     while (node->type==PageType::BTreeInner) {
       auto inner = static_cast<BTreeInner<Key>*>(node);
-      nodes_to_migrate.push_back(inner);
-
+      if (level_ >= 2)
+        nodes_to_migrate.push_back(inner);
+      
       // -------------------------------------------------------------------------------------
       // Move the node to a destination socket
       // void *ptr_to_check = inner;
@@ -766,8 +767,10 @@ struct BTree {
       if (needRestart) goto restart;
       versionNode = node->readLockOrRestart(needRestart);
       if (needRestart) goto restart;
+
+      level_ += 1;  
     }
-    
+    // cout << "Levels traversed: " << level_ << endl;
     BTreeLeaf<Key,Value>* leaf = static_cast<BTreeLeaf<Key,Value>*>(node);
     nodes_to_migrate.push_back(leaf);
     // -------------------------------------------------------------------------------------

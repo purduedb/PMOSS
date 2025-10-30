@@ -1,3 +1,14 @@
 kb_b__ : for demo data and testing purposes 
 kb_bs__: What we require
 kb_bs_4s_4n: Version
+
+
+113:
+if (this->gm->wkload == SD_YCSB_WKLOADA && i % 32 == 0) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+114
+if (this->gm->wkload == SD_YCSB_WKLOADA && i % 32 == 0) {
+          std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+        }

@@ -7,35 +7,11 @@ export PCM_NMI_WATCHDOG=1
 current_dir=$(pwd)
 exec="$current_dir/build/bin/erebus"
 
-# [44 45]
-# for wl in 45; do
-#   for cfg in {1..2..3}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {30..80..3}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in {80..100..3}; do
-#     "$exec" $cfg $wl
-#   done
-#   for cfg in 100 101 102; do
-#     "$exec" $cfg $wl
-#   done
-# done
-
-
-# Learned Models
-# [12 11 44 45 13 16]
-# for wl in 13; do
-#   for cfg in 205; do
-#     "$exec" $cfg $wl
-#   done
-# done
-
-# w / wo profiling
-# [11]
-for wl in 16; do
-  for cfg in 204; do
-    "$exec" $cfg $wl
+round=100
+cfg=(506)
+wl_span=1800000
+for wl in 12; do
+  for c in "${cfg[@]}"; do
+    "$exec" $c $wl $round $wl_span
   done
 done

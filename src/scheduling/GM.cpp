@@ -121,13 +121,19 @@ void GridManager::register_grid_cells(string configFile){
 
 void GridManager::enforce_scheduling(){
   auto start = std::chrono::high_resolution_clock::now();
+  
   for(size_t i = 0; i < MAX_GRID_CELL; i++){
+    // auto start1 = std::chrono::high_resolution_clock::now();
     double lx = this->glbGridCell[i].lx;
     double hx = this->glbGridCell[i].hx;
     double ly = this->glbGridCell[i].ly;
     double hy = this->glbGridCell[i].hy;
     int numa_id = this->glbGridCell[i].idNUMA;
-  #if LINUX != 0
+    int prev_numa_id = this->glbGridCell[i].prev_idNUMA;
+    if (numa_id == prev_numa_id) {
+        continue; // Skip migration if already on the correct NUMA node
+    }
+    #if LINUX != 0
 		#if STORAGE == 0
 			MigrateNodes(this->idx, lx, hx, ly, hy, numa_id);    
 		#elif STORAGE == 1
@@ -137,12 +143,70 @@ void GridManager::enforce_scheduling(){
             this->idx_btree->migrate_v1_(lx, this->DataDist[i], numa_id);
 		#endif
 	#endif
+    // auto finish1 = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double> elapsed1 = finish1 - start1;
+    // cout << "Checkpoint: SINGLE_MIGRATION_COMPLETED: " << elapsed1.count() << endl;
   }
   auto finish = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed = finish - start;
   cout << "Checkpoint: INDEX_MIGRATION_COMPLETED: " << elapsed.count() << endl;
   
 }
+
+
+void GridManager::enforce_scheduling_mt(){
+  auto start = std::chrono::high_resolution_clock::now();
+
+  const int NUM_THREADS = 40;
+  const int CELLS_PER_THREAD = MAX_GRID_CELL / NUM_THREADS; // 256 / 40 = 6 cells per thread
+
+  std::vector<std::thread> threads;
+  threads.reserve(NUM_THREADS);
+
+  // Lambda function for each thread to process its assigned grid cells
+  auto migrate_worker = [this](int start_idx, int end_idx) {
+    for(int i = start_idx; i < end_idx; i++){
+      double lx = this->glbGridCell[i].lx;
+      double hx = this->glbGridCell[i].hx;
+      double ly = this->glbGridCell[i].ly;
+      double hy = this->glbGridCell[i].hy;
+      int numa_id = this->glbGridCell[i].idNUMA;
+      int prev_numa_id = this->glbGridCell[i].prev_idNUMA;
+      if (numa_id == prev_numa_id) {
+          continue; // Skip migration if already on the correct NUMA node
+      }
+            
+      #if LINUX != 0
+        #if STORAGE == 0
+          MigrateNodes(this->idx, lx, hx, ly, hy, numa_id);
+        #elif STORAGE == 1
+          MigrateNodesQuad(this->idx_quadtree, lx, hx, ly, hy, numa_id);
+        #elif STORAGE == 2
+          // this->idx_btree->migrate_(lx, this->DataDist[i], numa_id);
+          this->idx_btree->migrate_v1_(lx, this->DataDist[i], numa_id);
+        #endif
+      #endif
+    }
+  };
+
+  // Launch threads, each handling a portion of the grid cells
+  for(int t = 0; t < NUM_THREADS; t++){
+    int start_idx = t * CELLS_PER_THREAD;
+    int end_idx = (t == NUM_THREADS - 1) ? MAX_GRID_CELL : (t + 1) * CELLS_PER_THREAD;
+    threads.emplace_back(migrate_worker, start_idx, end_idx);
+  }
+
+  // Wait for all threads to complete
+  for(auto &thread : threads){
+    thread.join();
+  }
+
+  auto finish = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = finish - start;
+  cout << "Checkpoint: INDEX_MIGRATION_COMPLETED (MT): " << elapsed.count() << endl;
+
+}
+
 
 void GridManager::register_index(erebus::storage::rtree::RTree * idx)
 {
@@ -225,19 +289,52 @@ void GridManager::printQueryDistOstanding(){
 }
 
 void GridManager::buildDataDistIdx(int access_method, std::vector<keytype> &init_keys){
+    // Clear existing distribution
+    std::fill(DataDist.begin(), DataDist.end(), 0);
+    
     if (access_method == BTREE){
-      for(unsigned int i = 0; i < BTREE_INIT_LIMIT; i++){
+      const int NUM_THREADS = 56;
+      const unsigned int KEYS_PER_THREAD = BTREE_INIT_LIMIT / NUM_THREADS;
+      
+      // Thread-local counters to avoid false sharing and contention
+      std::vector<std::vector<int>> thread_local_dists(NUM_THREADS, std::vector<int>(nGridCells, 0));
+      
+      std::vector<std::thread> threads;
+      threads.reserve(NUM_THREADS);
+      
+      auto count_worker = [&](int thread_id, unsigned int start_idx, unsigned int end_idx) {
+        for(unsigned int i = start_idx; i < end_idx; i++){
           double lx = init_keys[i];
-
+          
           for (auto gc = 0; gc < nGridCells; gc++){
             double glx = glbGridCell[gc].lx;
             double ghx = glbGridCell[gc].hx;
-      
-            if (lx <= ghx && lx >= glx)
-              DataDist[gc]++;
-            else 
-              continue;       
+            
+            if (lx <= ghx && lx >= glx) {
+              thread_local_dists[thread_id][gc]++;
+              break; // Key can only be in one grid cell
+            }
           }
+        }
+      };
+      
+      // Launch threads
+      for(int t = 0; t < NUM_THREADS; t++){
+        unsigned int start_idx = t * KEYS_PER_THREAD;
+        unsigned int end_idx = (t == NUM_THREADS - 1) ? SINGLE_DIMENSION_KEY_LIMIT : (t + 1) * KEYS_PER_THREAD;
+        threads.emplace_back(count_worker, t, start_idx, end_idx);
+      }
+      
+      // Wait for all threads
+      for(auto &thread : threads){
+        thread.join();
+      }
+      
+      // Aggregate thread-local results into DataDist
+      for(int t = 0; t < NUM_THREADS; t++){
+        for(auto gc = 0; gc < nGridCells; gc++){
+          DataDist[gc] += thread_local_dists[t][gc];
+        }
       }
     }
     else{
@@ -332,6 +429,55 @@ void GridManager::printQueryCorrMatrixView(){
     cout << "-------------------------------------------------------------------------------------" << endl;
 }
 
+// -------------------------------------------------------------------------------------
+// Dynamic Reconfiguration Methods
+// -------------------------------------------------------------------------------------
+
+void GridManager::reload_configuration(string configFile) {
+    cout << "Reloading configuration from: " << configFile << endl;
+
+    ifstream ifs(configFile, std::ifstream::in);
+    if (!ifs.is_open()) {
+        cerr << "ERROR: Failed to open config file: " << configFile << endl;
+        return;
+    }
+
+    vector<NUMAID> numaConfig;
+    vector<CPUID> cpuConfig;
+
+    // Read new NUMA assignments
+    for (int i = 0; i < nGridCells; i++) {
+        NUMAID nID;
+        ifs >> nID;
+        numaConfig.push_back(nID);
+    }
+
+    // Read new CPU assignments
+    for (int i = 0; i < nGridCells; i++) {
+        CPUID cpuID;
+        ifs >> cpuID;
+        cpuConfig.push_back(cpuID);
+    }
+
+    ifs.close();
+
+    // CRITICAL SECTION: Acquire exclusive write lock to update configuration
+    // This blocks all router threads from reading idCPU/idNUMA during update
+    // to ensure they never route queries to suboptimal cores
+    {
+        std::unique_lock<std::shared_mutex> lock(config_mutex);
+
+        // Update grid cells with new assignments (in-place, no reallocation)
+        for (int i = 0; i < nGridCells; i++) {
+            this->glbGridCell[i].prev_idNUMA = this->glbGridCell[i].idNUMA;
+            this->glbGridCell[i].prev_idCPU = this->glbGridCell[i].idCPU;
+            this->glbGridCell[i].idNUMA = numaConfig[i];
+            this->glbGridCell[i].idCPU = cpuConfig[i];
+        }
+    }  // Lock released here
+
+    cout << "Configuration reloaded successfully. Grid cells updated." << endl;
+}
 
 } // namespace dm
 }  // namespace erebus

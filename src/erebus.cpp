@@ -242,6 +242,99 @@ void Erebus::register_threadpool(erebus::tp::TPManager *tp)
 	this->glb_tpool = tp;
 }
 
+std::string Erebus::generate_config_path(int config_id, int workload_id) {
+	std::string config_file;
+	int iam = this->glb_gm->iam;
+
+	if (iam == BTREE) {
+		#if EVAL_PMOSS == 0
+		#if MACHINE==0
+			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_8n/c_" + std::to_string(config_id) + "_" +
+				std::to_string(MAX_GRID_CELL) + ".txt";
+		#elif MACHINE==6
+			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/skx_4s_4n/c_" + std::to_string(config_id) + "_" +
+				std::to_string(MAX_GRID_CELL) + ".txt";
+		#elif MACHINE == 2 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_2n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
+		#elif MACHINE==3
+			std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/config/amd_epyc7543_2s_8n/c_" + std::to_string(cfgIdx) + "_" + 
+		std::to_string(MAX_GRID_CELL) + ".txt";	
+		#endif
+		#else
+		#if MACHINE==0
+			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(workload_id)
+				+ "/c_" + std::to_string(config_id) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";
+		#elif MACHINE==6
+			config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/intel_skx_4s_4n/" + std::to_string(workload_id)
+				+ "/c_" + std::to_string(config_id) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";
+		#elif MACHINE == 2 
+		std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_2n/" + std::to_string(wl) 
+			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
+		#elif MACHINE==3
+			std::string config_file = std::string(PROJECT_SOURCE_DIR) + "/src/pmoss_machine_configs/amd_epyc7543_2s_8n/" + std::to_string(wl) 
+			+ "/c_" + std::to_string(cfgIdx) + "_" + std::to_string(MAX_GRID_CELL) + ".txt";	
+		#endif
+		#endif
+	} 
+	return config_file;
+}
+
+bool Erebus::perform_reconfiguration_static(int new_config_id, int new_workload_id, int round) { 
+	cout << "========================================" << endl;
+	cout << "STARTING RECONFIGURATION" << endl;
+	cout << "  Current Config: " << this->glb_gm->config << " -> New Config: " << new_config_id << endl;
+	cout << "  Current Workload: " << this->glb_gm->wkload << " -> New Workload: " << new_workload_id << endl;
+	cout << "========================================" << endl;
+
+	auto reconfig_start = std::chrono::high_resolution_clock::now();
+
+	// Step 0: Dump performance statistics from previous configuration
+	cout << "[0/2] Dumping performance statistics for previous configuration..." << endl;
+	auto step0_start = std::chrono::high_resolution_clock::now();
+	this->glb_tpool->dump_ncoresweeper_threads(round);
+	auto step0_end = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> step0_elapsed = step0_end - step0_start;
+	
+	if (ENABLE_DYNAMIC_RECONFIGURATION) {
+		string next_config_path = this->generate_config_path(new_config_id, new_workload_id);
+		cout << "Dynamic reconfiguration to: Workload " << new_workload_id << ", Config" << new_config_id << endl;
+		this->glb_tpool->init_megamind_threads(new_config_id, new_workload_id, next_config_path, round); // Ensure megamind is running
+	}
+
+	std::lock_guard<std::mutex> lock(reconfig_state.reconfig_mutex);
+	reconfig_state.is_reconfiguring = true;
+
+	// Step 1: Update router threads with new workload (if changed)
+	auto step1_start = std::chrono::high_resolution_clock::now();
+	// Can we move this after the checking if the new workload has been already changed or not
+	if (new_workload_id != this->glb_gm->wkload) {
+		this->glb_tpool->pause_all_routers();
+		cout << "[1/2] Initiate router thread workload change..." << endl;
+		this->glb_tpool->initiate_workload_change(new_workload_id);
+		this->glb_gm->wkload = new_workload_id;
+		cout << "[1/2] Workload change completed" << endl;
+	} else {
+		cout << "[1/2] Workload unchanged, skipping router synchronization" << endl;
+	}
+	this->glb_tpool->resume_all_routers();
+
+	auto step1_end = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> step1_elapsed = step1_end - step1_start;
+	
+	auto reconfig_finish = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> total_elapsed = reconfig_finish - reconfig_start;
+
+	reconfig_state.is_reconfiguring = false;
+
+	cout << "========================================" << endl;
+	cout << "Reconfiguration completed in " << total_elapsed.count() << " seconds" << endl;
+	cout << "========================================" << endl;
+	return true;
+}
+
+
+
 } 
 
 
@@ -266,6 +359,7 @@ std::string get_cpu_vendor() {
     return std::string(cpu_vendor);
 }
 
+
 int main(int argc, char* argv[])
 {	
 	auto start = std::chrono::high_resolution_clock::now();
@@ -273,19 +367,20 @@ int main(int argc, char* argv[])
 	int ds = YCSB;
 	int wl = SD_YCSB_WKLOADA;
 	int iam = BTREE;
-	
-	// int cfgIdx = 1;
-	// int ds = OSM_USNE;
-	// int wl = MD_RS_HOT7;
-	// int iam = RTREE;
+	int round = 71;
+	int run_duration_ms = 18000; 
 
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
 		wl = std::atoi(argv[2]);
+		round = std::atoi(argv[3]);
+		run_duration_ms = std::atoi(argv[4]);
 	}
 	
 	cout << "CONFIG=" << cfgIdx << endl;
 	cout << "WKLOAD="  << wl << endl;
+	cout << "ROUND="   << round << endl;
+
 	
 	// Keys in database 
 	std::vector<keytype> init_keys;
@@ -520,22 +615,139 @@ int main(int argc, char* argv[])
 
 	glb_tpool.init_worker_threads();
 	glb_tpool.init_syssweeper_threads();
-	glb_tpool.init_megamind_threads();
 	glb_tpool.init_ncoresweeper_threads();
 	glb_tpool.init_router_threads(ds, wl, min_x, max_x, min_y, max_y, init_keys, values);
 	
-	std::this_thread::sleep_for(std::chrono::milliseconds(300000));  //200000(ycsb-a), 490000, 1000000 previously
+	db.register_threadpool(&glb_tpool);
+
+	#if ENABLE_DYNAMIC_RECONFIGURATION
+	std::vector<std::pair<int, int>> workload_config_sequence = {
+		{SD_YCSB_WKLOADC, 20001},
+		{SD_YCSB_WKLOADH, 20014},
+		{SD_YCSB_WKLOADA, 20010},
+	};
+	#else
+	std::vector<std::pair<int, int>> workload_config_sequence = {
+		{SD_YCSB_WKLOADC, cfgIdx},
+		{SD_YCSB_WKLOADH, cfgIdx},
+		{SD_YCSB_WKLOADA, cfgIdx},
+	};
+	#endif
+
+	int current_sequence_index = -1;  // Start at index -1 (initial workload/config)
+
+	const int CHECK_INTERVAL_MS = 5000; // Check every 5 seconds
+	const int MAX_PASSES = 1; // Number of complete passes through the workload sequence before terminating
+
+	bool keep_running = true;
+	int iteration_count = 0;
+	int workload_run_count = -1;
+	int sequence_passes = 0;  // Track complete passes through the workload_config_sequence
+	
+	cout << "========================================" << endl;
+	cout << "P-MOSS: Continuous Execution Mode" << endl;
+	cout << "  Run duration per workload: " << run_duration_ms/1000 << " seconds" << endl;
+	cout << "  Initial configuration: Workload " << wl << ", Config " << cfgIdx << endl;
+	cout << "  Maximum passes through sequence: " << MAX_PASSES << endl;
+	cout << "  Workload-Config sequence: ";
+	for (size_t i = 0; i < workload_config_sequence.size(); i++) {
+		cout << "[W" << workload_config_sequence[i].first << ",C" << workload_config_sequence[i].second << "]";
+		if (i < workload_config_sequence.size() - 1) cout << " -> ";
+	}
+	cout << endl;
+	cout << "========================================" << endl;
+	
+	
+	
+	auto run_start_time = std::chrono::high_resolution_clock::now();
+	const int runtime_for_wkload_ch = 20000;
+	const int runtime_for_init = 100000; // Initial run duration before first change
+	while (keep_running) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(CHECK_INTERVAL_MS));
+		iteration_count++;
+		
+		// Check if run duration completed
+		auto current_time = std::chrono::high_resolution_clock::now();
+		auto elapsed_since_run_start = std::chrono::duration_cast<std::chrono::milliseconds>(
+			current_time - run_start_time).count();
+
+		if (elapsed_since_run_start >= run_duration_ms || (workload_run_count == -1 && elapsed_since_run_start >= runtime_for_init)) {
+			workload_run_count++;
+			
+			cout << "========================================" << endl;
+			cout << "RUN #" << workload_run_count << " COMPLETED" << endl;
+			cout << "  Duration: " << elapsed_since_run_start/1000 << " seconds" << endl;
+			cout << "  Current workload: " << glb_gm.wkload << endl;
+			cout << "  Current config: " << glb_gm.config << endl;
+			cout << "========================================" << endl;
+
+			// Determine next workload and config in sequence
+			current_sequence_index = (current_sequence_index + 1) % workload_config_sequence.size();
+
+			// Check if we've completed a full pass through the sequence
+			if (current_sequence_index == 0 && workload_run_count > 0) {
+				sequence_passes++;
+				cout << "Completed pass #" << sequence_passes << " through workload sequence" << endl;
+
+				// Check if we've reached the maximum number of passes
+				if (sequence_passes >= MAX_PASSES) {
+					cout << "Reached maximum passes (" << MAX_PASSES << "). Initiating graceful shutdown..." << endl;
+					keep_running = false;
+					continue; // Skip reconfiguration and exit the loop
+				}
+			}
+
+			int next_workload = workload_config_sequence[current_sequence_index].first;
+			int next_config = workload_config_sequence[current_sequence_index].second;
+
+			cout << "Initiating change to: Workload " << next_workload << ", Config " << next_config;
+			cout << " (Sequence index: " << current_sequence_index << ", Pass: " << (sequence_passes + 1) << ")" << endl;
+
+			// Trigger reconfiguration with paired workload and config
+			// If ENABLE_DYNAMIC_RECONFIGURATION is set, use dynamic else use static
+			bool success = false;
+			success = db.perform_reconfiguration_static(next_config, next_workload, round);
+			
+			if (success) {
+				cout << "Reconfiguration successful. Continuing with next run..." << endl;
+			} else {
+				cout << "Reconfiguration failed. Keeping current configuration." << endl;
+			}
+			
+			// Reset run timer
+			if (workload_run_count != 0) 
+				run_start_time = std::chrono::high_resolution_clock::now();
+			
+		}
+	}
+	
+	// -------------------------------------------------------------------------------------
+	// Graceful Shutdown Sequence
+	// -------------------------------------------------------------------------------------
+	
+	cout << "========================================" << endl;
+	cout << "SHUTTING DOWN P-MOSS" << endl;
+	cout << "========================================" << endl;
+	
+	glb_tpool.terminate_router_threads();
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	glb_tpool.terminate_worker_threads();
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	glb_tpool.terminate_ncoresweeper_threads();
-	std::this_thread::sleep_for(std::chrono::milliseconds(2));
-	glb_tpool.dump_ncoresweeper_threads();
+	glb_tpool.terminate_syssweeper_threads();
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	cout << "[4/5] Dumping final performance statistics..." << endl;
+	glb_tpool.dump_ncoresweeper_threads(round);
 	std::this_thread::sleep_for(std::chrono::milliseconds(2));
 	
-	auto finish = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> elapsed = finish - start;
-	cout << "Checkpoint: One Iteration: " << elapsed.count() << endl;
-	exit(0);
-		
-	while(1);
+	cout << "========================================" << endl;
+	cout << "P-MOSS SHUTDOWN COMPLETE" << endl;
+	cout << "  Total iterations: " << iteration_count << endl;
+	cout << "  Workload runs completed: " << workload_run_count << endl;
+	cout << "  Complete sequence passes: " << sequence_passes << "/" << MAX_PASSES << endl;
+	cout << "========================================" << endl;
+	
+	return 0;
 
 }
 

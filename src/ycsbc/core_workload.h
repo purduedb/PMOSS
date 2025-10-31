@@ -35,7 +35,8 @@ enum Operation {
   SCAN_FAILED,
   READMODIFYWRITE_FAILED,
   DELETE_FAILED,
-  MAXOPTYPE
+  MAXOPTYPE,
+  MIGRATE
 };
 
 extern const char *kOperationString[MAXOPTYPE];

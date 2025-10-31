@@ -29,11 +29,20 @@ void TPManager::init_worker_threads(){
       int cnt = 0;  
       #endif
       
-      while (1) {  
+      while (1) {
+        // Check for pause signal
+        {
+          std::unique_lock<std::mutex> lock(glb_worker_thrds[worker_cpuids[i]].pause_mutex);
+          while (glb_worker_thrds[worker_cpuids[i]].paused) {
+            // Wait for resume signal
+            glb_worker_thrds[worker_cpuids[i]].pause_cv.wait(lock);
+          }
+        }
+
         if(!glb_worker_thrds[worker_cpuids[i]].running) {
             break;
         }
-                
+
         int result = 0;        
         Rectangle rec_pop;
         int size_jobqueue = glb_worker_thrds[worker_cpuids[i]].jobs.size();
@@ -69,6 +78,9 @@ void TPManager::init_worker_threads(){
             else if(rec_pop.op == ycsbc::Operation::READ){
               v.clear();
               result = this->gm->idx_btree->find(static_cast<uint64_t>(rec_pop.left_), &v);
+            }
+            else if(rec_pop.op == ycsbc::Operation::MIGRATE){
+              result = this->gm->idx_btree->migrate_v1_(static_cast<uint64_t>(rec_pop.left_), int(rec_pop.right_), int(rec_pop.bottom_));
             }
             else{
               cout << "ycsb operation does not match" << endl;
@@ -112,21 +124,145 @@ void TPManager::init_worker_threads(){
   }
 }
 
-void TPManager::init_megamind_threads(){
-  // -------------------------------------------------------------------------------------
-  for (unsigned i = 0; i < CURR_MEGAMIND_THREADS; ++i) {
-    glb_megamind_thrds[megamind_cpuids[i]].th = std::thread([i, this] {
-      erebus::utils::PinThisThread(megamind_cpuids[i]);
-      glb_megamind_thrds[megamind_cpuids[i]].cpuid=megamind_cpuids[i];
-      int numaID = numa_node_of_cpu(megamind_cpuids[i]);
-      while (1) {
-        if(!glb_megamind_thrds[megamind_cpuids[i]].running) {
-            // glb_megamind_thrds[megamind_cpuids[i]].th.detach();
-            break;
-        }
+// -------------------------------------------------------------------------------------
+// Inference Server Communication (INFERENCESERVER Server)
+// -------------------------------------------------------------------------------------
+bool TPManager::query_inference_server(const TPManager::InferenceRequest& request) {
+    
+    const std::string INFERENCESERVER_USER = "xxxxxxxx";
+    const std::string INFERENCESERVER_HOST = "INFERENCESERVER.xxxx.xxxx.edu";
+    const std::string INFERENCESERVER_INFERENCE_DIR = "/home/xxxxxxxx/works/L-PMOSS";
+    
+    std::cout << "[INFERENCESERVER] Connecting to INFERENCESERVER and requesting GPU..." << std::endl;
+
+    std::stringstream ssh_cmd;
+    ssh_cmd << "ssh -o StrictHostKeyChecking=no " << INFERENCESERVER_USER << "@" << INFERENCESERVER_HOST << " '"
+            << "srun -A csml -N 1 -p a30 --ntasks=1 --cpus-per-task=8 --mem=128G "
+            << "--gres=gpu:1 --time=01:00:00 "
+            << "/bin/bash -l -c \"cd " << INFERENCESERVER_INFERENCE_DIR << " && ./infer_from_bigdata.sh " 
+            << request.required_workload << " " << request.required_config << "\""
+            << "'";
+
+    std::cout << "[INFERENCESERVER] Executing command with workload=" << request.required_workload 
+              << ", config=" << request.required_config << std::endl;
+    std::cout << "[INFERENCESERVER] Full command: " << ssh_cmd.str() << std::endl;
+    std::cout << "[INFERENCESERVER] Note: This may queue waiting for GPU availability..." << std::endl;
+
+
+    int ssh_result = system(ssh_cmd.str().c_str());
+    if (ssh_result != 0) {
+        std::cerr << "[INFERENCESERVER] ERROR: SSH command failed with exit code " << ssh_result << std::endl;
+        return -1;
+    }
+
+    std::cout << "[INFERENCESERVER] Inference completed successfully" << std::endl;
+
+    // Step 5: Copy the generated config from INFERENCESERVER to local machine
+    std::string remote_file_path = INFERENCESERVER_INFERENCE_DIR + "/pmoss_machine_configs/intel_skx_4s_8n/" 
+                                    + std::to_string(request.required_workload) + "/c_" 
+                                    + std::to_string(request.required_config) + "_256.txt";
+    std::string local_dir ="/homes/xxxxxxxx/works/PMOSS/src/pmoss_machine_configs/intel_skx_4s_8n/" + std::to_string(request.required_workload);
+    std::string local_file = local_dir + "/c_" + std::to_string(request.required_config) + "_256.txt";
+
+    std::stringstream scp_cmd;
+    scp_cmd << "scp -o StrictHostKeyChecking=no "
+            << INFERENCESERVER_USER << "@" << INFERENCESERVER_HOST << ":"
+            << remote_file_path << " "
+            << local_file;
+
+    std::cout << "[INFERENCESERVER] Copying result file from: " << remote_file_path << std::endl;
+    std::cout << "[INFERENCESERVER] To local path: " << local_file << std::endl;
+
+    int scp_result = system(scp_cmd.str().c_str());
+    if (scp_result != 0) {
+        std::cerr << "[INFERENCESERVER] ERROR: Failed to copy result file (exit code: " << scp_result << ")" << std::endl;
+        return -1;
+    }
+
+    std::cout << "[INFERENCESERVER] File successfully copied to local machine" << std::endl;
+    return 1;
+}
+
+// -------------------------------------------------------------------------------------
+
+void TPManager::init_megamind_threads(int next_config, int next_workload, string next_config_path, int round){
+  // Spawn a temporary detached thread for one-time delayed migration
+  std::thread migration_thread([this, next_config, next_workload, next_config_path, round]() {
+    CPUID migration_cpu = megamind_cpuids[0]; // Use first megamind CPU
+    erebus::utils::PinThisThread(migration_cpu);
+    
+    // Delay to get the ncore sweeper and sys sweeper threads warmed up
+    const int WARMUP_DELAY = 30000; // 30 seconds warmup
+    std::this_thread::sleep_for(std::chrono::milliseconds(WARMUP_DELAY));
+    
+    this->pause_all_ncoresweepers();
+    this->dump_ncoresweeper_threads(round);
+    this->resume_all_ncoresweepers();
+    
+    // an ssh command to send hardware snapshots to INFERENCESERVER server
+    std::string ssh_cmd = "rsync -aP /scratch/INFERENCESERVER/xxxxxxxx/kbs/intel/skx_4s_8n/kb_b_dynam/ /homes/xxxxxxxx/works/PMOSS/kb_bs_dynam/";
+    int ssh_result = system(ssh_cmd.c_str());
+    if (ssh_result != 0) {
+        std::cerr << "[INFERENCESERVER] ERROR: SSH command failed with exit code " << ssh_result << std::endl;
+        return -1;
+    }
+    
+    InferenceRequest request;
+    request.required_config = next_config;
+    request.required_workload = next_workload;
+    bool response = query_inference_server(request);
+    if(!response) assert(false);
+
+    auto migration_start = std::chrono::high_resolution_clock::now();
+    this->pause_all_routers();
+    this->gm->reload_configuration(next_config_path);
+    this->gm->config = next_config;
+    
+    
+    // Start timing the migration
+    int cnt_migrated = 0;    
+    #if SHARED_MIGRATION == 1
+      this->resume_all_routers();
+      for(size_t i = 0; i < MAX_GRID_CELL; i++){
+        double lx = this->gm->glbGridCell[i].lx;
+        int numa_id = this->gm->glbGridCell[i].idNUMA;
+        int prev_cpu = this->gm->glbGridCell[i].prev_idCPU;
+        int cpu_id = this->gm->glbGridCell[i].idCPU;
+        Rectangle query;
+        query.left_ = lx;
+        query.right_= this->gm->DataDist[i];
+        query.bottom_ = numa_id;
+        query.op = ycsbc::Operation::MIGRATE;
+        // Assign priority based on grid cell index for staggered execution
+        // First grid cells get highest priority, later ones get lower priority
+        query.qStamp = std::numeric_limits<int>::max() - i;
+        query.aGrid = i;
+        this->glb_worker_thrds[prev_cpu].jobs.push(query);
+        // if (this->gm->wkload == SD_YCSB_WKLOADA && i % 32 == 0) {
+        //   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        // }
+        cnt_migrated++;
+        if (cnt_migrated % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(90000));   // prev 100
       }
-    });
-  }
+    #else
+    // Pause all the router threads and worker threads
+    this->pause_all_workers();
+    this->gm->enforce_scheduling();
+    // this->gm->enforce_scheduling_mt();
+    this->resume_all_workers();
+    this->resume_all_routers();
+    #endif
+        
+    // Calculate migration time
+    auto migration_end = std::chrono::high_resolution_clock::now();
+    auto migration_duration = std::chrono::duration_cast<std::chrono::milliseconds>(migration_end - migration_start);
+
+    std::cout << "Megamind: Page migration completed in " << migration_duration.count() << "ms. Thread exiting." << std::endl;
+  });
+
+  // Detach the thread so it cleans up automatically when done
+  migration_thread.detach();
 }
 
 void TPManager::init_syssweeper_threads(){
@@ -243,11 +379,22 @@ void TPManager::init_ncoresweeper_threads(){
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
       glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].cpuid=ncore_sweeper_cpuids[i];
       int numaID = numa_node_of_cpu(ncore_sweeper_cpuids[i]);
-      while (1) 
+      while (1)
       {
-        if(!glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].running) 
+        if(!glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].running)
             break;
-        std::this_thread::sleep_for(std::chrono::milliseconds(40000));  // 80000
+
+        // Check if thread should pause (for reconfiguration)
+        {
+          std::unique_lock<std::mutex> lock(glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].pause_mutex);
+          if (glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].paused) {
+            glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].pause_cv.wait(lock, [this, i]() {
+              return !glb_ncore_sweeper_thrds[ncore_sweeper_cpuids[i]].paused;
+            });
+          }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));  //  60000
         
         // First, push the token to the worker cpus to get the DataView
         #if PROFILE==1
@@ -286,18 +433,18 @@ void TPManager::init_ncoresweeper_threads(){
                 
                 #if SIMD == 1
                 // Use SIMD to compute the DataView
-                // ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
-                // __m512d rawQCounter[nQCounterCline];
-                // __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
-                // for (auto vCline = 0; vCline < nQCounterCline; vCline++){
-                //   rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
-                //   rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
-                //   rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
-                //   if (vCline == 0){
-                //     rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
-                //   }
-                //   ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
-                // } 
+                ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
+                __m512d rawQCounter[nQCounterCline];
+                __m512d nIns= _mm512_set1_pd (pc.raw_counter_values[1]);
+                for (auto vCline = 0; vCline < nQCounterCline; vCline++){
+                  rawQCounter[vCline] = _mm512_load_pd (pc.raw_counter_values + vCline * 8);
+                  rawQCounter[vCline] = _mm512_div_pd (rawQCounter[vCline], nIns);
+                  rawQCounter[vCline] = _mm512_mul_pd (rawQCounter[vCline], _mm512_set1_pd (1000));
+                  if (vCline == 0){
+                    rawQCounter[vCline] = _mm512_mask_blend_pd(0b00000010, rawQCounter[vCline], _mm512_load_pd (pc.raw_counter_values + vCline * 8));
+                  }
+                  ddSnap.rawQCounter[pc.gIdx][vCline]  = _mm512_add_pd (ddSnap.rawQCounter[pc.gIdx][vCline], rawQCounter[vCline]);
+                } 
                 #else
                 ddSnap.rawCntSamples[pc.gIdx] += PERF_STAT_COLLECTION_INTERVAL; 
                 for(auto ex = 0; ex < PERF_EVENT_CNT; ex++){
@@ -330,7 +477,7 @@ void TPManager::init_ncoresweeper_threads(){
 
         // -------------------------------------------------------------------------------------
         // Take a snapshot of the System View (Memory Channel View)
-         #if PROFILE == 1
+        #if PROFILE == 1
         if (i == 0){
             bool token_found = false;                    
             // memdata_t DRAMResUsageSnap;
@@ -357,8 +504,9 @@ void TPManager::init_ncoresweeper_threads(){
   }
 }
 
-void TPManager::dump_ncoresweeper_threads(){
+void TPManager::dump_ncoresweeper_threads(int round){
   cout << "==========================DUMPING Core Sweeper Threads=======================" << endl;
+  size_t num_samples = 0;
   for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
   string dirName;
   #if PROFILE ==1
@@ -368,8 +516,11 @@ void TPManager::dump_ncoresweeper_threads(){
   #elif STORAGE == 1
       dirName += "/kb_quad/" + std::to_string(key);
   #elif STORAGE == 2
+      // dirName += "/kb_b__/" + std::to_string(key);  // This is for testing purpose 
       // dirName += "/kb_bs__/" + std::to_string(key);
-      dirName += "/kb_bs_profile/" + std::to_string(key);
+      dirName += "/kb_bs_dynam/" + std::to_string(key);
+      // dirName += "/kb_bs_dynam_/" + std::to_string(key);
+      // dirName += "/kb_bs_profile/" + std::to_string(key);
       // dirName += "/kb_bs_4s_4n/" + std::to_string(key);
   #endif
   #elif PROFILE == 0
@@ -388,15 +539,29 @@ void TPManager::dump_ncoresweeper_threads(){
   cout << dirName << endl;
 
   cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+  std::vector<DataDistSnap> localDataDistReel;
+  std::vector<QueryExecSnap> localQueryExecReel;
+  #if PROFILE == 1
+  std::vector<IntelPCMCounter> localDRAMResUsageReel;
+  localDRAMResUsageReel.swap(glb_ncore_sweeper_thrds[key].DRAMResUsageReel);
+  #endif
+  localDataDistReel.swap(glb_ncore_sweeper_thrds[key].dataDistReel);
+  localQueryExecReel.swap(glb_ncore_sweeper_thrds[key].queryExecReel);
+  
+  num_samples = localQueryExecReel.size();
+  
+  cout << "DEBUG: dump_sample_counter = " << this->dump_sample_counter << ", num_samples = " << num_samples << endl;
+
         // -------------------------------------------------------------------------------------
     #if PROFILE == 1
     ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
-    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].DRAMResUsageReel.size(); i++){
-        int tReel = i;
+    for(size_t i = 0; i < localDRAMResUsageReel.size(); i++){
+        int tReel = this->dump_sample_counter + i;
         memChannelView << this->gm->config << " ";
         memChannelView << tReel << " ";
         memChannelView << this->gm->wkload << " ";
         memChannelView << this->gm->iam << " ";
+        memChannelView << round << " ";
         /**
          * TODO: Have a global config header file that saves the value of 
          * global hw params
@@ -406,28 +571,31 @@ void TPManager::dump_ncoresweeper_threads(){
         // Dump Read Socket Channel
         for (auto sc = 0; sc < 4; sc++){
             for(auto ch = 0; ch < 6; ch++){
-                memChannelView <<  glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Rd_socket_chan[sc][ch] << " ";
+                memChannelView <<  localDRAMResUsageReel[i].sysParams.iMC_Rd_socket_chan[sc][ch] << " ";
             }
         }
         // Dump Write Socket Channel
         for (auto sc = 0; sc < 4; sc++){
             for(auto ch = 0; ch < 6; ch++){
-                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].sysParams.iMC_Wr_socket_chan[sc][ch] << " ";
+                memChannelView << localDRAMResUsageReel[i].sysParams.iMC_Wr_socket_chan[sc][ch] << " ";
             }
         }
         // // Dump Write Socket Channel
         for (auto sc = 0; sc < 4; sc++){
             for(auto ul = 0; ul < 3; ul++){
-                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_incoming[sc][ul] << " ";
+                memChannelView << localDRAMResUsageReel[i].upi_incoming[sc][ul] << " ";
             }
         }
         // Dump Write Socket Channel
         for (auto sc = 0; sc < 4; sc++){
             for(auto ul = 0; ul < 3; ul++){
-                memChannelView << glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].upi_outgoing[sc][ul] << " ";
+                memChannelView << localDRAMResUsageReel[i].upi_outgoing[sc][ul] << " ";
             }
         }
         memChannelView << endl;
+        
+        // Clear this ith reel or do something so that it does not get bloated
+        // glb_ncore_sweeper_thrds[key].DRAMResUsageReel[i].clear();
     }
     #endif
     // -------------------------------------------------------------------------------------
@@ -437,14 +605,15 @@ void TPManager::dump_ncoresweeper_threads(){
     
     alignas(64) double dataViewScalarDump[scalarDumpSize] = {};
         
-    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].dataDistReel.size(); i++){
-        int tReel = i;
-        DataDistSnap dd = glb_ncore_sweeper_thrds[key].dataDistReel[i];
+    for(size_t i = 0; i < localDataDistReel.size(); i++){
+        int tReel = this->dump_sample_counter + i;
+        DataDistSnap dd = localDataDistReel[i];
 
         dataView << this->gm->config  << " ";
         dataView << tReel << " ";
         dataView << this->gm->wkload << " ";
         dataView << this->gm->iam << " ";
+        dataView << round << " ";
 
         #if SIMD == 1
         // Load the SIMD values in a memory address
@@ -490,14 +659,15 @@ void TPManager::dump_ncoresweeper_threads(){
 
     // -------------------------------------------------------------------------------------
     ofstream queryExecView(dirName + "/query-exec_view.txt", std::ifstream::app);
-    for(size_t i = 0; i < glb_ncore_sweeper_thrds[key].queryExecReel.size(); i++){
-        int tReel = i;
+    for(size_t i = 0; i < localQueryExecReel.size(); i++){
+        int tReel = this->dump_sample_counter + i;
         queryExecView << this->gm->config  << " ";
         queryExecView << tReel << " ";
         queryExecView << this->gm->wkload  << " ";
         queryExecView << this->gm->iam  << " ";
+        queryExecView << round  << " ";
         for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
-            queryExecView << glb_ncore_sweeper_thrds[key].queryExecReel[i].qExecutedMice[aSize1] << " ";
+            queryExecView << localQueryExecReel[i].qExecutedMice[aSize1] << " ";
             
         }
         queryExecView << endl;
@@ -508,8 +678,150 @@ void TPManager::dump_ncoresweeper_threads(){
     cout << "==========================Finished dumping NCore Sweeper Thread =====> " << key <<  endl;
     cout << "-------------------------------------------------------------------------------------"  << endl;
 }    
+    this->dump_sample_counter += num_samples;
     cout << "==================================================================" << endl;
 
+}
+
+void TPManager::dump_ncoresweeper_threads_v2(){
+  cout << "==========================DUMPING Core Sweeper Threads V2=======================" << endl;
+  for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
+    string dirName;
+    #if PROFILE ==1
+    dirName = std::string(PROJECT_SOURCE_DIR);
+    #if STORAGE == 0
+        dirName += "/kb_r__/" + std::to_string(key);
+    #elif STORAGE == 1
+        dirName += "/kb_quad/" + std::to_string(key);
+    #elif STORAGE == 2
+        dirName += "/kb_bs_dynam/" + std::to_string(key);
+    #endif
+    #elif PROFILE == 0
+    dirName = std::string(PROJECT_SOURCE_DIR);
+    #if STORAGE == 0
+        dirName += "/kb_r__/" + std::to_string(key);
+    #elif STORAGE == 1
+        dirName += "/kb_quad/" + std::to_string(key);
+    #elif STORAGE == 2
+        dirName += "/kb_bs_profile/" + std::to_string(key);
+    #endif
+    #endif
+
+    mkdir(dirName.c_str(), 0777);
+    cout << dirName << endl;
+    cout << "==========================Started dumping NCore Sweeper Thread =====> " << key << endl;
+
+    // Atomically swap vectors to local copies - clears global vectors without contention
+    std::vector<DataDistSnap> localDataDistReel;
+    std::vector<QueryExecSnap> localQueryExecReel;
+    #if PROFILE == 1
+    std::vector<IntelPCMCounter> localDRAMResUsageReel;
+    localDRAMResUsageReel.swap(glb_ncore_sweeper_thrds[key].DRAMResUsageReel);
+    #endif
+    localDataDistReel.swap(glb_ncore_sweeper_thrds[key].dataDistReel);
+    localQueryExecReel.swap(glb_ncore_sweeper_thrds[key].queryExecReel);
+
+    // -------------------------------------------------------------------------------------
+    #if PROFILE == 1
+    ofstream memChannelView(dirName + "/mem-channel_view.txt", std::ifstream::app);
+    for(size_t i = 0; i < localDRAMResUsageReel.size(); i++){
+        int tReel = i;
+        memChannelView << this->gm->config << " ";
+        memChannelView << tReel << " ";
+        memChannelView << this->gm->wkload << " ";
+        memChannelView << this->gm->iam << " ";
+
+        // Dump Read Socket Channel
+        for (auto sc = 0; sc < 4; sc++){
+            for(auto ch = 0; ch < 6; ch++){
+                memChannelView << localDRAMResUsageReel[i].sysParams.iMC_Rd_socket_chan[sc][ch] << " ";
+            }
+        }
+        // Dump Write Socket Channel
+        for (auto sc = 0; sc < 4; sc++){
+            for(auto ch = 0; ch < 6; ch++){
+                memChannelView << localDRAMResUsageReel[i].sysParams.iMC_Wr_socket_chan[sc][ch] << " ";
+            }
+        }
+        // Dump UPI incoming
+        for (auto sc = 0; sc < 4; sc++){
+            for(auto ul = 0; ul < 3; ul++){
+                memChannelView << localDRAMResUsageReel[i].upi_incoming[sc][ul] << " ";
+            }
+        }
+        // Dump UPI outgoing
+        for (auto sc = 0; sc < 4; sc++){
+            for(auto ul = 0; ul < 3; ul++){
+                memChannelView << localDRAMResUsageReel[i].upi_outgoing[sc][ul] << " ";
+            }
+        }
+        memChannelView << endl;
+    }
+    memChannelView.close();
+    #endif
+
+    // -------------------------------------------------------------------------------------
+    ofstream dataView(dirName + "/data_view.txt", std::ifstream::app);
+    const int nQCounterCline = PERF_EVENT_CNT/8 + PERF_EVENT_CNT%8;
+    const int scalarDumpSize = MAX_GRID_CELL * nQCounterCline * 8;
+
+    alignas(64) double dataViewScalarDump[scalarDumpSize] = {};
+
+    for(size_t i = 0; i < localDataDistReel.size(); i++){
+        int tReel = i;
+        DataDistSnap dd = localDataDistReel[i];
+
+        dataView << this->gm->config  << " ";
+        dataView << tReel << " ";
+        dataView << this->gm->wkload << " ";
+        dataView << this->gm->iam << " ";
+
+        #if SIMD == 1
+        // Load the SIMD values in a memory address
+        for (auto g = 0; g < MAX_GRID_CELL; g++){
+            for (auto cLine = 0; cLine < nQCounterCline; cLine++){
+                _mm512_store_pd(dataViewScalarDump + (g*nQCounterCline*8)+(cLine*8), dd.rawQCounter[g][cLine]);
+            }
+        }
+        #else
+        for (auto g = 0; g < MAX_GRID_CELL; g++){
+          memcpy(dataViewScalarDump+g*PERF_EVENT_CNT, dd.rawQCounter[g], sizeof(dd.rawQCounter[g]));
+        }
+        #endif
+
+        //Dump the perf counters
+        for (auto aSize = 0; aSize < scalarDumpSize; aSize++){
+            dataView << dataViewScalarDump[aSize] << " ";
+        }
+
+        //Dump the sample counts
+        for (auto aSize = 0; aSize < MAX_GRID_CELL; aSize++){
+            dataView << dd.rawCntSamples[aSize] << " ";
+        }
+
+        dataView << endl;
+    }
+    dataView.close();
+
+    // -------------------------------------------------------------------------------------
+    ofstream queryExecView(dirName + "/query-exec_view.txt", std::ifstream::app);
+    for(size_t i = 0; i < localQueryExecReel.size(); i++){
+        int tReel = i;
+        queryExecView << this->gm->config  << " ";
+        queryExecView << tReel << " ";
+        queryExecView << this->gm->wkload  << " ";
+        queryExecView << this->gm->iam  << " ";
+        for(auto aSize1 = 0; aSize1 < MAX_GRID_CELL; aSize1++){
+            queryExecView << localQueryExecReel[i].qExecutedMice[aSize1] << " ";
+        }
+        queryExecView << endl;
+    }
+    queryExecView.close();
+
+    cout << "==========================Finished dumping NCore Sweeper Thread =====> " << key <<  endl;
+    cout << "-------------------------------------------------------------------------------------"  << endl;
+  }
+  cout << "==================================================================" << endl;
 }
 
 void TPManager::terminate_worker_threads(){
@@ -573,6 +885,149 @@ void TPManager::terminateTestWorkerThreads(){
     for (const auto & [ key, value ] : testWkload_glb_worker_thrds) {
         testWkload_glb_worker_thrds[key].running = false;
     }
+}
+
+// -------------------------------------------------------------------------------------
+// Dynamic Reconfiguration Methods
+// -------------------------------------------------------------------------------------
+
+void TPManager::pause_all_workers() {
+    // Set pause flag for all worker threads
+    for (const auto & [ key, value ] : glb_worker_thrds) {
+        std::lock_guard<std::mutex> lock(glb_worker_thrds[key].pause_mutex);
+        glb_worker_thrds[key].paused = true;
+    }
+
+    // Give workers time to reach pause point and drain in-flight queries
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+void TPManager::resume_all_workers() {
+    // Clear pause flag and wake all worker threads
+    for (const auto & [ key, value ] : glb_worker_thrds) {
+        {
+            std::lock_guard<std::mutex> lock(glb_worker_thrds[key].pause_mutex);
+            glb_worker_thrds[key].paused = false;
+        }
+        glb_worker_thrds[key].pause_cv.notify_one();
+    }
+}
+
+bool TPManager::are_all_workers_idle() {
+    // Check if all worker job queues are empty
+    for (const auto & [ key, value ] : glb_worker_thrds) {
+        if (glb_worker_thrds[key].jobs.size() > 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void TPManager::clear_all_worker_queues() {
+    // Clear all pending queries from worker thread queues
+    // IMPORTANT: This should only be called AFTER pause_all_workers()
+    size_t total_dropped = 0;
+
+    // Extra safety: ensure all workers have reached pause point
+    // This gives time for any in-flight queue operations to complete
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    for (const auto & [ key, value ] : glb_worker_thrds) {
+        // Acquire the pause_mutex to ensure the worker is truly paused
+        // and not in the middle of accessing the queue
+        std::lock_guard<std::mutex> lock(glb_worker_thrds[key].pause_mutex);
+
+        // Verify worker is actually paused before clearing
+        if (!glb_worker_thrds[key].paused) {
+            std::cerr << "WARNING: Worker " << key << " not paused when clearing queue!" << std::endl;
+            continue;
+        }
+
+        size_t queue_size = glb_worker_thrds[key].jobs.size();
+        total_dropped += queue_size;
+
+        // Clear the queue directly - much more efficient than popping each element
+        // Safe to call because we hold the pause_mutex and worker is paused
+        glb_worker_thrds[key].jobs.clear();
+    }
+
+    if (total_dropped > 0) {
+        std::cout << "  Cleared " << total_dropped << " pending queries from worker queues" << std::endl;
+    }
+}
+
+void TPManager::pause_all_routers() {
+    // Set pause flag for all router threads
+    for (const auto & [ key, value ] : glb_router_thrds) {
+        std::lock_guard<std::mutex> lock(glb_router_thrds[key].pause_mutex);
+        glb_router_thrds[key].paused = true;
+    }
+
+    // Give routers time to reach pause point
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+}
+
+void TPManager::resume_all_routers() {
+    // Clear pause flag and wake all router threads
+    for (const auto & [ key, value ] : glb_router_thrds) {
+        {
+            std::lock_guard<std::mutex> lock(glb_router_thrds[key].pause_mutex);
+            glb_router_thrds[key].paused = false;
+        }
+        glb_router_thrds[key].pause_cv.notify_one();
+    }
+}
+
+void TPManager::pause_all_ncoresweepers() {
+    // Set pause flag for all node core sweeper threads
+    for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
+        std::lock_guard<std::mutex> lock(glb_ncore_sweeper_thrds[key].pause_mutex);
+        glb_ncore_sweeper_thrds[key].paused = true;
+    }
+
+    // Give core sweepers time to reach pause point
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+}
+
+void TPManager::resume_all_ncoresweepers() {
+    // Clear pause flag and wake all node core sweeper threads
+    for (const auto & [ key, value ] : glb_ncore_sweeper_thrds) {
+        {
+            std::lock_guard<std::mutex> lock(glb_ncore_sweeper_thrds[key].pause_mutex);
+            glb_ncore_sweeper_thrds[key].paused = false;
+        }
+        glb_ncore_sweeper_thrds[key].pause_cv.notify_one();
+    }
+}
+
+
+void TPManager::initiate_workload_change(int new_workload) {
+    std::cout << "Initiating workload change to: " << new_workload << std::endl;
+
+    // Signal all router threads that workload change is pending
+    for (const auto & [ key, value ] : glb_router_thrds) {
+        glb_router_thrds[key].current_workload.store(new_workload);
+        glb_router_thrds[key].workload_change_pending.store(true);
+    }
+    active_workload.store(new_workload);
+}
+
+void TPManager::wait_for_router_sync(int router_id, int new_workload) {
+    std::unique_lock<std::mutex> lock(workload_change_mutex);
+
+    // Increment ready counter
+    int count = router_ready_count.fetch_add(1) + 1;
+    std::cout << "Router " << router_id << " reached barrier (" << count << "/" << CURR_ROUTER_THREADS << ")" << std::endl;
+
+    // Notify coordinator
+    workload_change_cv.notify_one();
+
+    // Wait until all routers are ready and global workload is updated
+    workload_change_cv.wait(lock, [this, new_workload]() {
+        return active_workload.load() == new_workload;
+    });
+
+    std::cout << "Router " << router_id << " proceeding with new workload" << std::endl;
 }
 
 TPManager::~TPManager(){
@@ -650,8 +1105,8 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     std::vector<keytype> &init_keys, std::vector<uint64_t> &values){
   
   for (unsigned i = 0; i < CURR_ROUTER_THREADS; ++i) {
-    glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys, &values] {
-    
+    glb_router_thrds[router_cpuids[i]].th = std::thread([i, this, ds, wl, min_x, max_x, min_y, max_y, &init_keys, &values] () mutable {
+
     erebus::utils::PinThisThread(router_cpuids[i]);
     std::this_thread::sleep_for(std::chrono::milliseconds(40));
     glb_router_thrds[router_cpuids[i]].cpuid=router_cpuids[i];
@@ -900,6 +1355,10 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/sb_4s_4n/";  // this should be nvidia
       #elif MACHINE==6
       std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/skx_4s_4n/";
+      #elif MACHINE==2 || MACHINE == 7
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/epyc7543_2s_2n/";
+      #elif MACHINE==3
+      std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/epyc7543_2s_2n/";
       #endif
 
       if (wl == SD_YCSB_WKLOADA){
@@ -1078,167 +1537,124 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
     // -------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------
     // -------------------------------------------------------------------------------------
-    while (1) {
+    // Initialize rate control tracking
+    glb_router_thrds[router_cpuids[i]].second_start_time = std::chrono::steady_clock::now();
+    glb_router_thrds[router_cpuids[i]].queries_this_second = 0;
+    
+    while(1) {
+      // ==================================================================================
+      // QUERY RATE CONTROL LOGIC
+      // ==================================================================================
+      // if (RATE_CONTROL_ENABLED and wl==SD_YCSB_WKLOADA) {  // Enable rate control only for specific workloads
+      //   auto current_time = std::chrono::steady_clock::now();
+      //   auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+      //       current_time - glb_router_thrds[router_cpuids[i]].second_start_time);
+        
+      //   // If we've been running for more than 1 second, reset the counter
+      //   if (elapsed.count() >= 1000) {
+      //     glb_router_thrds[router_cpuids[i]].second_start_time = current_time;
+      //     glb_router_thrds[router_cpuids[i]].queries_this_second = 0;
+      //   }
+        
+      //   // If we've reached the query limit for this second, sleep until the next second
+      //   if (glb_router_thrds[router_cpuids[i]].queries_this_second >= QUERIES_PER_SECOND) {
+      //     auto time_to_sleep = std::chrono::milliseconds(1000) - elapsed;
+      //     if (time_to_sleep.count() > 0) {
+      //       std::this_thread::sleep_for(time_to_sleep);
+      //     }
+      //     // Reset for the next second
+      //     glb_router_thrds[router_cpuids[i]].second_start_time = std::chrono::steady_clock::now();
+      //     glb_router_thrds[router_cpuids[i]].queries_this_second = 0;
+      //   }
+      // }
+      // ==================================================================================
+      
+      // We need to be able to handle the load factor by fixing the number of queries generated by 
+      // each router thread. So, each router thread generates a fixed number of queries per time unit (e.g., second)
+      
+
+      // Check for pause signal (grid cell update support)
+      {
+        std::unique_lock<std::mutex> lock(glb_router_thrds[router_cpuids[i]].pause_mutex);
+        while (glb_router_thrds[router_cpuids[i]].paused) {
+          glb_router_thrds[router_cpuids[i]].pause_cv.wait(lock);
+        }
+      }
+
+      // Check for workload change (dynamic reconfiguration support)
+      if (glb_router_thrds[router_cpuids[i]].workload_change_pending.load()) {
+        int new_wl = glb_router_thrds[router_cpuids[i]].current_workload.load();
+        std::cout << "Router " << i << " detected workload change to " << new_wl << std::endl;
+        wl = new_wl;
+
+        if (wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
+            wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADE1 || wl == SD_YCSB_WKLOADH ||
+            wl == SD_YCSB_WKLOADI || wl == SD_YCSB_WKLOADA1 ||
+            wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE || wl == WIKI_WKLOADI ||
+            wl == WIKI_WKLOADH || wl == WIKI_WKLOADA1 || wl == WIKI_WKLOADA2 || wl == WIKI_WKLOADA3 ||
+            wl == OSM_WKLOADA || wl == OSM_WKLOADC || wl == OSM_WKLOADE || wl == OSM_WKLOADH || wl == OSM_WKLOADA0 ||
+            wl == SD_YCSB_WKLOADH1 || wl == SD_YCSB_WKLOADH2 || wl == SD_YCSB_WKLOADH3 || wl == SD_YCSB_WKLOADH4 || wl == SD_YCSB_WKLOADH5 ||
+            wl == SD_YCSB_WKLOADA00 || wl == SD_YCSB_WKLOADA01 || wl == SD_YCSB_WKLOADC1 || wl == SD_YCSB_WKLOADH11 ||
+            wl == SD_YCSB_WKLOADK || wl == SD_YCSB_WKLOADK2 || wl == SD_YCSB_WKLOADK3 || wl == SD_YCSB_WKLOADK4) {
+
+          // Reload YCSB workload configuration
+          std::ifstream input;
+          #if MACHINE==0
+          std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/skx_4s_8n/";
+          #elif MACHINE==1
+          std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/ice_2s_2n/";
+          #elif MACHINE==5
+          std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/sb_4s_4n/";
+          #elif MACHINE==6
+          std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/skx_4s_4n/";
+          #elif MACHINE==2 || MACHINE == 7
+          std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/epyc7543_2s_2n/";
+          #elif MACHINE==3
+          std::string wl_config = std::string(PROJECT_SOURCE_DIR) + "/src/workloads/2s_8n/";
+          #endif
+
+          // Select appropriate workload file based on new_wl
+          if (wl == SD_YCSB_WKLOADA) wl_config += "ycsb_workloada_" + to_string(router_cpuids[i]);
+          else if (wl == SD_YCSB_WKLOADC) wl_config += "ycsb_workloadc";
+          else if (wl == SD_YCSB_WKLOADE) wl_config += "ycsb_workloade_" + to_string(router_cpuids[i]);
+          else if (wl == SD_YCSB_WKLOADH) wl_config += "ycsb_workloadh";
+          else if (wl == SD_YCSB_WKLOADK2) wl_config += "ycsb_workloadk2_" + to_string(router_cpuids[i]);
+          else {
+            std::cerr << "Unsupported dynamic workload change to: " << wl << std::endl;
+          }
+          
+          ycsbc::utils::Properties fresh_props;
+          input.open(wl_config);
+          if (input.is_open()) {
+            fresh_props.Load(input);
+            input.close();
+            ycsb_wl.Init(fresh_props);
+            std::cout << "Router " << i << " successfully reloaded YCSB workload config from: " << wl_config << std::endl;
+            std::cout << "       Properties loaded: readproportion=" << fresh_props.GetProperty("readproportion", "N/A")
+                      << ", scanproportion=" << fresh_props.GetProperty("scanproportion", "N/A") << std::endl;
+          } else {
+            std::cerr << "ERROR: Router " << i << " FAILED to open workload file: " << wl_config << std::endl;
+            std::cerr << "       Workload change ABORTED - router will continue with previous workload!" << std::endl;
+            std::cerr << "       This will cause SEVERE performance degradation!" << std::endl;
+          }
+        } else {
+          std::cout << "Warning: Non-YCSB workload change may not be fully supported" << std::endl;
+        }
+
+        glb_router_thrds[router_cpuids[i]].workload_change_pending.store(false);
+        std::cout << "Router " << i << " completed workload change" << std::endl;
+      }
+
       if(!glb_router_thrds[router_cpuids[i]].running) {
           break;
       }
-                
+
       // Query parameters 
       double lx, ly, hx, hy, length, width;
       Rectangle query;
       uint64_t tx_keys[3] = {0};
 
-    if(wl == MD_RS_UNIFORM){
-      lx = dlx_ureal(gen);
-      ly = dly_ureal(gen);
-      length = dLength_ureal(gen);
-      width = dLength_ureal(gen);
-      hx = lx + length;
-      hy = ly + width;
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_RS_NORMAL){  
-      lx = dlx_norm(gen);
-      ly = dly_norm(gen);
-      length = dLength_ureal(gen);
-      width = dLength_ureal(gen);
-      hx = lx + length;
-      hy = ly + width;
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_LK_UNIFORM){
-      int idx_to_search = dob_uint(gen);
-      lx = this->gm->idx->objects_[idx_to_search]->left_;
-      ly = this->gm->idx->objects_[idx_to_search]->bottom_;
-      hx = lx;
-      hy = ly;
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_RS_ZIPF){
-      lx = dlx_zipint(generator);
-      ly = dly_zipint(generator);
-      length = dLength_ureal(gen);
-      width = dLength_ureal(gen);
-      hx = lx + length;
-      hy = ly + width;
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_RS_HOT3){
-      const int nHotSpots = 3;
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == nHotSpots) {
-          lx = dlx_ureal(gen);
-          ly = dly_ureal(gen);
-      }
-      else{
-          lx = GX[index](genTem) + 0.880170200000002;
-          ly = GY[index](genTem) - 0.4350911999999987;
-      }  
-      length = dLength_ureal(gen);
-      width = dLength_ureal(gen);
-      hx = lx + length;
-      hy = ly + width;
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_RS_HOT5){
-      const int nHotSpots = 5;
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == nHotSpots) {
-          lx = dlx_ureal(gen);
-          ly = dly_ureal(gen);
-      }
-      else{
-          lx = GX[index](genTem) + 0.880170200000002;
-          ly = GY[index](genTem) - 0.4350911999999987;
-      }
-      length = dLength_ureal(gen);
-      width = dLength_ureal(gen);
-      hx = lx + length;
-      hy = ly + width;
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_RS_HOT7){
-      const int nHotSpots = 7;
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == nHotSpots) {
-          lx = dlx_ureal(gen);
-          ly = dly_ureal(gen);
-      }
-      else{
-          lx = GX[index](genTem) + 0.880170200000002;
-          ly = GY[index](genTem) - 0.4350911999999987;
-      }
-      length = dLength_ureal(gen);
-      width = dLength_ureal(gen);
-      hx = lx + length;
-      hy = ly + width;
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_LK_RS_25_75){
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == 0) { // this is a point search
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 0;
-          hy = ly + 0;
-      }
-      else{
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 4;
-          hy = ly + 2;
-      }
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_LK_RS_50_50){
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == 0) { // this is a point search
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 0;
-          hy = ly + 0;
-      }
-      else{
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 4;
-          hy = ly + 2;
-      }
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_LK_RS_75_25){
-      auto index = w(genTem); // which hotspot to choose?
-      if (index == 0) { // this is a point search
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 0;
-          hy = ly + 0;
-      }
-      else{
-          lx = GX[index](genTem);
-          ly = GY[index](genTem);
-          hx = lx + 4;
-          hy = ly + 2;
-      }
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (wl == MD_RS_LOGNORMAL){
-      lx = dlx_lnorm(gen);
-      ly = dly_lnorm(gen);
-      
-      while(lx > pseudo_max_x || lx < pseudo_min_x)
-          lx = dlx_lnorm(gen);
-      while(ly > max_y || ly < min_y)
-          ly = dly_lnorm(gen);  
-      lx = lx - (1 - min_x);
-      length = dLength_ureal(gen);
-      width = dWidth_ureal(gen);
-      hx = lx + length;
-      hy = ly + width;
-      query = Rectangle(lx, hx, ly, hy);
-    }
-    else if (
-      wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
+    if(wl == SD_YCSB_WKLOADA || wl == SD_YCSB_WKLOADC || wl == SD_YCSB_WKLOADE ||
       wl == SD_YCSB_WKLOADF || wl == SD_YCSB_WKLOADE1 || wl == SD_YCSB_WKLOADH || 
       wl == SD_YCSB_WKLOADI || wl == SD_YCSB_WKLOADA1 || 
       wl == WIKI_WKLOADA || wl == WIKI_WKLOADC || wl == WIKI_WKLOADE || wl == WIKI_WKLOADI || 
@@ -1248,37 +1664,24 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
       wl == SD_YCSB_WKLOADA00 || wl == SD_YCSB_WKLOADA01 || wl == SD_YCSB_WKLOADC1 || wl == SD_YCSB_WKLOADH11 ||
       wl == SD_YCSB_WKLOADK || wl == SD_YCSB_WKLOADK2 || wl == SD_YCSB_WKLOADK3 || wl == SD_YCSB_WKLOADK4
     ){
-      ycsb_wl.DoTransaction(tx_keys);  
+      ycsb_wl.DoTransaction(tx_keys);
       uint64_t value = -1;
-      
+
+      // Bounds check to prevent segfault when workload changes
+      if (tx_keys[0] >= init_keys.size()) {
+        // std::cerr << "ERROR: tx_keys[0]=" << tx_keys[0] << " exceeds init_keys.size()=" << init_keys.size() << std::endl;
+        continue; // Skip this invalid query
+      }
+
       lx = init_keys[tx_keys[0]]; // The key to insert/search/update
       length = tx_keys[1];  // in case of range scan
-      if (tx_keys[2] == ycsbc::Operation::INSERT) value = values[tx_keys[0]];  // in case of 
+      if (tx_keys[2] == ycsbc::Operation::INSERT) value = values[tx_keys[0]];  // in case of
       query = Rectangle(lx, length, value, -1);
       query.op = tx_keys[2];
       // cout << tx_keys[0] << ' ' << tx_keys[2] << endl;
     }
-    else if (wl == SD_YCSB_WKLOADX1){
-      const int num_hspots = 8;
-      auto nd = w(genTem); 
-      int key_to_search = static_cast<uint64_t>(std::round(b_GX[nd](genTem)));
-      
-      lx = init_keys[key_to_search]; // The key to insert/search/update
-      length = dslength_uint64(gen);
-      uint64_t value = -1;
-      query = Rectangle(lx, length, value, -1);
-      query.op = ycsbc::Operation::SCAN;
-    }
-    else if (wl == SD_YCSB_WKLOADX2){
-      const int num_hspots = 8;
-      auto nd = w(genTem); 
-      uint64_t key_to_search = static_cast<uint64_t>(std::round(b_GX[nd](genTem)));
-      
-      lx = key_to_search; // The key to insert/search/update
-      length = dslength_uint64(gen);
-      uint64_t value = -1;
-      query = Rectangle(lx, length, value, -1);
-      query.op = ycsbc::Operation::SCAN;
+    else {
+      std::cerr << "Workload not supported in the current implementation." << std::endl;
     }
 
       // -------------------------------------------------------------------------------------
@@ -1320,14 +1723,72 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
           }
       }
       
-      // Push the query to the correct worker thread's job queue
-      std::mt19937 genInt(rd());
-      std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
-      int insert_tid = dq(genInt);
 
-      int glbGridCellInsert = valid_gcells[insert_tid];
-                
+      if(this->gm->config == 506){
+        std::vector<std::vector<int>> sn_numa;
+        #if MACHINE==0
+          // sn_numa={{ 0 , 31 }, { 32 , 63 }, { 64 , 95 }, { 96 , 127 }, { 128 , 159 }, { 160 , 191 }, { 192 , 223 }, { 224 , 255 }};
+          sn_numa ={
+            {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 ,10 ,11 ,12 ,13 ,14 ,15 ,16 ,17 ,18 ,19 ,20 ,21 ,22 ,23 ,24 ,25 ,26 ,27 ,28 ,29 ,30 ,31}, 
+            {32 ,33 ,34 ,35 ,36 ,37 ,38 ,39 ,40 ,41 ,42 ,43 ,44 ,45 ,46 ,47 ,48 ,49 ,50 ,51 ,52 ,53 ,54 ,55 ,56 ,57 ,58 ,59 ,60 ,61 ,62 ,63}, 
+            {64 ,65 ,66 ,67 ,68 ,69 ,70 ,71 ,72 ,73 ,74 ,75 ,76 ,77 ,78 ,79 ,80 ,81 ,82 ,83 ,84 ,85 ,86 ,87 ,88 ,89 ,90 ,91 ,92 ,93 ,94 ,95}, 
+            {96 ,97 ,98 ,99 ,100 ,101 ,102 ,103 ,104 ,105 ,106 ,107 ,108 ,109 ,110 ,111 ,112 ,113 ,114 ,115 ,116 ,117 ,118 ,119 ,120 ,121 ,122 ,123 ,124 ,125 ,126 ,127}, 
+            {128 ,129 ,130 ,131 ,132 ,133 ,134 ,135 ,136 ,137 ,138 ,139 ,140 ,141 ,142 ,143 ,144 ,145 ,146 ,147 ,148 ,149 ,150 ,151 ,152 ,153 ,154 ,155 ,156 ,157 ,158 ,159}, 
+            {160 ,161 ,162 ,163 ,164 ,165 ,166 ,167 ,168 ,169 ,170 ,171 ,172 ,173 ,174 ,175 ,176 ,177 ,178 ,179 ,180 ,181 ,182 ,183 ,184 ,185 ,186 ,187 ,188 ,189 ,190 ,191}, 
+            {192 ,193 ,194 ,195 ,196 ,197 ,198 ,199 ,200 ,201 ,202 ,203 ,204 ,205 ,206 ,207 ,208 ,209 ,210 ,211 ,212 ,213 ,214 ,215 ,216 ,217 ,218 ,219 ,220 ,221 ,222 ,223}, 
+            {224 ,225 ,226 ,227 ,228 ,229 ,230 ,231 ,232 ,233 ,234 ,235 ,236 ,237 ,238 ,239 ,240 ,241 ,242 ,243 ,244 ,245 ,246 ,247 ,248 ,249 ,250 ,251 ,252 ,253 ,254 ,255}
+          };
+        #elif MACHINE==1
+          // sn_numa={{ 0 , 127 }, { 128 , 255 }};
+          sn_numa = {
+            {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 ,10 ,11 ,12 ,13 ,14 ,15 ,16 ,17 ,18 ,19 ,20 ,21 ,22 ,23 ,24 ,25 ,26 ,27 ,28 ,29 ,30 ,31 ,32 ,33 ,34 ,35 ,36 ,37 ,38 ,39 ,40 ,41 ,42 ,43 ,44 ,45 ,46 ,47 ,48 ,49 ,50 ,51 ,52 ,53 ,54 ,55 ,56 ,57 ,58 ,59 ,60 ,61 ,62 ,63 ,64 ,65 ,66 ,67 ,68 ,69 ,70 ,71 ,72 ,73 ,74 ,75 ,76 ,77 ,78 ,79 ,80 ,81 ,82 ,83 ,84 ,85 ,86 ,87 ,88 ,89 ,90 ,91 ,92 ,93 ,94 ,95 ,96 ,97 ,98 ,99 ,100 ,101 ,102 ,103 ,104 ,105 ,106 ,107 ,108 ,109 ,110 ,111 ,112 ,113 ,114 ,115 ,116 ,117 ,118 ,119 ,120 ,121 ,122 ,123 ,124 ,125 ,126 ,127}, 
+            {128 ,129 ,130 ,131 ,132 ,133 ,134 ,135 ,136 ,137 ,138 ,139 ,140 ,141 ,142 ,143 ,144 ,145 ,146 ,147 ,148 ,149 ,150 ,151 ,152 ,153 ,154 ,155 ,156 ,157 ,158 ,159 ,160 ,161 ,162 ,163 ,164 ,165 ,166 ,167 ,168 ,169 ,170 ,171 ,172 ,173 ,174 ,175 ,176 ,177 ,178 ,179 ,180 ,181 ,182 ,183 ,184 ,185 ,186 ,187 ,188 ,189 ,190 ,191 ,192 ,193 ,194 ,195 ,196 ,197 ,198 ,199 ,200 ,201 ,202 ,203 ,204 ,205 ,206 ,207 ,208 ,209 ,210 ,211 ,212 ,213 ,214 ,215 ,216 ,217 ,218 ,219 ,220 ,221 ,222 ,223 ,224 ,225 ,226 ,227 ,228 ,229 ,230 ,231 ,232 ,233 ,234 ,235 ,236 ,237 ,238 ,239 ,240 ,241 ,242 ,243 ,244 ,245 ,246 ,247 ,248 ,249 ,250 ,251 ,252 ,253 ,254 ,255}
+          };
+        #elif MACHINE==2 || MACHINE == 7 || MACHINE == 8
+          // sn_numa={{ 0 , 127 }, { 128 , 255 }};
+          sn_numa = {
+            {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 ,10 ,11 ,12 ,13 ,14 ,15 ,16 ,17 ,18 ,19 ,20 ,21 ,22 ,23 ,24 ,25 ,26 ,27 ,28 ,29 ,30 ,31 ,32 ,33 ,34 ,35 ,36 ,37 ,38 ,39 ,40 ,41 ,42 ,43 ,44 ,45 ,46 ,47 ,48 ,49 ,50 ,51 ,52 ,53 ,54 ,55 ,56 ,57 ,58 ,59 ,60 ,61 ,62 ,63 ,64 ,65 ,66 ,67 ,68 ,69 ,70 ,71 ,72 ,73 ,74 ,75 ,76 ,77 ,78 ,79 ,80 ,81 ,82 ,83 ,84 ,85 ,86 ,87 ,88 ,89 ,90 ,91 ,92 ,93 ,94 ,95 ,96 ,97 ,98 ,99 ,100 ,101 ,102 ,103 ,104 ,105 ,106 ,107 ,108 ,109 ,110 ,111 ,112 ,113 ,114 ,115 ,116 ,117 ,118 ,119 ,120 ,121 ,122 ,123 ,124 ,125 ,126 ,127}, 
+            {128 ,129 ,130 ,131 ,132 ,133 ,134 ,135 ,136 ,137 ,138 ,139 ,140 ,141 ,142 ,143 ,144 ,145 ,146 ,147 ,148 ,149 ,150 ,151 ,152 ,153 ,154 ,155 ,156 ,157 ,158 ,159 ,160 ,161 ,162 ,163 ,164 ,165 ,166 ,167 ,168 ,169 ,170 ,171 ,172 ,173 ,174 ,175 ,176 ,177 ,178 ,179 ,180 ,181 ,182 ,183 ,184 ,185 ,186 ,187 ,188 ,189 ,190 ,191 ,192 ,193 ,194 ,195 ,196 ,197 ,198 ,199 ,200 ,201 ,202 ,203 ,204 ,205 ,206 ,207 ,208 ,209 ,210 ,211 ,212 ,213 ,214 ,215 ,216 ,217 ,218 ,219 ,220 ,221 ,222 ,223 ,224 ,225 ,226 ,227 ,228 ,229 ,230 ,231 ,232 ,233 ,234 ,235 ,236 ,237 ,238 ,239 ,240 ,241 ,242 ,243 ,244 ,245 ,246 ,247 ,248 ,249 ,250 ,251 ,252 ,253 ,254 ,255}
+          };
+        #elif MACHINE==3
+          // sn_numa={{ 0 , 31 }, { 32 , 63 }, { 64 , 95 }, { 96 , 127 }, { 128 , 159 }, { 160 , 191 }, { 192 , 223 }, { 224 , 255 }};
+          sn_numa ={
+            {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 ,10 ,11 ,12 ,13 ,14 ,15 ,16 ,17 ,18 ,19 ,20 ,21 ,22 ,23 ,24 ,25 ,26 ,27 ,28 ,29 ,30 ,31}, 
+            {32 ,33 ,34 ,35 ,36 ,37 ,38 ,39 ,40 ,41 ,42 ,43 ,44 ,45 ,46 ,47 ,48 ,49 ,50 ,51 ,52 ,53 ,54 ,55 ,56 ,57 ,58 ,59 ,60 ,61 ,62 ,63}, 
+            {64 ,65 ,66 ,67 ,68 ,69 ,70 ,71 ,72 ,73 ,74 ,75 ,76 ,77 ,78 ,79 ,80 ,81 ,82 ,83 ,84 ,85 ,86 ,87 ,88 ,89 ,90 ,91 ,92 ,93 ,94 ,95}, 
+            {96 ,97 ,98 ,99 ,100 ,101 ,102 ,103 ,104 ,105 ,106 ,107 ,108 ,109 ,110 ,111 ,112 ,113 ,114 ,115 ,116 ,117 ,118 ,119 ,120 ,121 ,122 ,123 ,124 ,125 ,126 ,127}, 
+            {128 ,129 ,130 ,131 ,132 ,133 ,134 ,135 ,136 ,137 ,138 ,139 ,140 ,141 ,142 ,143 ,144 ,145 ,146 ,147 ,148 ,149 ,150 ,151 ,152 ,153 ,154 ,155 ,156 ,157 ,158 ,159}, 
+            {160 ,161 ,162 ,163 ,164 ,165 ,166 ,167 ,168 ,169 ,170 ,171 ,172 ,173 ,174 ,175 ,176 ,177 ,178 ,179 ,180 ,181 ,182 ,183 ,184 ,185 ,186 ,187 ,188 ,189 ,190 ,191}, 
+            {192 ,193 ,194 ,195 ,196 ,197 ,198 ,199 ,200 ,201 ,202 ,203 ,204 ,205 ,206 ,207 ,208 ,209 ,210 ,211 ,212 ,213 ,214 ,215 ,216 ,217 ,218 ,219 ,220 ,221 ,222 ,223}, 
+            {224 ,225 ,226 ,227 ,228 ,229 ,230 ,231 ,232 ,233 ,234 ,235 ,236 ,237 ,238 ,239 ,240 ,241 ,242 ,243 ,244 ,245 ,246 ,247 ,248 ,249 ,250 ,251 ,252 ,253 ,254 ,255}
+          };
+        #elif MACHINE==4
+          sn_numa={{
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255
+          }};
+        #elif MACHINE==5 || MACHINE == 6
+          // sn_numa = {{ 0 , 63 }, { 64 , 127 }, { 128 , 191 }, { 192 , 255 }};
+          sn_numa = {
+            {0 ,1 ,2 ,3 ,4 ,5 ,6 ,7 ,8 ,9 ,10 ,11 ,12 ,13 ,14 ,15 ,16 ,17 ,18 ,19 ,20 ,21 ,22 ,23 ,24 ,25 ,26 ,27 ,28 ,29 ,30 ,31 ,32 ,33 ,34 ,35 ,36 ,37 ,38 ,39 ,40 ,41 ,42 ,43 ,44 ,45 ,46 ,47 ,48 ,49 ,50 ,51 ,52 ,53 ,54 ,55 ,56 ,57 ,58 ,59 ,60 ,61 ,62 ,63}, 
+            {64 ,65 ,66 ,67 ,68 ,69 ,70 ,71 ,72 ,73 ,74 ,75 ,76 ,77 ,78 ,79 ,80 ,81 ,82 ,83 ,84 ,85 ,86 ,87 ,88 ,89 ,90 ,91 ,92 ,93 ,94 ,95 ,96 ,97 ,98 ,99 ,100 ,101 ,102 ,103 ,104 ,105 ,106 ,107 ,108 ,109 ,110 ,111 ,112 ,113 ,114 ,115 ,116 ,117 ,118 ,119 ,120 ,121 ,122 ,123 ,124 ,125 ,126 ,127}, 
+            {128 ,129 ,130 ,131 ,132 ,133 ,134 ,135 ,136 ,137 ,138 ,139 ,140 ,141 ,142 ,143 ,144 ,145 ,146 ,147 ,148 ,149 ,150 ,151 ,152 ,153 ,154 ,155 ,156 ,157 ,158 ,159 ,160 ,161 ,162 ,163 ,164 ,165 ,166 ,167 ,168 ,169 ,170 ,171 ,172 ,173 ,174 ,175 ,176 ,177 ,178 ,179 ,180 ,181 ,182 ,183 ,184 ,185 ,186 ,187 ,188 ,189 ,190 ,191}, 
+            {192 ,193 ,194 ,195 ,196 ,197 ,198 ,199 ,200 ,201 ,202 ,203 ,204 ,205 ,206 ,207 ,208 ,209 ,210 ,211 ,212 ,213 ,214 ,215 ,216 ,217 ,218 ,219 ,220 ,221 ,222 ,223 ,224 ,225 ,226 ,227 ,228 ,229 ,230 ,231 ,232 ,233 ,234 ,235 ,236 ,237 ,238 ,239 ,240 ,241 ,242 ,243 ,244 ,245 ,246 ,247 ,248 ,249 ,250 ,251 ,252 ,253 ,254 ,255}
+          }; 
+        #endif 
+        
+        // std::uniform_int_distribution<int> dqt(0, valid_gcells.size()-1);  // you choose the numa node 
+        // int choose_numa = dqt(gen);
+        int choose_numa = gm->glbGridCell[valid_gcells[0]].idNUMA;
+        valid_gcells=sn_numa[choose_numa];
+        
+      }
 
+        // Push the query to the correct worker thread's job queue
+        std::mt19937 genInt(rd());
+        std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
+        int insert_tid = dq(genInt);
+        int glbGridCellInsert = valid_gcells[insert_tid];
+              
         // -------------------------------------------------------------------------------------
         query.aGrid = glbGridCellInsert;
         // -------------------------------------------------------------------------------------
@@ -1337,15 +1798,25 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         gm->freqQueryDistCompleted[glbGridCellInsert]++;
         // -------------------------------------------------------------------------------------
         /**
-         * TODO: The idCpu can be a vector, as multiple threads might be allocated to this grid 
+         * TODO: The idCpu can be a vector, as multiple threads might be allocated to this grid
         */
-        int cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
+        // CRITICAL SECTION: Acquire shared read lock to read idCPU
+        // This ensures we always read the correct CPU assignment even during reconfiguration
+        int cpuid;
+        {
+            std::shared_lock<std::shared_mutex> lock(gm->config_mutex);
+            cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
+        }
         glb_worker_thrds[cpuid].jobs.push(query);
+        // -------------------------------------------------------------------------------------
+        // Increment query counter for rate control
+        // if (RATE_CONTROL_ENABLED) {
+        //   glb_router_thrds[router_cpuids[i]].queries_this_second++;
+        // }
         // -------------------------------------------------------------------------------------
         // Use it as a throttling factor
         // std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      }
-            
+      }           
     });
   }
 }

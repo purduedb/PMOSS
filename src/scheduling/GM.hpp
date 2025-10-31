@@ -3,24 +3,27 @@
 
 #include <iostream>
 #include <fstream>
+#include <shared_mutex>
 // -------------------------------------------------------------------------------------
 #include "utils/Misc.hpp"
-#include "storage/index.h"  
-#include "storage/btree/btree.h"  
+#include "storage/index.h"
+#include "storage/btree/btree.h"
 #include "storage/rtree/rtree.h"
-#include "storage/qtree/qtree.h"  
+#include "storage/qtree/qtree.h"
 // -------------------------------------------------------------------------------------
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
+#define ENABLE_DYNAMIC_RECONFIGURATION 1  // Set to 1 to enable dynamic reconfiguration support
+#define SHARED_MIGRATION 1  // 1: all the workers take part in migration
 #define PROFILE 1
-#define SIMD 0
+#define SIMD 1
 
-#define EVAL_PMOSS 1  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
+#define EVAL_PMOSS 0  // when set to 1, it evaluates the learned configs in pmoss_machine_configs
 #define MACHINE 0     // 0 (BIGDATA), 1(DBSERVER)
 
-#define SINGLE_DIMENSION_KEY_LIMIT 1000000000 // total keys in db       
-#define BTREE_INIT_LIMIT 1000000000 // initial number of keys in btree   30000000        
+#define SINGLE_DIMENSION_KEY_LIMIT 1500000000 // total keys in db       
+#define BTREE_INIT_LIMIT 500000000 // initial number of keys in btree   680000000  800000000
 #define LIMIT 1000        
 
 #define MAX_GRID_CELL 256 // total number of index slices = MAX_XPAR*MAX_YPAR
@@ -75,8 +78,9 @@ class GridManager
       double hy;
       // -------------------------------------------------------------------------------------
       int idNUMA;
-      
-      int idCPU;  
+      int idCPU; 
+      int prev_idNUMA;
+      int prev_idCPU; 
       // -------------------------------------------------------------------------------------
       // Model Parameters for stamping query: Currently we have linear regression
       double lRegCoeff[2][STAMP_LR_PARAM];
@@ -86,11 +90,16 @@ class GridManager
     };
     
     GridCell glbGridCell[MAX_GRID_CELL];
+
+    // Protects grid cell configuration (idNUMA, idCPU) during dynamic reconfiguration
+    // - Writers (reload_configuration): Use unique_lock for exclusive access
+    // - Readers (router threads): Use shared_lock for concurrent reads
+    mutable std::shared_mutex config_mutex;
     // -------------------------------------------------------------------------------------
     // Correlation Query Matrix of the grid cells [NUM_GRID_CELLS x NUM_GRID_CELLS]
     int qCorrMatrix[MAX_GRID_CELL][MAX_GRID_CELL] = {0};  //It needs to be thread-safe
     // -------------------------------------------------------------------------------------
-    
+
     int freqQueryDistPushed[MAX_GRID_CELL] = {0};  // TODO: this needs to be thread-safe
     int freqQueryDistCompleted[MAX_GRID_CELL] = {0};  // TODO: this needs to be thread-safe
 
@@ -105,17 +114,22 @@ class GridManager
     void register_index(erebus::storage::qtree::QuadTree *idx_quadtree);
     void register_index(erebus::storage::BTreeOLCIndex<keytype, keycomp> *idx_btree);
     void enforce_scheduling();
+    void enforce_scheduling_mt();
+    void enforce_scheduling_batch();
     void printGM();
     void printQueryDistPushed();
     void printQueryDistCompleted();
     void printQueryDistOstanding();
-    
+
     void buildDataDistIdx(int access_method, std::vector<keytype> &init_keys);
     void printDataDistIdx();
     void printDataDistIdxT();
-    
+
     void printQueryView();
     void printQueryCorrMatrixView();
+
+    // Dynamic reconfiguration support
+    void reload_configuration(string configFile);
   
 };
 

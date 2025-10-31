@@ -24,3 +24,7 @@ kb_bs__/*
 kb_r_linux/*
 kb_r_linux_pfl/*
 kb_b_linux_pfl/*
+kb_bs_dynam/*
+kb_bs_dynam-old/*
+kb_bs_dynam_test/*
+kb_bs_linux_dynam/*

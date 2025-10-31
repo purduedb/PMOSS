@@ -15,7 +15,7 @@ using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
 #define ENABLE_DYNAMIC_RECONFIGURATION 1
-#define SHARED_MIGRATION 1
+#define SHARED_MIGRATION 1  // 1: lazy asyn migration, 0: sync migration, 2: jit migration
 #define PROFILE 1
 #define SIMD 1
 
@@ -81,6 +81,8 @@ class GridManager
       int idCPU; 
       int prev_idNUMA;
       int prev_idCPU; 
+
+      bool has_migrated = true;
       // -------------------------------------------------------------------------------------
       // Model Parameters for stamping query: Currently we have linear regression
       double lRegCoeff[2][STAMP_LR_PARAM];

@@ -34,12 +34,24 @@ exec="$current_dir/build/bin/erebus"
 #   done
 # done
 
-
-round=47
+# PMOSS (start from 69)
+round=69
 cfg=(506)
 wl_span=1800000
+# wl_span=1800
 for wl in 12; do
   for c in "${cfg[@]}"; do
     "$exec" $c $wl $round $wl_span
   done
 done
+
+# 34, 44, 58, 25
+# round=102
+# cfg=(58)
+# wl_span=1800000
+# # wl_span=1800
+# for wl in 12; do
+#   for c in "${cfg[@]}"; do
+#     "$exec" $c $wl $round $wl_span
+#   done
+# done

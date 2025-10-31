@@ -471,14 +471,13 @@ std::string get_cpu_vendor() {
 
 int main(int argc, char* argv[])
 {	
-	
 	auto start = std::chrono::high_resolution_clock::now();
 	int cfgIdx = 506;
 	int ds = YCSB_2000M;
 	int wl = SD_YCSB_WKLOADC;
 	int iam = BTREE;
 	int round = 0;
-	int run_duration_ms = 900000; // Default: 60 seconds
+	int run_duration_ms = 1800000; // Default: 18 seconds
 
 	if (argc > 1) {
 		cfgIdx = std::atoi(argv[1]);
@@ -842,7 +841,7 @@ int main(int argc, char* argv[])
 	
 	auto run_start_time = std::chrono::high_resolution_clock::now();
 	const int runtime_for_wkload_ch = 20000;
-	const int runtime_for_init = 100000; // Initial run duration before first change
+	const int runtime_for_init = 100000; // Initial run duration before first change: 
 	while (keep_running) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(CHECK_INTERVAL_MS));
 		iteration_count++;

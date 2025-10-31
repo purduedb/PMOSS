@@ -111,7 +111,7 @@ void GridManager::register_grid_cells(string configFile){
 			
 			this->glbGridCell[trk_cid].idNUMA = numaConfig[trk_cid];
 			this->glbGridCell[trk_cid].idCPU = cpuConfig[trk_cid]; 
-			
+			this->glbGridCell[trk_cid].has_migrated = false;
 			trk_cid++; 
 		}
 	}
@@ -505,6 +505,7 @@ void GridManager::reload_configuration(string configFile) {
             this->glbGridCell[i].prev_idCPU = this->glbGridCell[i].idCPU;
             this->glbGridCell[i].idNUMA = numaConfig[i];
             this->glbGridCell[i].idCPU = cpuConfig[i];
+            this->glbGridCell[i].has_migrated = false;
         }
     }  // Lock released here
 

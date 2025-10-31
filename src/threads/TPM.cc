@@ -238,8 +238,9 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     #if SHARED_MIGRATION == 1
       this->resume_all_routers();
       size_t i = 0;
+      int cnt_migrated = 0;
       if (next_workload == SD_YCSB_WKLOADA)
-        i = 33;  // Staggered start for YCSB-A
+        i = 31;  // Staggered start for YCSB-A
 
       for(i; i < MAX_GRID_CELL; i++){
         double lx = this->gm->glbGridCell[i].lx;
@@ -256,15 +257,22 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
         query.qStamp = std::numeric_limits<int>::max() - i;
         query.aGrid = i;
         this->glb_worker_thrds[cpu_id].jobs.push(query);
-        if (i % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
-          std::this_thread::sleep_for(std::chrono::milliseconds(120000));   // prev 100
+        
+        // if (i % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+        //   std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
+        
+        cnt_migrated++;
+        if (cnt_migrated % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
       }  
-    #else
+    #elif SHARED_MIGRATION == 0
     // Pause all the router threads and worker threads
     this->pause_all_workers();
     // this->gm->enforce_scheduling();
     this->gm->enforce_scheduling_mt();
     this->resume_all_workers();
+    this->resume_all_routers();
+    #elif SHARED_MIGRATION == 2
     this->resume_all_routers();
     #endif
     
@@ -1601,14 +1609,14 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
         std::uniform_int_distribution<int> dq(0, valid_gcells.size()-1); 
         int insert_tid = dq(genInt);
         int glbGridCellInsert = valid_gcells[insert_tid];
-              
+        
         // -------------------------------------------------------------------------------------
         // Check the grid has been migrated or not, if not you add a migration query as well
         
         query.aGrid = glbGridCellInsert;
         // -------------------------------------------------------------------------------------
         // Update the query view of each cell
-        gm->glbGridCell[glbGridCellInsert].qType[query.qStamp] += 1;
+        // gm->glbGridCell[glbGridCellInsert].qType[query.qStamp] += 1;
         gm->freqQueryDistPushed[glbGridCellInsert]++;
         gm->freqQueryDistCompleted[glbGridCellInsert]++;
         // -------------------------------------------------------------------------------------
@@ -1623,6 +1631,27 @@ void TPManager::init_router_threads(int ds, int wl, double min_x, double max_x, 
             cpuid = gm->glbGridCell[glbGridCellInsert].idCPU;
         }
         glb_worker_thrds[cpuid].jobs.push(query);
+        
+        #if SHARED_MIGRATION == 2
+        if (
+          // wl == SD_YCSB_WKLOADA && 
+          this->gm->config != 506 && !this->gm->glbGridCell[glbGridCellInsert].has_migrated
+        ) {
+          double m_lx = this->gm->glbGridCell[glbGridCellInsert].lx;
+          int m_numa_id = this->gm->glbGridCell[glbGridCellInsert].idNUMA;
+          int m_prev_cpu = this->gm->glbGridCell[glbGridCellInsert].prev_idCPU;
+          int m_cpu_id = this->gm->glbGridCell[glbGridCellInsert].idCPU;
+          Rectangle m_query;
+          m_query.left_ = m_lx;
+          m_query.right_= this->gm->DataDist[glbGridCellInsert];
+          m_query.bottom_ = m_numa_id;
+          m_query.op = ycsbc::Operation::MIGRATE;
+          m_query.qStamp = std::numeric_limits<int>::max() - i;
+          m_query.aGrid = glbGridCellInsert;
+          this->glb_worker_thrds[m_cpu_id].jobs.push(m_query);
+          gm->glbGridCell[glbGridCellInsert].has_migrated = true;
+        }
+        #endif
         // -------------------------------------------------------------------------------------
         // Increment query counter for rate control
         // if (RATE_CONTROL_ENABLED) {

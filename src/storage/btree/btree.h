@@ -735,23 +735,12 @@ struct BTree {
     uint64_t versionParent;
 
     // std::vector<void*> nodes_to_migrate;
-
+    // We want to migrate node only if it is not root or the next level or the next level
+    int level_ = 0;
     while (node->type==PageType::BTreeInner) {
       auto inner = static_cast<BTreeInner<Key>*>(node);
-      nodes_to_migrate.push_back(inner);
-
-      // -------------------------------------------------------------------------------------
-      // Move the node to a destination socket
-      // void *ptr_to_check = inner;
-      // int status[1];
-      // const int destNodes[1] = {destNUMA};
       
-      // int ret_code = move_pages(0, 1, &ptr_to_check, destNodes, status, 0);
-      // int ret_code = syscall(SYS_move_pages2, 1, &ptr_to_check, destNodes, status, migrate_mode, num_tries);
-
-      // cout << ret_code << endl;
-      // printf("Memory at %p is at %d node (retcode %d)\n", ptr_to_check, status[0], ret_code);
-      // -------------------------------------------------------------------------------------
+      if (level_ >= 2) nodes_to_migrate.push_back(inner);
 
       if (parent) {
         parent->readUnlockOrRestart(versionParent, needRestart);
@@ -766,6 +755,7 @@ struct BTree {
       if (needRestart) goto restart;
       versionNode = node->readLockOrRestart(needRestart);
       if (needRestart) goto restart;
+      level_ += 1;
     }
     
     BTreeLeaf<Key,Value>* leaf = static_cast<BTreeLeaf<Key,Value>*>(node);

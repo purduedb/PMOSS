@@ -54,3 +54,37 @@ if (i % 16 == 0 && next_workload == SD_YCSB_WKLOADA)
 47
 if (i % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
           std::this_thread::sleep_for(std::chrono::milliseconds(120000));   // prev 100
+
+
+if (i % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
+
+
+63
+cnt_migrated++;
+        if (cnt_migrated % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
+
+64
+cnt_migrated++;
+        if (cnt_migrated % 32 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
+
+65
+if (cnt_migrated % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(150000));   // prev 100
+
+66 
+if (cnt_migrated % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
+
+Inner nodes are not migrated
+
+67
+No delay
+
+
+68 
+level >= 2 migrate 
+if (cnt_migrated % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100

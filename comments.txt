@@ -12,3 +12,18 @@ if (this->gm->wkload == SD_YCSB_WKLOADA && i % 32 == 0) {
 if (this->gm->wkload == SD_YCSB_WKLOADA && i % 32 == 0) {
           std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         }
+
+200
+cnt_migrated++;
+        if (cnt_migrated % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
+          std::this_thread::sleep_for(std::chrono::milliseconds(120000));   // prev 100
+
+201 
+90000
+
+202 
+60000
+
+203 
+90000, migrate from 21
+

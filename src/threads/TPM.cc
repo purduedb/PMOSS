@@ -236,7 +236,7 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
     
     
     // Start timing the migration
-    int cnt_migrated = 0;
+    int cnt_migrated = 0;    
     #if SHARED_MIGRATION == 1
       this->resume_all_routers();
       for(size_t i = 0; i < MAX_GRID_CELL; i++){
@@ -259,7 +259,7 @@ void TPManager::init_megamind_threads(int next_config, int next_workload, string
         // }
         cnt_migrated++;
         if (cnt_migrated % 16 == 0 && next_workload == SD_YCSB_WKLOADA) 
-          std::this_thread::sleep_for(std::chrono::milliseconds(180000));   // prev 100
+          std::this_thread::sleep_for(std::chrono::milliseconds(90000));   // prev 100
       }
     #else
     // Pause all the router threads and worker threads

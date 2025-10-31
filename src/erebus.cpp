@@ -838,7 +838,7 @@ int main(int argc, char* argv[])
 	
 	auto run_start_time = std::chrono::high_resolution_clock::now();
 	const int runtime_for_wkload_ch = 20000;
-	const int runtime_for_init = 30000; // Initial run duration before first change
+	const int runtime_for_init = 100000; // Initial run duration before first change
 	while (keep_running) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(CHECK_INTERVAL_MS));
 		iteration_count++;

@@ -14,7 +14,7 @@
 using std::ifstream;
 using std::ofstream;
 // -------------------------------------------------------------------------------------
-#define ENABLE_DYNAMIC_RECONFIGURATION 1
+#define ENABLE_DYNAMIC_RECONFIGURATION 0
 #define SHARED_MIGRATION 1
 #define PROFILE 1
 #define SIMD 1

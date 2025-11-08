@@ -16,7 +16,7 @@ using std::ofstream;
 #define EVAL_PMOSS 1
 
 #define SINGLE_DIMENSION_KEY_LIMIT 1000000000      
-#define BTREE_INIT_LIMIT 800000000
+#define BTREE_INIT_LIMIT 680000000
 #define LIMIT 1000                  // test btree workload
 #define MAX_GRID_CELL 256
 #define STAMP_LR_PARAM 4            // For now think of the query MBR as only output

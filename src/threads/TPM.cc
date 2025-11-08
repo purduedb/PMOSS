@@ -24,9 +24,11 @@ void TPManager::init_worker_threads(){
       erebus::utils::PinThisThread(worker_cpuids[i]);
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
       glb_worker_thrds[worker_cpuids[i]].cpuid=worker_cpuids[i];
-          
+      
+      #if PROFILE==1
       PerfEvent e;
       int cnt = 0;
+      #endif
       
       // ofstream outfile;
       // outfile.open ("/homes/yrayhan/works/erebus/src/a_test/" + std::to_string(worker_cpuids[i]) + "example.txt");
@@ -45,9 +47,11 @@ void TPManager::init_worker_threads(){
                     
         if (size_jobqueue != 0){
           glb_worker_thrds[worker_cpuids[i]].jobs.try_pop(rec_pop);
+          #if PROFILE==1
           if (cnt == 0) {
             e.startCounters();
           }
+          #endif
           // e.startCounters();
                     
           // -------------------------------------------------------------------------------------
@@ -78,6 +82,7 @@ void TPManager::init_worker_threads(){
             //   << static_cast<uint64_t>(rec_pop.bottom_) << endl;
           #endif
           
+          #if PROFILE==1
           cnt +=1;
           if (cnt == PERF_STAT_COLLECTION_INTERVAL){
             e.stopCounters();
@@ -96,6 +101,7 @@ void TPManager::init_worker_threads(){
             glb_worker_thrds[worker_cpuids[i]].perf_stats.push(perf_counter);
 
           }
+          #endif
           
                     
           // PerfCounter perf_counter;
@@ -289,6 +295,7 @@ void TPManager::init_ncoresweeper_threads(){
             break;
         std::this_thread::sleep_for(std::chrono::milliseconds(40000));  // 80000
         
+        #if PROFILE == 1
         // First, push the token to the worker cpus to get the DataView
         PerfCounter perf_counter;
         perf_counter.qType = SYNC_TOKEN;
@@ -298,7 +305,8 @@ void TPManager::init_ncoresweeper_threads(){
           // cout << itr->first<< '\t' << itr->second << '\n';
           glb_worker_thrds[wkCPUID].perf_stats.push(perf_counter);
         }
-        
+        #endif
+
         // Then, push the token to the system_sweeper cpu to get the System View (MemChannel)
         // if (i == 0){
         //   IntelPCMCounter iPCMCnt;

@@ -167,8 +167,16 @@ exec="$current_dir/build/bin/erebus"
 #     /users/yrayhan/works/erebus/build/bin/erebus $cfg $wl
 #   done
 # done
-wl=(11 44 45)
-cfg=(15000 15002 15003)
+
+# wl=(11 44 45)
+# cfg=(15000 15002 15003)
+# #it should be the corresponding workloads and configs
+# for i in "${!wl[@]}"; do
+#   "$exec" "${cfg[$i]}" "${wl[$i]}"
+# done
+
+wl=(11)
+cfg=(70000)
 #it should be the corresponding workloads and configs
 for i in "${!wl[@]}"; do
   "$exec" "${cfg[$i]}" "${wl[$i]}"

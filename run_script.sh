@@ -42,9 +42,14 @@ exec="$current_dir/build/bin/erebus"
 
 # Date: 2024-06-10 (Testing new KBs)
 # Add a wl list and a cfg list 
-wl=(11 11 11 11)
-cfg=(39 48 57 16)
+# wl=(11 11 11 11)
+# cfg=(39 48 57 16)
+# for i in "${!wl[@]}"; do
+#   "$exec" ${cfg[$i]} ${wl[$i]}
+# done
+
+wl=(11)
+cfg=(70000)
 for i in "${!wl[@]}"; do
   "$exec" ${cfg[$i]} ${wl[$i]}
 done
-
